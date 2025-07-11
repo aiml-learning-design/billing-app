@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import jwt_decode from 'jwt-decode';
 
 const AuthContext = createContext();
 
@@ -13,33 +14,21 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      api.get('/api/auth/me')
-        .then(response => {
-          setUser(response.data); // Assuming backend returns user object
-        })
-        .catch((err) => {
-          console.error("Failed to fetch user:", err);
-          logout();
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+      const decoded = jwt_decode(token);
+      setUser(decoded);
     }
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
     try {
       setError(null);
-      const { token, email } = await api.post('http://localhost:8087/api/auth/authenticate', { 
-        email, 
-        password 
-      });
-      
-      localStorage.setItem('token', token);
-      setUser({ email: email }); // Store user data
+      const response = await api.post('/api/auth/authenticate', { email, password });
+      localStorage.setItem('token', response.token);
+      setUser(jwt_decode(response.token));
       navigate('/dashboard');
     } catch (error) {
-      setError(error.response?.data?.message || "Login failed");
+      setError(error.response?.data?.message || 'Login failed');
       throw error;
     }
   };
@@ -47,16 +36,31 @@ export function AuthProvider({ children }) {
   const register = async (email, password) => {
     try {
       setError(null);
-      const { token, email } = await api.post('http://localhost:8087/api/auth/register', { 
-        email, 
-        password 
+      const response = await api.post('/api/auth/register', {
+        email,
+        password,
+        userRole: 'USER'
       });
-      
-      localStorage.setItem('token', token);
-      setUser({ email: email });
+      localStorage.setItem('token', response.token);
+      setUser(jwt_decode(response.token));
       navigate('/dashboard');
     } catch (error) {
-      setError(error.response?.data?.message || "Registration failed");
+      setError(error.response?.data?.message || 'Registration failed');
+      throw error;
+    }
+  };
+
+  const loginWithGoogle = async (googleData) => {
+    try {
+      setError(null);
+      const response = await api.post('/api/auth/google', {
+        token: googleData.credential
+      });
+      localStorage.setItem('token', response.token);
+      setUser(jwt_decode(response.token));
+      navigate('/dashboard');
+    } catch (error) {
+      setError(error.response?.data?.message || 'Google login failed');
       throw error;
     }
   };
@@ -67,16 +71,19 @@ export function AuthProvider({ children }) {
     navigate('/login');
   };
 
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    loginWithGoogle,
+    setError
+  };
+
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      loading, 
-      error,
-      login, 
-      register, 
-      logout,
-      setError // Allow clearing errors from components
-    }}>
+    <AuthContext.Provider value={value}>
       {!loading && children}
     </AuthContext.Provider>
   );

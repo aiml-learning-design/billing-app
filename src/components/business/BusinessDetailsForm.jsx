@@ -24,6 +24,7 @@ const validationSchema = Yup.object().shape({
 const BusinessDetailsForm = () => {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const formik = useFormik({
     initialValues: {
@@ -38,11 +39,12 @@ const BusinessDetailsForm = () => {
     onSubmit: async (values) => {
       try {
         setSuccess(false);
+        setError(null);
         const response = await api.post('/api/business/update', values);
         formik.setValues(response.data);
         setSuccess(true);
       } catch (error) {
-        console.error('Error saving business details', error);
+        setError(error.response?.data?.message || 'Error saving business details');
       }
     },
   });
@@ -50,7 +52,7 @@ const BusinessDetailsForm = () => {
   useEffect(() => {
     const fetchBusinessDetails = async () => {
       try {
-        const response = await api.get('/api/business');
+        const response = await api.get('/api/business/1'); // Assuming single business for user
         if (response.data) {
           formik.setValues(response.data);
         }
@@ -79,9 +81,15 @@ const BusinessDetailsForm = () => {
           </Alert>
         )}
 
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <form onSubmit={formik.handleSubmit}>
           <Grid container spacing={3}>
-            <Grid item xs={12}>
+            <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
                 label="Business Name"
@@ -92,7 +100,64 @@ const BusinessDetailsForm = () => {
                 helperText={formik.touched.businessName && formik.errors.businessName}
               />
             </Grid>
-            {/* Rest of your form fields */}
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="GSTIN"
+                name="gstin"
+                value={formik.values.gstin}
+                onChange={formik.handleChange}
+                error={formik.touched.gstin && Boolean(formik.errors.gstin)}
+                helperText={formik.touched.gstin && formik.errors.gstin}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Address"
+                name="address"
+                multiline
+                rows={3}
+                value={formik.values.address}
+                onChange={formik.handleChange}
+                error={formik.touched.address && Boolean(formik.errors.address)}
+                helperText={formik.touched.address && formik.errors.address}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="PAN"
+                name="pan"
+                value={formik.values.pan}
+                onChange={formik.handleChange}
+                error={formik.touched.pan && Boolean(formik.errors.pan)}
+                helperText={formik.touched.pan && formik.errors.pan}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                error={formik.touched.email && Boolean(formik.errors.email)}
+                helperText={formik.touched.email && formik.errors.email}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label="Phone"
+                name="phone"
+                value={formik.values.phone}
+                onChange={formik.handleChange}
+                error={formik.touched.phone && Boolean(formik.errors.phone)}
+                helperText={formik.touched.phone && formik.errors.phone}
+              />
+            </Grid>
             <Grid item xs={12}>
               <Button
                 type="submit"
