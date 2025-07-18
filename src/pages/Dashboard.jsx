@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Box, Typography, Button, Grid, Card, CardContent,
-  CircularProgress, Divider, Chip
+  CircularProgress, Divider, Chip, Alert
 } from '@mui/material';
 import { Business, ListAlt, Add, Paid, Pending } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';

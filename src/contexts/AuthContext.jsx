@@ -11,13 +11,57 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
+  // Check if token is expired
+  const isTokenExpired = (token) => {
+    try {
       const decoded = jwt_decode(token);
-      setUser(decoded);
+      return decoded.exp * 1000 < Date.now();
+    } catch (error) {
+      return true;
     }
-    setLoading(false);
+  };
+
+  // Refresh token function
+  const refreshToken = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) throw new Error('No refresh token available');
+      
+      const response = await api.post('/api/auth/refresh-token', {}, {
+        headers: {
+          'X-Refresh-Token': refreshToken
+        }
+      });
+      
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
+      return response.token;
+    } catch (error) {
+      console.error('Failed to refresh token:', error);
+      logout();
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        if (isTokenExpired(token)) {
+          try {
+            const newToken = await refreshToken();
+            setUser(jwt_decode(newToken));
+          } catch (error) {
+            // If refresh fails, user will be logged out in the refreshToken function
+          }
+        } else {
+          setUser(jwt_decode(token));
+        }
+      }
+      setLoading(false);
+    };
+    
+    initAuth();
   }, []);
 
   const login = async (email, password) => {
@@ -25,6 +69,7 @@ export function AuthProvider({ children }) {
       setError(null);
       const response = await api.post('/api/auth/authenticate', { email, password });
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
       setUser(jwt_decode(response.token));
       navigate('/dashboard');
     } catch (error) {
@@ -33,15 +78,12 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const register = async (email, password) => {
+  const register = async (userData) => {
     try {
       setError(null);
-      const response = await api.post('/api/auth/register', {
-        email,
-        password,
-        userRole: 'USER'
-      });
+      const response = await api.post('/api/auth/register', userData);
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
       setUser(jwt_decode(response.token));
       navigate('/dashboard');
     } catch (error) {
@@ -57,6 +99,7 @@ export function AuthProvider({ children }) {
         token: googleData.credential
       });
       localStorage.setItem('token', response.token);
+      localStorage.setItem('refreshToken', response.refreshToken);
       setUser(jwt_decode(response.token));
       navigate('/dashboard');
     } catch (error) {

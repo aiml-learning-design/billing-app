@@ -72,8 +72,8 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
         };
 
         const response = invoiceId
-          ? await api.put(`/api/invoices/${invoiceId}`, payload)
-          : await api.post('/api/invoices', payload);
+          ? await api.put(`/api/invoices/update/${invoiceId}`, payload)
+          : await api.post('/api/invoices/add', payload);
 
         setInvoice(response.data);
         setSuccess(true);
@@ -89,7 +89,7 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
       const fetchInvoice = async () => {
         try {
           setLoading(true);
-          const response = await api.get(`/api/invoices/${invoiceId}`);
+          const response = await api.get(`/api/invoices/get/${invoiceId}`);
           setInvoice(response.data);
           formik.setValues({
             billedTo: response.data.billedTo,

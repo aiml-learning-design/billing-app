@@ -5,6 +5,8 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import Dashboard from './pages/Dashboard';
 import BusinessPage from './pages/BusinessPage';
 import InvoicesPage from './pages/InvoicesPage';
@@ -18,11 +20,15 @@ function App() {
     <AuthProvider>
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
 
+        {/* Protected routes */}
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
@@ -32,6 +38,7 @@ function App() {
           <Route path="/invoices/edit/:id" element={<InvoiceFormPage />} />
         </Route>
 
+        {/* Catch-all route */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </AuthProvider>

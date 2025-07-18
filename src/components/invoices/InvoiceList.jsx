@@ -28,7 +28,7 @@ const InvoiceList = () => {
   useEffect(() => {
     const fetchInvoices = async () => {
       try {
-        const response = await api.get('/api/invoices');
+        const response = await api.get('/api/invoices/all');
         setInvoices(response.data);
       } catch (err) {
         setError('Failed to fetch invoices');
@@ -56,7 +56,7 @@ const InvoiceList = () => {
 
   const handleDelete = async () => {
     try {
-      await api.delete(`/api/invoices/${selectedInvoice.id}`);
+      await api.delete(`/api/invoices/delete/${selectedInvoice.id}`);
       setInvoices(invoices.filter(inv => inv.id !== selectedInvoice.id));
     } catch (err) {
       setError('Failed to delete invoice');
@@ -182,7 +182,10 @@ const InvoiceList = () => {
             {invoices.map((invoice) => (
               <TableRow key={invoice.id} hover>
                 <TableCell>{invoice.invoiceNumber}</TableCell>
-                <TableCell>{invoice.billedTo}</TableCell>
+                <TableCell>
+                  {invoice.billedTo?.businessName || 
+                   (typeof invoice.billedTo === 'string' ? invoice.billedTo : 'N/A')}
+                </TableCell>
                 <TableCell>
                   {invoice.currency} {invoice.amount.toFixed(2)}
                 </TableCell>

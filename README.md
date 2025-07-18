@@ -1,70 +1,235 @@
-# Getting Started with Create React App
+# Billing Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive billing and invoice management system built with React and Material UI, designed to help businesses manage their invoices, track payments, and maintain business details.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+1. **User Authentication**
+   - Email & Password Login
+   - Google Authentication
+   - Registration/Signup
+   - Forgot Password Recovery
+   - Password Reset
 
-### `npm start`
+2. **Dashboard**
+   - Overview of invoices and business metrics
+   - Quick access to key features
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+3. **Business Management**
+   - Add/Update/Delete Business Details
+   - Manage multiple office addresses
+   - Store business information (GSTIN, PAN, etc.)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+4. **Invoice Management**
+   - Create new invoices
+   - Edit existing invoices
+   - Delete invoices
+   - Mark invoices as paid
+   - Restore deleted invoices
+   - GST calculation (IGST, CGST, SGST)
 
-### `npm test`
+5. **Export Options**
+   - Export invoices as PDF
+   - Preview invoice PDFs
+   - Export all invoices as CSV
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Technologies Used
 
-### `npm run build`
+- **Frontend**
+  - React 18
+  - React Router v7
+  - Material UI v7
+  - Formik & Yup for form validation
+  - Axios for API requests
+  - JWT for authentication
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- **Backend**
+  - Spring Boot (Java)
+  - Spring Security
+  - Spring Data JPA
+  - MySQL/PostgreSQL
+  - Swagger for API documentation
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Installation and Setup
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Frontend Setup
 
-### `npm run eject`
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/billing-app.git
+   cd billing-app
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. **Set up environment variables**
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   REACT_APP_API_URL=http://localhost:8087
+   REACT_APP_ENV=development
+   REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
+   ```
+   
+   > **Important:** Replace `your-google-client-id` with your actual Google OAuth client ID from the [Google Cloud Console](https://console.cloud.google.com/apis/credentials). Without a valid client ID, Google Sign-In will not work.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **Start the frontend development server**
+   ```bash
+   npm start
+   ```
+   The frontend will be available at http://localhost:3000
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Backend Setup
 
-## Learn More
+1. **Clone the backend repository** (if separate from frontend)
+   ```bash
+   git clone https://github.com/yourusername/billing-service.git
+   cd billing-service
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+2. **Configure the database**
+   
+   Edit the `application.properties` or `application.yml` file to set up your database connection:
+   ```
+   spring.datasource.url=jdbc:mysql://localhost:3306/billing_db
+   spring.datasource.username=your_username
+   spring.datasource.password=your_password
+   ```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+3. **Build and run the backend**
+   
+   Using Maven:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+   
+   Or using Gradle:
+   ```bash
+   ./gradlew bootRun
+   ```
+   
+   The backend API will be available at http://localhost:8087
 
-### Code Splitting
+> **Note:** Make sure the backend is running before starting the frontend application to ensure proper integration.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Usage
 
-### Analyzing the Bundle Size
+1. **Authentication**
+   - Register a new account or login with existing credentials
+   - Alternatively, use Google authentication
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+2. **Business Setup**
+   - Add your business details including name, GSTIN, PAN, etc.
+   - Add office addresses with contact information
 
-### Making a Progressive Web App
+3. **Creating Invoices**
+   - Navigate to the Invoices page
+   - Click "New Invoice"
+   - Fill in the invoice details including billed to, amount, GST details
+   - Save the invoice
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+4. **Managing Invoices**
+   - View all invoices in the invoice list
+   - Edit, delete, or mark invoices as paid
+   - Export invoices as PDF or preview them
+   - Export all invoices as CSV
 
-### Advanced Configuration
+## API Endpoints
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+The application interacts with the following API endpoints:
 
-### Deployment
+### Authentication
+- `POST /api/auth/register` - Register a new user
+- `POST /api/auth/authenticate` - Login with email and password
+- `POST /api/auth/google` - Login with Google
+- `POST /api/auth/forgot-password` - Request password reset
+- `POST /api/auth/reset-password` - Reset password with token
+- `POST /api/auth/refresh-token` - Refresh authentication token
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Business Management
+- `GET /api/business/all` - Get all businesses
+- `GET /api/business/get/{id}` - Get business by ID
+- `POST /api/business/add` - Create a new business
+- `PUT /api/business/update/{id}` - Update business details
+- `POST /api/business/add/office-address/{id}` - Add office address to business
 
-### `npm run build` fails to minify
+### Invoice Management
+- `GET /api/invoices/all` - Get all invoices
+- `GET /api/invoices/get/{id}` - Get invoice by ID
+- `POST /api/invoices/add` - Create a new invoice
+- `PUT /api/invoices/update/{id}` - Update invoice details
+- `DELETE /api/invoices/delete/{id}` - Delete invoice
+- `PATCH /api/invoices/{id}/mark-paid` - Mark invoice as paid
+- `PATCH /api/invoices/restore/{id}` - Restore deleted invoice
+- `GET /api/invoices/{id}/export/pdf` - Export invoice as PDF
+- `GET /api/invoices/{id}/preview/pdf` - Preview invoice as PDF
+- `GET /api/invoices/export/pdf` - Export all invoices as PDF
+- `GET /api/invoices/export/csv` - Export all invoices as CSV
+- `GET /api/invoices/search` - Search invoices
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Frontend-Backend Integration Status
+
+The frontend application is fully integrated with the backend API as defined in the OpenAPI specification. The integration includes:
+
+### Authentication Integration
+- ✅ Email/Password Login: Implemented using `/api/auth/authenticate` endpoint
+- ✅ User Registration: Implemented using `/api/auth/register` endpoint
+- ✅ Google Sign-In: Implemented using `/api/auth/google` endpoint
+- ✅ Token Refresh: Implemented using `/api/auth/refresh-token` endpoint
+  - Automatic token refresh when expired
+  - Seamless retry of failed requests after token refresh
+
+### Business Management Integration
+- ✅ Create Business: Implemented using `/api/business/add` endpoint
+- ✅ Update Business: Implemented using `/api/business/update/{id}` endpoint
+- ✅ Get Business Details: Implemented using `/api/business/get/{id}` endpoint
+- ✅ List All Businesses: Implemented using `/api/business/all` endpoint
+- ✅ Add Office Address: Implemented using `/api/business/add/office-address/{id}` endpoint
+
+### Invoice Management Integration
+- ✅ Create Invoice: Implemented using `/api/invoices/add` endpoint
+- ✅ Update Invoice: Implemented using `/api/invoices/update/{id}` endpoint
+- ✅ Delete Invoice: Implemented using `/api/invoices/delete/{id}` endpoint
+- ✅ Get Invoice Details: Implemented using `/api/invoices/get/{id}` endpoint
+- ✅ List All Invoices: Implemented using `/api/invoices/all` endpoint
+- ✅ Mark Invoice as Paid: Implemented using `/api/invoices/{id}/mark-paid` endpoint
+- ✅ Restore Deleted Invoice: Implemented using `/api/invoices/restore/{id}` endpoint
+- ✅ Export Invoice as PDF: Implemented using `/api/invoices/{id}/export/pdf` endpoint
+- ✅ Preview Invoice as PDF: Implemented using `/api/invoices/{id}/preview/pdf` endpoint
+- ✅ Export All Invoices: Implemented using `/api/invoices/export/pdf` and `/api/invoices/export/csv` endpoints
+
+### Recent Improvements
+1. **Enhanced Token Management**:
+   - Implemented automatic token refresh when expired
+   - Added refresh token storage and management
+   - Improved error handling for authentication failures
+
+2. **Seamless Authentication Experience**:
+   - Added retry mechanism for failed requests due to expired tokens
+   - Implemented proper token validation and expiration checking
+
+3. **Google Authentication Setup**:
+   - Added clear instructions for setting up Google OAuth client ID
+   - Ensured proper integration with Google authentication API
+
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| REACT_APP_API_URL | Backend API URL | http://localhost:8087 |
+| REACT_APP_ENV | Environment (development/production) | development |
+| REACT_APP_GOOGLE_CLIENT_ID | Google OAuth Client ID | - |
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
