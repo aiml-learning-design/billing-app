@@ -157,16 +157,26 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box className="auth-container">
-      <Paper elevation={3} className="auth-paper">
-        <Typography variant="h5" gutterBottom align="center">
-          Create Your Account
-        </Typography>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+    <Box className="auth-container" sx={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <Paper 
+            elevation={3} 
+            className="auth-paper" 
+            sx={{ 
+              width: '100%', 
+              maxWidth: '750px',  // Increased width by approximately 50%
+              padding: '20px 30px'
+            }}
+          >
+            <Typography variant="h5" gutterBottom align="center">
+              Create Your Account
+            </Typography>
+            {error && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {error}
+              </Alert>
+            )}
         <form onSubmit={handleSubmit}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
@@ -413,6 +423,109 @@ const RegisterPage = () => {
           </Link>
         </Typography>
       </Paper>
+        </Grid>
+        
+        {/* Invoice-related styling on the right side */}
+        <Grid item xs={12} md={5}>
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              height: '100%', 
+              padding: '20px',
+              backgroundColor: '#f8f9fa',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
+            <Typography variant="h5" gutterBottom align="center" color="primary">
+              Invoice Preview
+            </Typography>
+            
+            <Box sx={{ 
+              border: '1px dashed #ccc', 
+              borderRadius: '8px', 
+              padding: '15px',
+              backgroundColor: 'white',
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column'
+            }}>
+              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
+                Sample Invoice
+              </Typography>
+              
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">From:</Typography>
+                  <Typography variant="body1">Your Company Name</Typography>
+                  <Typography variant="body2">123 Business Street</Typography>
+                  <Typography variant="body2">City, Country</Typography>
+                </Box>
+                <Box>
+                  <Typography variant="body2" color="text.secondary">To:</Typography>
+                  <Typography variant="body1">Client Name</Typography>
+                  <Typography variant="body2">456 Client Avenue</Typography>
+                  <Typography variant="body2">Client City, Country</Typography>
+                </Box>
+              </Box>
+              
+              <Box sx={{ 
+                backgroundColor: '#f0f0f0', 
+                borderRadius: '4px', 
+                p: 1, 
+                mb: 2 
+              }}>
+                <Grid container>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Invoice Number:</Typography>
+                    <Typography variant="body2">INV-2025-001</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="body2" color="text.secondary">Date:</Typography>
+                    <Typography variant="body2">July 24, 2025</Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+              
+              <Box sx={{ mb: 2, flexGrow: 1 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Items:</Typography>
+                <Box sx={{ 
+                  border: '1px solid #eee', 
+                  borderRadius: '4px',
+                  overflow: 'hidden'
+                }}>
+                  <Grid container sx={{ backgroundColor: '#e9ecef', p: 1 }}>
+                    <Grid item xs={6}><Typography variant="body2" fontWeight="bold">Description</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
+                  </Grid>
+                  
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #eee' }}>
+                    <Grid item xs={6}><Typography variant="body2">Service 1</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2">1</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2">$100.00</Typography></Grid>
+                  </Grid>
+                  
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #eee' }}>
+                    <Grid item xs={6}><Typography variant="body2">Service 2</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2">2</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2">$150.00</Typography></Grid>
+                  </Grid>
+                  
+                  <Grid container sx={{ p: 1, backgroundColor: '#f8f9fa' }}>
+                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold">Total</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">$250.00</Typography></Grid>
+                  </Grid>
+                </Box>
+              </Box>
+              
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 'auto', textAlign: 'center' }}>
+                Create your account to start generating professional invoices like this
+              </Typography>
+            </Box>
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
