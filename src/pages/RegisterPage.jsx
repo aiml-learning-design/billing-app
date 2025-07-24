@@ -416,6 +416,7 @@ const RegisterPage = () => {
                   }}
                 />
 
+
                 <Box sx={{ mt: 2 }}>
                   <Box sx={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', mb: 1 }}>
                     <Box
@@ -428,46 +429,65 @@ const RegisterPage = () => {
                     />
                   </Box>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                    <Typography variant="caption">Password Strength</Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: getPasswordStrengthColor(passwordStrength) }}
-                    >
-                      {getPasswordStrengthLabel(passwordStrength)}
-                    </Typography>
-                  </Box>
-                  <Grid container spacing={1}>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {hasMinLength(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
-                        <Typography variant="caption" sx={{ ml: 1 }}>8+ characters</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {hasUppercase(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
-                        <Typography variant="caption" sx={{ ml: 1 }}>Uppercase</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {hasLowercase(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
-                        <Typography variant="caption" sx={{ ml: 1 }}>Lowercase</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {hasNumber(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
-                        <Typography variant="caption" sx={{ ml: 1 }}>Number</Typography>
-                      </Box>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                        {hasSpecialChar(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
-                        <Typography variant="caption" sx={{ ml: 1 }}>Special character</Typography>
-                      </Box>
-                    </Grid>
-                  </Grid>
+                      <Box
+                            sx={{
+                              position: 'relative',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              cursor: 'pointer',
+                              '&:hover > div': {
+                                visibility: 'visible',
+                                opacity: 1
+                              }
+                            }}
+                          >
+<Typography variant="caption">Password Strength</Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 'bold',
+          ml: 0.5,
+          color: '#666'
+        }}
+      >
+        ?
+      </Typography>
+      <Box
+        sx={{
+          position: 'absolute',
+          bottom: '100%',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          mb: 1,
+          p: 1,
+          backgroundColor: '#333',
+          color: '#fff',
+          borderRadius: '4px',
+          fontSize: '0.75rem',
+          width: '200px',
+          visibility: 'hidden',
+          opacity: 0,
+          transition: 'opacity 0.2s, visibility 0.2s',
+          zIndex: 1
+        }}
+      >
+        <Typography variant="caption">Password Strength Requirements:</Typography>
+        <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px' }}>
+          <li>At least 8 characters long</li>
+          <li>At least one uppercase letter</li>
+          <li>At least one lowercase letter</li>
+          <li>At least one number</li>
+          <li>At least one special character (e.g. @$!%*?&)</li>
+        </ul>
+      </Box>
+    </Box>
+    <Typography
+      variant="caption"
+      sx={{ color: getPasswordStrengthColor(passwordStrength) }}
+    >
+      {getPasswordStrengthLabel(passwordStrength)}
+    </Typography>
+  </Box>
                 </Box>
 
                 <TextField
