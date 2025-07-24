@@ -82,7 +82,6 @@ const RegisterPage = () => {
     fetchLocationData();
   }, []);
 
-  // Update phone country code when selected country changes
   useEffect(() => {
     const selectedCountryData = countries.find(c => c.name === selectedCountry);
     if (selectedCountryData) {
@@ -93,7 +92,6 @@ const RegisterPage = () => {
     }
   }, [selectedCountry]);
 
-  // Update password strength when password changes
   useEffect(() => {
     setPasswordStrength(calculatePasswordStrength(password));
   }, [password]);
@@ -180,7 +178,6 @@ const RegisterPage = () => {
 
   return (
     <Box sx={{ position: 'relative', width: '100%' }}>
-      {/* Top Navigation Bar */}
       <Box sx={{
         position: 'fixed',
         top: 0,
@@ -243,7 +240,6 @@ const RegisterPage = () => {
         pt: '84px'
       }}>
         <Grid container spacing={3} alignItems="stretch">
-          {/* Left - Youtube thumbnail grid */}
           <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' }}>
             <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
@@ -420,7 +416,6 @@ const RegisterPage = () => {
                   }}
                 />
 
-                {/* Password Strength Indicator */}
                 <Box sx={{ mt: 2 }}>
                   <Box sx={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', mb: 1 }}>
                     <Box
