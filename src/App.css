@@ -36,3 +36,7 @@
     transform: rotate(360deg);
   }
 }
+
+.react-tel-input .country-list .country {
+  padding: 5px 35px !important;
+}

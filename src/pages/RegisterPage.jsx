@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import office_building from '../assets/office_building.jpg';
 import { 
   Box, TextField, Button, Typography, Link, Paper, Alert, Grid,
   FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment,
@@ -160,21 +161,26 @@ const RegisterPage = () => {
   return (
     <Box className="auth-container" sx={{ 
       width: '100%', 
-      maxWidth: '1400px', 
+      maxWidth: '1500px',
       margin: '0 auto',
       backgroundColor: '#E3F2FD', // Lighter blue background for the entire page
-      padding: '20px',
-      borderRadius: '8px'
+      padding: '5px',
+      borderRadius: '4px'
     }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+        <Grid item xs={12} md={7} sx={{
+      display: 'flex',
+      justifyContent: 'flex-start',
+      paddingLeft: '0 !important'
+            }}>
           <Paper 
             elevation={3} 
             className="auth-paper" 
             sx={{ 
               width: '100%', 
-              maxWidth: '750px',  // Increased width by approximately 50%
-              padding: '20px 30px'
+              maxWidth: '600px',  // Increased width by approximately 50%
+              padding: '30px',
+              margin: '0'
             }}
           >
             <Typography variant="h5" gutterBottom align="center">
@@ -436,9 +442,9 @@ const RegisterPage = () => {
         {/* Invoice-related styling on the right side */}
         <Grid item xs={12} md={5}>
           <Paper 
-            elevation={3} 
-            sx={{ 
-              height: '100%', 
+            elevation={3}
+            sx={{
+              height: '100%',
               padding: '20px',
               backgroundColor: '#FFF8E1', // Yellowish background for invoice preview
               display: 'flex',
@@ -460,32 +466,65 @@ const RegisterPage = () => {
               display: 'flex',
               flexDirection: 'column'
             }}>
-              <Typography variant="h6" color="primary" sx={{ mb: 1 }}>
+              <Typography variant="h6" color="primary" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold',color: 'black' }}>
                 Sample Tax Invoice
               </Typography>
-              <Box sx={{ mb: 2 }}>
-                <Typography variant="body2">Invoice Number: INV-2025-001</Typography>
-                <Typography variant="body2">Invoice Date: July 24, 2025</Typography>
-                <Typography variant="body2">Due Date: August 23, 2025</Typography>
+                <Box sx={{ mb: 2, textAlign: 'right' }}>
+                    <img
+                        src={office_building} // Dummy image URL
+                        alt="Sunshine Tower"
+                        style={{ marginBottom: 8, width: 80, height: 80,objectFit: 'contain' }} // spacing below image
+                      />
+                      <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
+                        Sunshine Tower
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+                        "Excellence in Every Service"
+                      </Typography>
+                </Box>
+<Box sx={{ mb: 2 }}>
+  {/* Invoice Number */}
+  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+      Invoice No #
+    </Typography>
+    <Typography variant="body2" sx={{ color: 'black' }}>
+      INV-2025-001
+    </Typography>
+  </Box>
+
+  {/* Invoice Date */}
+  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+      Invoice Date
+    </Typography>
+    <Typography variant="body2" sx={{ color: 'black' }}>
+      July 24, 2025
+    </Typography>
+  </Box>
+
+  {/* Due Date */}
+  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+      Due Date
+    </Typography>
+    <Typography variant="body2" sx={{ color: 'black' }}>
+      August 23, 2025
+    </Typography>
+  </Box>
+</Box>
+              <Box sx={{ my: 2 }}>
+                {/* content here */}
               </Box>
-              
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">Billed By:</Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }} >Billed By:</Typography>
                   <Typography variant="body1">Your Company Name</Typography>
                   <Typography variant="body2">123 Business Street</Typography>
                   <Typography variant="body2">City, Country</Typography>
                 </Box>
-                <Box sx={{ textAlign: 'right' }}>
-                  <Box sx={{ mb: 2 }}>
-                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                      Sunshine Tower
-                    </Typography>
-                    <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-                      "Excellence in Every Service"
-                    </Typography>
-                  </Box>
-                  <Typography variant="body2" color="text.secondary">Billed To:</Typography>
+                <Box sx={{ textAlign: 'left' }}>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
                   <Typography variant="body1">Client Name</Typography>
                   <Typography variant="body2">456 Client Avenue</Typography>
                   <Typography variant="body2">Client City, Country</Typography>
@@ -510,46 +549,35 @@ const RegisterPage = () => {
                   </Grid>
                 </Grid>
               </Box>
-              
-              <Box sx={{ mb: 2, flexGrow: 1 }}>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Items:</Typography>
-                <Box sx={{ 
-                  border: '1px solid #33CC33', 
-                  borderRadius: '4px',
-                  overflow: 'auto'
-                }}>
-                  <Grid container sx={{ backgroundColor: '#33CC33', p: 1, color: 'white' }}>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Item</Typography></Grid>
-                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">GST Rate</Typography></Grid>
-                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
-                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">Rate</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">CGST</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">SGST</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">Total</Typography></Grid>
-                  </Grid>
-                  
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7', alignItems: 'center' }}>
-                    <Grid item xs={3}>
-                      <Typography variant="body2">1. ISO Certification</Typography>
-                      <Typography variant="caption">(HSN/SAC: 111111)</Typography>
-                    </Grid>
-                    <Grid item xs={1}><Typography variant="body2">18%</Typography></Grid>
-                    <Grid item xs={1}><Typography variant="body2">1</Typography></Grid>
-                    <Grid item xs={1}><Typography variant="body2">$75.00</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2">$75.00</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2">$6.75</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2">$6.75</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2">$88.50</Typography></Grid>
-                  </Grid>
-                  
-                  <Grid container sx={{ p: 1, backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
-                    <Grid item xs={7.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">Total</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$75.00</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$6.75</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$6.75</Typography></Grid>
-                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$88.50</Typography></Grid>
-                  </Grid>
+
+              <Box sx={{ display: 'table', width: '100%', borderSpacing: 0 }}>
+                {/* Header Row */}
+                <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' }}>
+                  {['Item', 'GST Rate', 'Quantity', 'Rate', 'Amount', 'CGST', 'SGST', 'Total'].map((text, i) => (
+                    <Box key={i} sx={{ display: 'table-cell', padding: '8px', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                      {text}
+                    </Box>
+                  ))}
+                </Box>
+
+                {/* Data Row */}
+                <Box sx={{ display: 'table-row', borderBottom: '1px solid #A5D6A7' }}>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}>
+                    <Typography variant="body2">1. ISO Certification</Typography>
+                    <Typography variant="caption">(HSN/SAC: 111111)</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">18%</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">1</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$75.00</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$75.00</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$6.75</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$6.75</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$88.50</Typography></Box>
+                </Box>
+
+                {/* Footer Row */}
+                <Box sx={{ display: 'table-row', backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
+
                 </Box>
               </Box>
               
