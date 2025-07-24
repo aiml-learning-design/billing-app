@@ -326,43 +326,45 @@ useEffect(() => {
       <Box sx={{ mb: 2 }}>
         <Grid container spacing={2}>
           <Grid item xs={12} sm={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>First Name:</Typography>
+             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>First Name:</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  autoComplete="given-name"
+                  sx={{ mr: 2 }} // Add right margin for spacing
+                />
+
+                <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Middle Name:</Typography>
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                  autoComplete="additional-name"
+                />
+              </Box>
+
+          </Grid>
+
+        </Grid>
+      </Box>
+
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Last Name:</Typography>
               <TextField
                 fullWidth
                 size="small"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="given-name"
-              />
-              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Middle Name:</Typography>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              value={middleName}
-                              onChange={(e) => setMiddleName(e.target.value)}
-                              autoComplete="additional-name"
-                            />
-            </Box>
-
-          </Grid>
-
-          <Grid item xs={12} sm={4}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Last Name:</Typography>
-              <TextField
-                width='100px'
-                size="small"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                autoComplete="family-name"
+                autoComplete="username"
               />
             </Box>
-          </Grid>
-        </Grid>
-      </Box>
 
       {/* Email */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
