@@ -56,19 +56,13 @@ const RegisterPage = () => {
       try {
         const response = await axios.get('https://ipapi.co/json/');
         const userData = response.data;
-        
-        // Extract country names from the countries array
         const countryNames = countries.map(country => country.name);
-        
         if (userData?.country_name && countryNames.includes(userData.country_name)) {
           setSelectedCountry(userData.country_name);
-          // Set country code for phone input (lowercase)
           const detectedCountryCode = userData.country_code.toLowerCase();
           setCountryCode(detectedCountryCode);
-          // Initialize phone with the detected country code
           setPhone(userData.country_calling_code ? userData.country_calling_code.replace('+', '') : '');
         } else {
-          // Use United States as default fallback country
           const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
           setSelectedCountry(defaultCountry.name);
           setCountryCode(defaultCountry.code.toLowerCase());
@@ -76,8 +70,7 @@ const RegisterPage = () => {
         }
       } catch (error) {
         console.error("Failed to fetch location data", error);
-        // Use United States as default fallback country
-        const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
+        const defaultCountry = countries.find(c => c.code === 'in') || countries.find(c => c.name === 'India');
         setSelectedCountry(defaultCountry.name);
         setCountryCode(defaultCountry.code.toLowerCase());
         setPhone(defaultCountry.dialCode.replace('+', ''));
@@ -252,18 +245,23 @@ const RegisterPage = () => {
               }}
               buttonStyle={{
                 borderRadius: '4px 0 0 4px',
-                width: '70px',
-                padding: '0 10px 0 10px'
+                width: '50px',
+                padding: '0px 0px 0px 5px'
               }}
               containerStyle={{ 
                 width: '100%'
               }}
               dropdownStyle={{
                 width: 'auto',
-                minWidth: '300px'
+                minWidth: '375px',
+                padding: '0',
+                margin: '0'
               }}
               countryDropdownStyle={{
-                paddingLeft: '46px'
+                padding: '0',
+                margin: '0',
+                lineHeight: '1',
+                height: 'auto'
               }}
             />
           </Box>
