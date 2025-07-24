@@ -307,6 +307,7 @@ useEffect(() => {
     sx={{
       width: '100%',
       flex: 1,
+      backgroundColor: '#e8e7c5',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'center',
@@ -400,6 +401,7 @@ useEffect(() => {
       {/* Phone */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Phone:</Typography>
+
         <Box sx={{ width: '100%' }}>
           <PhoneInput
             country={countryCode}
