@@ -35,8 +35,6 @@ const RegisterPage = () => {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [country, setCountry] = useState('IN');
-  const [phoneCode, setPhoneCode] = useState('+91');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('in');
   const [password, setPassword] = useState('');
@@ -56,7 +54,7 @@ const RegisterPage = () => {
         const countryCode = response.data.country_code.toLowerCase();
         setCountryCode(countryCode);
       })
-      .catch(() => setCountryCode('in'));
+      .catch(() => setCountryCode(''));
   }, []);
 
   // Update password strength when password changes
@@ -100,7 +98,7 @@ const RegisterPage = () => {
         email,
         password,
         country,
-        phone: phoneCode + phoneNumber,
+        phone: phone,
         userRole: 'USER'
       };
       
@@ -177,19 +175,19 @@ const RegisterPage = () => {
           />
 
           <FormControl fullWidth margin="normal">
-            <InputLabel>Country</InputLabel>
-            <Select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              label="Country"
-              required
-            >
-              {countries.map((country) => (
-                <MenuItem key={country.code} value={country.code}>
-                  {country.name}
-                </MenuItem>
-              ))}
-            </Select>
+              <InputLabel>Country</InputLabel>
+              <Select
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                label="Country"
+                required
+              >
+                {countries.map((c) => (
+                  <MenuItem key={c.code.toLowerCase()} value={c.code.toLowerCase()}>
+                    {c.name}
+                  </MenuItem>
+                ))}
+              </Select>
           </FormControl>
 
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
@@ -214,18 +212,16 @@ const RegisterPage = () => {
                 placeholder="Enter phone number"
               />
             </Grid> */}
-            <PhoneInput
-              country={countryCode}
-              value={phone}
-              onChange={setPhone}
-              inputProps={{
-                name: 'phone',
-                required: true,
-                autoFocus: false
-              }}
-              inputStyle={{ width: '100%' }}
-              containerStyle={{ marginTop: '16px' }}
-            />
+              <PhoneInput
+                country={countryCode}
+                value={phone}
+                onChange={setPhone}
+                inputProps={{
+                  name: 'phone',
+                  required: true,
+                }}
+                inputStyle={{ width: '100%', marginTop: 16 }}
+              />
           </Grid>
 
           {/* <TextField
