@@ -26,6 +26,7 @@ import {
 } from '../utils/passwordUtils';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/material.css';
+import 'react-phone-input-2/lib/style.css';
 import axios from 'axios';
 
 
@@ -37,6 +38,7 @@ const RegisterPage = () => {
   const [country, setCountry] = useState('IN');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('in');
+  const [selectedCountry, setSelectedCountry] = useState('India');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
@@ -44,23 +46,59 @@ const RegisterPage = () => {
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
-  // Update phone code when country changes
+  // Fetch user's location and set country defaults
   useEffect(() => {
-  axios.get('https://ipapi.co/json/')
-      .then(response => {
-        const countryCode = response.data.country_code.toLowerCase();
-        setCountryCode(countryCode);
-      })
-      .catch(() => setCountryCode(''));
+    const fetchLocationData = async () => {
+      try {
+        const response = await axios.get('https://ipapi.co/json/');
+        const userData = response.data;
+        
+        // Extract country names from the countries array
+        const countryNames = countries.map(country => country.name);
+        
+        if (userData?.country_name && countryNames.includes(userData.country_name)) {
+          setSelectedCountry(userData.country_name);
+          // Set country code for phone input (lowercase)
+          const detectedCountryCode = userData.country_code.toLowerCase();
+          setCountryCode(detectedCountryCode);
+          // Initialize phone with the detected country code
+          setPhone(userData.country_calling_code ? userData.country_calling_code.replace('+', '') : '');
+        } else {
+          setSelectedCountry("India");
+          setCountryCode("in");
+          setPhone('91');
+        }
+      } catch (error) {
+        console.error("Failed to fetch location data", error);
+        setSelectedCountry("India");
+        setCountryCode("in");
+        setPhone('91');
+      }
+    };
+    
+    fetchLocationData();
   }, []);
 
   // Update password strength when password changes
   useEffect(() => {
     setPasswordStrength(calculatePasswordStrength(password));
   }, [password]);
+  
+  // Update phone country code when selected country changes
+  useEffect(() => {
+    const selectedCountryData = countries.find(c => c.name === selectedCountry);
+    if (selectedCountryData) {
+      setCountryCode(selectedCountryData.code.toLowerCase());
+      // Optionally update the phone number with the country's dialing code
+      if (!phone) {
+        setPhone(selectedCountryData.dialCode.replace('+', ''));
+      }
+    }
+  }, [selectedCountry]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -177,52 +215,42 @@ const RegisterPage = () => {
           <FormControl fullWidth margin="normal">
               <InputLabel>Country</InputLabel>
               <Select
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
+                value={selectedCountry}
+                onChange={(e) => setSelectedCountry(e.target.value)}
                 label="Country"
                 required
               >
-                {countries.map((c) => (
-                  <MenuItem key={c.code.toLowerCase()} value={c.code.toLowerCase()}>
-                    {c.name}
+                {countries.map((country) => (
+                  <MenuItem key={country.name} value={country.name}>
+                    {country.name}
                   </MenuItem>
                 ))}
               </Select>
           </FormControl>
 
-          <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            {/* <Grid item xs={4}>
-              <TextField
-                label="Code"
-                fullWidth
-                value={phoneCode}
-                InputProps={{
-                  readOnly: true,
-                }}
-              />
-            </Grid>
-            <Grid item xs={8}>
-              <TextField
-                label="Phone Number"
-                fullWidth
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                required
-                autoComplete="tel"
-                placeholder="Enter phone number"
-              />
-            </Grid> */}
-              <PhoneInput
-                country={countryCode}
-                value={phone}
-                onChange={setPhone}
-                inputProps={{
-                  name: 'phone',
-                  required: true,
-                }}
-                inputStyle={{ width: '100%', marginTop: 16 }}
-              />
-          </Grid>
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <PhoneInput
+              country={countryCode}
+              value={phone}
+              onChange={setPhone}
+              inputProps={{
+                name: 'phone',
+                required: true
+              }}
+              inputStyle={{ 
+                width: '100%', 
+                height: '56px',
+                fontSize: '1rem',
+                borderRadius: '4px'
+              }}
+              buttonStyle={{
+                borderRadius: '4px 0 0 4px'
+              }}
+              containerStyle={{ 
+                width: '100%'
+              }}
+            />
+          </Box>
 
           {/* <TextField
             label="Password"
@@ -244,6 +272,7 @@ const RegisterPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             InputProps={{
+              style: { height: '56px' },
               endAdornment: (
                 <InputAdornment position="end">
                   <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
@@ -302,13 +331,23 @@ const RegisterPage = () => {
 
           <TextField
             label="Confirm Password"
-            type="password"
+            type={showConfirmPassword ? 'text' : 'password'}
             fullWidth
             margin="normal"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
             autoComplete="new-password"
+            InputProps={{
+              style: { height: '56px' },
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
 
           <FormControlLabel
