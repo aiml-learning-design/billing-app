@@ -252,20 +252,21 @@ useEffect(() => {
         width: '100%',
         maxWidth: '1800px',
         margin: '0 auto',
-        backgroundColor: '#E3F2FD',
+        backgroundColor: '#87c6fa',
         padding: '20px',
         borderRadius: '4px',
         pt: '84px'
       }}>
-        <Grid container spacing={3} alignItems="stretch">
-          <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' }}>
-            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%', }}>
+        <Grid container spacing={3} alignItems="stretch" >
+          <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' , }}>
+            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', color: 'blue' , justifyContent: 'space-between', backgroundColor:'#adad3d', height: '100%', }}>
               <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Registration Tutorial
               </Typography>
               <Box
                 sx={{
                   position: 'relative',
+
                   cursor: 'pointer',
                   '&:hover .play-button': { transform: 'scale(1.1)' }
                 }}
