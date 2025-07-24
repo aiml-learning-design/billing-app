@@ -68,15 +68,19 @@ const RegisterPage = () => {
           // Initialize phone with the detected country code
           setPhone(userData.country_calling_code ? userData.country_calling_code.replace('+', '') : '');
         } else {
-          setSelectedCountry("India");
-          setCountryCode("in");
-          setPhone('91');
+          // Use United States as default fallback country
+          const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
+          setSelectedCountry(defaultCountry.name);
+          setCountryCode(defaultCountry.code.toLowerCase());
+          setPhone(defaultCountry.dialCode.replace('+', ''));
         }
       } catch (error) {
         console.error("Failed to fetch location data", error);
-        setSelectedCountry("India");
-        setCountryCode("in");
-        setPhone('91');
+        // Use United States as default fallback country
+        const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
+        setSelectedCountry(defaultCountry.name);
+        setCountryCode(defaultCountry.code.toLowerCase());
+        setPhone(defaultCountry.dialCode.replace('+', ''));
       }
     };
     
@@ -229,10 +233,12 @@ const RegisterPage = () => {
           </FormControl>
 
           <Box sx={{ mt: 2, mb: 1 }}>
+            <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
             <PhoneInput
               country={countryCode}
               value={phone}
               onChange={setPhone}
+              enableSearch={true}
               inputProps={{
                 name: 'phone',
                 required: true
@@ -241,13 +247,20 @@ const RegisterPage = () => {
                 width: '100%', 
                 height: '56px',
                 fontSize: '1rem',
-                borderRadius: '4px'
+                borderRadius: '4px',
+                paddingLeft: '80px'
               }}
               buttonStyle={{
-                borderRadius: '4px 0 0 4px'
+                borderRadius: '4px 0 0 4px',
+                width: '70px',
+                padding: '0 10px 0 10px'
               }}
               containerStyle={{ 
                 width: '100%'
+              }}
+              dropdownStyle={{
+                width: 'auto',
+                minWidth: '300px'
               }}
             />
           </Box>
