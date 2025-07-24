@@ -157,7 +157,14 @@ const RegisterPage = () => {
   };
 
   return (
-    <Box className="auth-container" sx={{ width: '100%', maxWidth: '1400px', margin: '0 auto' }}>
+    <Box className="auth-container" sx={{ 
+      width: '100%', 
+      maxWidth: '1400px', 
+      margin: '0 auto',
+      backgroundColor: '#F0F7FF', // Light blue background for the entire page
+      padding: '20px',
+      borderRadius: '8px'
+    }}>
       <Grid container spacing={3}>
         <Grid item xs={12} md={7} sx={{ display: 'flex', justifyContent: 'flex-start' }}>
           <Paper 
@@ -166,7 +173,9 @@ const RegisterPage = () => {
             sx={{ 
               width: '100%', 
               maxWidth: '750px',  // Increased width by approximately 50%
-              padding: '20px 30px'
+              padding: '20px 30px',
+              backgroundColor: '#E6F0FF', // Light blue background for the registration form
+              borderTop: '4px solid #7986CB' // Purple-blue accent border
             }}
           >
             <Typography variant="h5" gutterBottom align="center">
@@ -432,9 +441,11 @@ const RegisterPage = () => {
             sx={{ 
               height: '100%', 
               padding: '20px',
-              backgroundColor: '#f8f9fa',
+              backgroundColor: '#FFF8E1', // Yellowish background for invoice preview
               display: 'flex',
-              flexDirection: 'column'
+              flexDirection: 'column',
+              borderTop: '4px solid #FFB74D', // Orange accent border
+              borderRadius: '8px'
             }}
           >
             <Typography variant="h5" gutterBottom align="center" color="primary">
@@ -470,10 +481,11 @@ const RegisterPage = () => {
               </Box>
               
               <Box sx={{ 
-                backgroundColor: '#f0f0f0', 
+                backgroundColor: '#FFF3E0', 
                 borderRadius: '4px', 
                 p: 1, 
-                mb: 2 
+                mb: 2,
+                border: '1px solid #FFE0B2'
               }}>
                 <Grid container>
                   <Grid item xs={6}>
@@ -494,7 +506,7 @@ const RegisterPage = () => {
                   borderRadius: '4px',
                   overflow: 'hidden'
                 }}>
-                  <Grid container sx={{ backgroundColor: '#e9ecef', p: 1 }}>
+                  <Grid container sx={{ backgroundColor: '#FFB74D', p: 1, color: 'white' }}>
                     <Grid item xs={6}><Typography variant="body2" fontWeight="bold">Description</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
@@ -512,9 +524,9 @@ const RegisterPage = () => {
                     <Grid item xs={3}><Typography variant="body2">$150.00</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, backgroundColor: '#f8f9fa' }}>
-                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold">Total</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">$250.00</Typography></Grid>
+                  <Grid container sx={{ p: 1, backgroundColor: '#FFEFD5', borderTop: '2px solid #FFB74D' }}>
+                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold" color="#FF8F00">Total</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold" color="#FF8F00">$250.00</Typography></Grid>
                   </Grid>
                 </Box>
               </Box>
