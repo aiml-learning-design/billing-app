@@ -480,11 +480,11 @@ const RegisterPage = () => {
               </Box>
               
               <Box sx={{ 
-                backgroundColor: '#FFF3E0', 
+                backgroundColor: '#E8F5E9', 
                 borderRadius: '4px', 
                 p: 1, 
                 mb: 2,
-                border: '1px solid #FFE0B2'
+                border: '1px solid #A5D6A7'
               }}>
                 <Grid container>
                   <Grid item xs={6}>
