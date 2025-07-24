@@ -287,147 +287,147 @@ const RegisterPage = () => {
               </Typography>
             </Paper>
           </Grid>
-          <Grid item xs={12} md={6} sx={{ flex: '0 0 40%' }}>
-            <Paper
-              elevation={3}
-              sx={{
-                width: '100%',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-                p: 3,
-              }}
-            >
-              <Typography variant="h5" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
-                Create Your Account
-              </Typography>
-              {error && (
-                <Alert severity="error" sx={{ mb: 2 }}>
-                  {error}
-                </Alert>
-              )}
-              <form onSubmit={handleSubmit}>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="First Name"
-                      fullWidth
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                      autoComplete="given-name"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="Middle Name"
-                      fullWidth
-                      value={middleName}
-                      onChange={(e) => setMiddleName(e.target.value)}
-                      autoComplete="additional-name"
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
-                    <TextField
-                      label="Last Name"
-                      fullWidth
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                      autoComplete="family-name"
-                    />
-                  </Grid>
-                </Grid>
+<Grid item xs={12} md={6} sx={{ flex: '0 0 40%' }}>
+  <Paper
+    elevation={3}
+    sx={{
+      width: '100%',
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'center',
+      p: 3,
+    }}
+  >
+    <Typography variant="h5" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+      Create Your Account
+    </Typography>
+    {error && (
+      <Alert severity="error" sx={{ mb: 2 }}>
+        {error}
+      </Alert>
+    )}
+    <form onSubmit={handleSubmit}>
+      {/* Name Fields */}
+      <Box sx={{ mb: 2 }}>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>First Name:</Typography>
+              <TextField
+                fullWidth
+                size="small"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                required
+                autoComplete="given-name"
+              />
+              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Middle Name:</Typography>
+                            <TextField
+                              fullWidth
+                              size="small"
+                              value={middleName}
+                              onChange={(e) => setMiddleName(e.target.value)}
+                              autoComplete="additional-name"
+                            />
+            </Box>
 
-                <TextField
-                  label="Email"
-                  type="email"
-                  fullWidth
-                  margin="normal"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="username"
-                />
+          </Grid>
 
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Country</InputLabel>
-                  <Select
-                    value={selectedCountry}
-                    onChange={(e) => setSelectedCountry(e.target.value)}
-                    label="Country"
-                    required
-                  >
-                    {countries.map((country) => (
-                      <MenuItem key={country.name} value={country.name}>
-                        {country.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+          <Grid item xs={12} sm={4}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Last Name:</Typography>
+              <TextField
+                width='100px'
+                size="small"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+                autoComplete="family-name"
+              />
+            </Box>
+          </Grid>
+        </Grid>
+      </Box>
 
-                <Box sx={{ mt: 2, mb: 1 }}>
-                  <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
-                  <PhoneInput
-                    country={countryCode}
-                    value={phone}
-                    onChange={setPhone}
-                    enableSearch={true}
-                    inputProps={{
-                      name: 'phone',
-                      required: true
-                    }}
-                    inputStyle={{
-                      width: '100%',
-                      height: '56px',
-                      fontSize: '1rem',
-                      borderRadius: '4px',
-                      paddingLeft: '80px'
-                    }}
-                    buttonStyle={{
-                      borderRadius: '4px 0 0 4px',
-                      width: '50px',
-                      padding: '0px 0px 0px 5px'
-                    }}
-                    containerStyle={{
-                      width: '100%'
-                    }}
-                  />
-                </Box>
+      {/* Email */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Email:</Typography>
+        <TextField
+          fullWidth
+          size="small"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="username"
+        />
+      </Box>
 
-                <TextField
-                  label="Password"
-                  type={showPassword ? 'text' : 'password'}
-                  fullWidth
-                  margin="normal"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  InputProps={{
-                    style: { height: '56px' },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
+      {/* Country */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Country:</Typography>
+        <FormControl fullWidth size="small">
+          <Select
+            value={selectedCountry}
+            onChange={(e) => setSelectedCountry(e.target.value)}
+            required
+          >
+            {countries.map((country) => (
+              <MenuItem key={country.name} value={country.name}>
+                {country.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
 
+      {/* Phone */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Phone:</Typography>
+        <Box sx={{ width: '100%' }}>
+          <PhoneInput
+            country={countryCode}
+            value={phone}
+            onChange={setPhone}
+            inputStyle={{
+              width: '100%',
+              height: '40px',
+              fontSize: '0.875rem'
+            }}
+            containerStyle={{
+              width: '100%'
+            }}
+          />
+        </Box>
+      </Box>
 
-                <Box sx={{ mt: 2 }}>
-                  <Box sx={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', mb: 1 }}>
-                    <Box
-                      sx={{
-                        height: '100%',
-                        width: getPasswordStrengthWidth(passwordStrength),
-                        backgroundColor: getPasswordStrengthColor(passwordStrength),
-                        borderRadius: '2px'
-                      }}
-                    />
-                  </Box>
+      {/* Password */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Password:</Typography>
+        <TextField
+          fullWidth
+          size="small"
+          type={showPassword ? 'text' : 'password'}
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowPassword(!showPassword)}
+                  size="small"
+                >
+                  {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+
+      {/* Password Strength */}
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Box
                             sx={{
@@ -441,117 +441,144 @@ const RegisterPage = () => {
                               }
                             }}
                           >
-<Typography variant="caption">Password Strength</Typography>
-      <Typography
-        variant="caption"
-        sx={{
-          fontWeight: 'bold',
-          ml: 0.5,
-          color: '#666'
-        }}
-      >
-        ?
-      </Typography>
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: '100%',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          mb: 1,
-          p: 1,
-          backgroundColor: '#333',
-          color: '#fff',
-          borderRadius: '4px',
-          fontSize: '0.75rem',
-          width: '200px',
-          visibility: 'hidden',
-          opacity: 0,
-          transition: 'opacity 0.2s, visibility 0.2s',
-          zIndex: 1
-        }}
-      >
-        <Typography variant="caption">Password Strength Requirements:</Typography>
-        <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px' }}>
-          <li>At least 8 characters long</li>
-          <li>At least one uppercase letter</li>
-          <li>At least one lowercase letter</li>
-          <li>At least one number</li>
-          <li>At least one special character (e.g. @$!%*?&)</li>
-        </ul>
+      <Typography variant="caption">Password Strength</Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 'bold',
+                ml: 0.5,
+                color: '#666'
+              }}
+            >
+              ?
+            </Typography>
+            <Box
+              sx={{
+                position: 'absolute',
+                bottom: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                mb: 1,
+                p: 1,
+                backgroundColor: '#333',
+                color: '#fff',
+                borderRadius: '4px',
+                fontSize: '0.75rem',
+                width: '200px',
+                visibility: 'hidden',
+                opacity: 0,
+                transition: 'opacity 0.2s, visibility 0.2s',
+                zIndex: 1
+              }}
+            >
+              <Typography variant="caption">Password Strength Requirements:</Typography>
+              <ul style={{ margin: '4px 0 0 0', paddingLeft: '16px' }}>
+                <li>At least 8 characters long</li>
+                <li>At least one uppercase letter</li>
+                <li>At least one lowercase letter</li>
+                <li>At least one number</li>
+                <li>At least one special character (e.g. @$!%*?&)</li>
+              </ul>
+            </Box>
+           </Box>
+                   <Typography
+                     variant="caption"
+                     sx={{ color: getPasswordStrengthColor(passwordStrength) }}
+                   >
+                     {getPasswordStrengthLabel(passwordStrength)}
+                   </Typography>
+                 </Box>
+
+      <Box sx={{ display: 'flex', mb: 1 }}>
+        <Box sx={{ width: '90px', flexShrink: 0 }}></Box>
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', mb: 1 }}>
+            <Box
+              sx={{
+                height: '100%',
+                width: getPasswordStrengthWidth(passwordStrength),
+                backgroundColor: getPasswordStrengthColor(passwordStrength),
+                borderRadius: '2px'
+              }}
+            />
+          </Box>
+          {/* Password strength indicators */}
+        </Box>
       </Box>
-    </Box>
-    <Typography
-      variant="caption"
-      sx={{ color: getPasswordStrengthColor(passwordStrength) }}
-    >
-      {getPasswordStrengthLabel(passwordStrength)}
-    </Typography>
-  </Box>
-                </Box>
 
-                <TextField
-                  label="Confirm Password"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  fullWidth
-                  margin="normal"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  autoComplete="new-password"
-                  InputProps={{
-                    style: { height: '56px' },
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
-                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                        </IconButton>
-                      </InputAdornment>
-                    )
-                  }}
-                />
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={termsAgreed}
-                      onChange={(e) => setTermsAgreed(e.target.checked)}
-                      color="primary"
-                    />
-                  }
-                  label={
-                    <Typography variant="body2">
-                      I agree to the{' '}
-                      <Link component={RouterLink} to="/terms" target="_blank">
-                        Terms of Service
-                      </Link>{' '}
-                      and{' '}
-                      <Link component={RouterLink} to="/privacy" target="_blank">
-                        Privacy Policy
-                      </Link>
-                    </Typography>
-                  }
-                  sx={{ mt: 2 }}
-                />
-
-                <Button
-                  type="submit"
-                  fullWidth
-                  variant="contained"
-                  sx={{ mt: 2 }}
-                  disabled={loading}
+      {/* Confirm Password */}
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Confirm:</Typography>
+        <TextField
+          fullWidth
+          size="small"
+          type={showConfirmPassword ? 'text' : 'password'}
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  size="small"
                 >
-                  {loading ? 'Registering...' : 'Register'}
-                </Button>
-              </form>
-              <Typography sx={{ mt: 2 }} align="center">
-                Already have an account?{' '}
-                <Link component={RouterLink} to="/login" underline="hover">
-                  Login
-                </Link>
-              </Typography>
-            </Paper>
-          </Grid>
+                  {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+                </IconButton>
+              </InputAdornment>
+            )
+          }}
+        />
+      </Box>
+
+      {/* Terms */}
+      <Box sx={{ display: 'flex', mb: 2 }}>
+        <Box sx={{ width: '90px', flexShrink: 0 }}></Box>
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={termsAgreed}
+              onChange={(e) => setTermsAgreed(e.target.checked)}
+              size="small"
+            />
+          }
+          label={
+            <Typography variant="body2">
+              I agree to the{' '}
+              <Link component={RouterLink} to="/terms" target="_blank">
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link component={RouterLink} to="/privacy" target="_blank">
+                Privacy Policy
+              </Link>
+            </Typography>
+          }
+        />
+      </Box>
+
+      {/* Submit Button */}
+      <Box sx={{ display: 'flex' }}>
+        <Box sx={{ width: '90px', flexShrink: 0 }}></Box>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={loading}
+        >
+          {loading ? 'Registering...' : 'Register'}
+        </Button>
+      </Box>
+    </form>
+
+    <Typography sx={{ mt: 2 }} align="center">
+      Already have an account?{' '}
+      <Link component={RouterLink} to="/login" underline="hover">
+        Login
+      </Link>
+    </Typography>
+  </Paper>
+</Grid>
 
           <Grid item xs={12} md={3} sx={{ flex: '0 0 30%' }}>
             <Paper
