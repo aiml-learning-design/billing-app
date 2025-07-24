@@ -157,488 +157,486 @@ const RegisterPage = () => {
     }
   };
 
-function numberToWords(num) {
-  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
-  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
-  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+  function numberToWords(num) {
+    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+    const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
 
-  if (num === 0) return "Zero";
+    if (num === 0) return "Zero";
 
-  const intPart = Math.floor(num);
-  const decimalPart = Math.round((num - intPart) * 100);
+    const intPart = Math.floor(num);
+    const decimalPart = Math.round((num - intPart) * 100);
 
-  function convertTwoDigits(n) {
-    if (n < 10) return ones[n];
-    else if (n < 20) return teens[n - 10];
-    else return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+    function convertTwoDigits(n) {
+      if (n < 10) return ones[n];
+      else if (n < 20) return teens[n - 10];
+      else return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+    }
+
+    let words = "";
+    if (intPart >= 100) {
+      words += ones[Math.floor(intPart / 100)] + " Hundred ";
+    }
+    words += convertTwoDigits(intPart % 100);
+
+    return words.trim() + " Rupees Only";
   }
-
-  let words = "";
-  if (intPart >= 100) {
-    words += ones[Math.floor(intPart / 100)] + " Hundred ";
-  }
-  words += convertTwoDigits(intPart % 100);
-
-  return words.trim() + " Rupees Only";
-}
 
   return (
-    <Box className="auth-container" sx={{ 
-      width: '100%', 
-      maxWidth: '1500px',
-      margin: '0 auto',
-      backgroundColor: '#E3F2FD', // Lighter blue background for the entire page
-      padding: '5px',
-      borderRadius: '4px'
-    }}>
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={7} sx={{
-      display: 'flex',
-      justifyContent: 'flex-start',
-      paddingLeft: '0 !important'
-            }}>
-          <Paper 
-            elevation={3} 
-            className="auth-paper" 
-            sx={{ 
-              width: '100%', 
-              maxWidth: '650px',  // Increased width by approximately 50%
-              padding: '30px',
-              margin: '0'
-            }}
-          >
-            <Typography variant="h5" gutterBottom align="center">
-              Create Your Account
-            </Typography>
-            {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {error}
-              </Alert>
-            )}
-        <form onSubmit={handleSubmit}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="First Name"
-                fullWidth
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                autoComplete="given-name"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Middle Name"
-                fullWidth
-                value={middleName}
-                onChange={(e) => setMiddleName(e.target.value)}
-                autoComplete="additional-name"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Last Name"
-                fullWidth
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                autoComplete="family-name"
-              />
-            </Grid>
-          </Grid>
+    <Box sx={{ position: 'relative', width: '100%' }}>
+      {/* Support and Login Links at the top */}
+      <Box sx={{
+        position: 'absolute',
+        top: 16,
+        right: 24,
+        display: 'flex',
+        gap: 2,
+        zIndex: 10
+      }}>
+        <Link component={RouterLink} to="/support" underline="hover" variant="body2" color="primary">
+          Support
+        </Link>
+        <Link component={RouterLink} to="/login" underline="hover" variant="body2" color="primary">
+          Login
+        </Link>
+      </Box>
 
-          <TextField
-            label="Email"
-            type="email"
-            fullWidth
-            margin="normal"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="username"
-          />
-
-          <FormControl fullWidth margin="normal">
-              <InputLabel>Country</InputLabel>
-              <Select
-                value={selectedCountry}
-                onChange={(e) => setSelectedCountry(e.target.value)}
-                label="Country"
-                required
-              >
-                {countries.map((country) => (
-                  <MenuItem key={country.name} value={country.name}>
-                    {country.name}
-                  </MenuItem>
-                ))}
-              </Select>
-          </FormControl>
-
-          <Box sx={{ mt: 2, mb: 1 }}>
-            <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
-            <style>
-              {`
-                .react-tel-input .country-list .country {
-                  padding: 5px 35px;
-                }
-              `}
-            </style>
-            <PhoneInput
-              country={countryCode}
-              value={phone}
-              onChange={setPhone}
-              enableSearch={true}
-              inputProps={{
-                name: 'phone',
-                required: true
-              }}
-              inputStyle={{ 
-                width: '100%', 
-                height: '56px',
-                fontSize: '1rem',
-                borderRadius: '4px',
-                paddingLeft: '80px'
-              }}
-              buttonStyle={{
-                borderRadius: '4px 0 0 4px',
-                width: '50px',
-                padding: '0px 0px 0px 5px'
-              }}
-              containerStyle={{ 
-                width: '100%'
-              }}
-              dropdownStyle={{
-                width: 'auto',
-                minWidth: '375px',
-                padding: '0',
+      <Box className="auth-container" sx={{
+        width: '100%',
+        maxWidth: '1500px',
+        margin: '0 auto',
+        backgroundColor: '#E3F2FD',
+        padding: '5px',
+        borderRadius: '4px',
+        pt: 6 // Add padding top to make space for the links
+      }}>
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={7} sx={{
+            display: 'flex',
+            justifyContent: 'flex-start',
+            paddingLeft: '0 !important'
+          }}>
+            <Paper
+              elevation={3}
+              className="auth-paper"
+              sx={{
+                width: '100%',
+                maxWidth: '650px',
+                padding: '30px',
                 margin: '0'
               }}
-              countryDropdownStyle={{
-                padding: '0',
-                margin: '0',
-                lineHeight: '1',
-                height: 'auto'
-              }}
-            />
-          </Box>
-
-          {/* <TextField
-            label="Password"
-            type="password"
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-          /> */}
-
-          <TextField
-            label="Password"
-            type={showPassword ? 'text' : 'password'}
-            fullWidth
-            margin="normal"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            InputProps={{
-              style: { height: '56px' },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-
-          {/* Password Strength Indicator */}
-          <Box className="password-strength">
-            <Box className="strength-meter">
-              <Box 
-                className="strength-meter-fill" 
-                sx={{ 
-                  width: getPasswordStrengthWidth(passwordStrength),
-                  backgroundColor: getPasswordStrengthColor(passwordStrength)
-                }}
-              />
-            </Box>
-            <Box className="strength-text">
-              <Typography variant="caption">
-                Password Strength
+            >
+              <Typography variant="h5" gutterBottom align="center">
+                Create Your Account
               </Typography>
-              <Typography 
-                variant="caption" 
-                sx={{ color: getPasswordStrengthColor(passwordStrength) }}
-              >
-                {getPasswordStrengthLabel(passwordStrength)}
-              </Typography>
-            </Box>
-            <Box className="strength-requirements">
-              <Box className={`requirement ${hasMinLength(password) ? 'valid' : 'invalid'}`}>
-                {hasMinLength(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                <Typography variant="caption">8+ characters</Typography>
-              </Box>
-              <Box className={`requirement ${hasUppercase(password) ? 'valid' : 'invalid'}`}>
-                {hasUppercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                <Typography variant="caption">Uppercase</Typography>
-              </Box>
-              <Box className={`requirement ${hasLowercase(password) ? 'valid' : 'invalid'}`}>
-                {hasLowercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                <Typography variant="caption">Lowercase</Typography>
-              </Box>
-              <Box className={`requirement ${hasNumber(password) ? 'valid' : 'invalid'}`}>
-                {hasNumber(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                <Typography variant="caption">Number</Typography>
-              </Box>
-              <Box className={`requirement ${hasSpecialChar(password) ? 'valid' : 'invalid'}`}>
-                {hasSpecialChar(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                <Typography variant="caption">Special character</Typography>
-              </Box>
-            </Box>
-          </Box>
-
-          <TextField
-            label="Confirm Password"
-            type={showConfirmPassword ? 'text' : 'password'}
-            fullWidth
-            margin="normal"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-            InputProps={{
-              style: { height: '56px' },
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
-                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-          />
-
-          <FormControlLabel
-            control={
-              <Checkbox 
-                checked={termsAgreed}
-                onChange={(e) => setTermsAgreed(e.target.checked)}
-                color="primary"
-              />
-            }
-            label={
-              <Typography variant="body2">
-                I agree to the{' '}
-                <Link component={RouterLink} to="/terms" target="_blank">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link component={RouterLink} to="/privacy" target="_blank">
-                  Privacy Policy
-                </Link>
-              </Typography>
-            }
-            sx={{ mt: 2 }}
-          />
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2 }}
-            disabled={loading}
-          >
-            {loading ? 'Registering...' : 'Register'}
-          </Button>
-        </form>
-        <Typography sx={{ mt: 2 }} align="center">
-          Already have an account?{' '}
-          <Link component={RouterLink} to="/login" underline="hover">
-            Login
-          </Link>
-        </Typography>
-      </Paper>
-        </Grid>
-
-        <Grid item xs={12} md={5} sx={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          marginLeft: 'auto', // This is key to pushing it to the right
-          paddingLeft: '0 !important'
-        }}>
-          <Paper 
-            elevation={3}
-            sx={{
-              height: '100%',
-              padding: '20px',
-              backgroundColor: '#FFF8E1', // Yellowish background for invoice preview
-              display: 'flex',
-              maxWidth: '500px',
-              flexDirection: 'column',
-              borderTop: '4px solid #FFB74D', // Orange accent border
-              borderRadius: '8px'
-            }}
-          >
-            <Typography variant="h5" gutterBottom align="center" color="primary">
-              Invoice Preview
-            </Typography>
-            
-            <Box sx={{ 
-              border: '1px dashed #FFB74D', 
-              borderRadius: '8px', 
-              padding: '15px',
-              backgroundColor: 'white',
-              flexGrow: 1,
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              <Typography variant="h6" color="primary" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold',color: 'black' }}>
-                Sample Tax Invoice
-              </Typography>
-                <Box sx={{ mb: 2, textAlign: 'right' }}>
-                    <img
-                        src={office_building} // Dummy image URL
-                        alt="Sunshine Tower"
-                        style={{ marginBottom: 8, width: 80, height: 80,objectFit: 'contain' }} // spacing below image
-                      />
-                      <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                        Sunshine Tower
-                      </Typography>
-                      <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-                        "Excellence in Every Service"
-                      </Typography>
-                </Box>
-<Box sx={{ mb: 2 }}>
-  {/* Invoice Number */}
-  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-      Invoice No #
-    </Typography>
-    <Typography variant="body2" sx={{ color: 'black' }}>
-      INV-2025-001
-    </Typography>
-  </Box>
-
-  {/* Invoice Date */}
-  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-      Invoice Date
-    </Typography>
-    <Typography variant="body2" sx={{ color: 'black' }}>
-      July 24, 2025
-    </Typography>
-  </Box>
-
-  {/* Due Date */}
-  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-      Due Date
-    </Typography>
-    <Typography variant="body2" sx={{ color: 'black' }}>
-      August 23, 2025
-    </Typography>
-  </Box>
-</Box>
-              <Box sx={{ my: 2 }}>
-                {/* content here */}
-              </Box>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }} >Billed By:</Typography>
-                  <Typography variant="body1">Your Company Name</Typography>
-                  <Typography variant="body2">123 Business Street</Typography>
-                  <Typography variant="body2">City, Country</Typography>
-                    <Typography variant="body2">
-                      <strong style={{ color: 'black' }}>GSTIN:</strong> 27ABCDE1234F0G0
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong style={{ color: 'black' }}>PAN:</strong> ABCDE1234F
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong style={{ color: 'black' }}>Email:</strong> test@test.com
-                    </Typography>
-                    <Typography variant="body2">
-                      <strong style={{ color: 'black' }}>Phone:</strong> +91 99999 00000
-                    </Typography>
-                </Box>
-                <Box sx={{ textAlign: 'left' }}>
-                  <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
-                  <Typography variant="body1">Client Name</Typography>
-                  <Typography variant="body2">456 Client Avenue</Typography>
-                  <Typography variant="body2">Client City, Country</Typography>
-                </Box>
-              </Box>
-              
-              <Box sx={{ 
-                backgroundColor: '#E8F5E9', 
-                borderRadius: '4px', 
-                p: 1, 
-                mb: 2,
-                border: '1px solid #A5D6A7'
-              }}>
-                <Grid container>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">GST Registration No:</Typography>
-                    <Typography variant="body2">22AAAAA0000A1Z5</Typography>
+              {error && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              <form onSubmit={handleSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="First Name"
+                      fullWidth
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                      autoComplete="given-name"
+                    />
                   </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">PAN:</Typography>
-                    <Typography variant="body2">AAAAA0000A</Typography>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="Middle Name"
+                      fullWidth
+                      value={middleName}
+                      onChange={(e) => setMiddleName(e.target.value)}
+                      autoComplete="additional-name"
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label="Last Name"
+                      fullWidth
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                      autoComplete="family-name"
+                    />
                   </Grid>
                 </Grid>
-              </Box>
 
-              <Box sx={{ display: 'table', width: '100%', borderSpacing: 0 }}>
-                {/* Header Row */}
-                <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' , maxWidth: '500px' }}>
-                  {['Item', 'GST Rate', 'Quantity', 'Rate', 'Amount', 'CGST', 'SGST', 'Total'].map((text, i) => (
-                    <Box key={i} sx={{ display: 'table-cell', padding: '6px', fontWeight: 'bold', fontSize: '0.575rem' }}>
-                      {text}
+                <TextField
+                  label="Email"
+                  type="email"
+                  fullWidth
+                  margin="normal"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  autoComplete="username"
+                />
+
+                <FormControl fullWidth margin="normal">
+                    <InputLabel>Country</InputLabel>
+                    <Select
+                      value={selectedCountry}
+                      onChange={(e) => setSelectedCountry(e.target.value)}
+                      label="Country"
+                      required
+                    >
+                      {countries.map((country) => (
+                        <MenuItem key={country.name} value={country.name}>
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                </FormControl>
+
+                <Box sx={{ mt: 2, mb: 1 }}>
+                  <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
+                  <style>
+                    {`
+                      .react-tel-input .country-list .country {
+                        padding: 5px 35px;
+                      }
+                    `}
+                  </style>
+                  <PhoneInput
+                    country={countryCode}
+                    value={phone}
+                    onChange={setPhone}
+                    enableSearch={true}
+                    inputProps={{
+                      name: 'phone',
+                      required: true
+                    }}
+                    inputStyle={{
+                      width: '100%',
+                      height: '56px',
+                      fontSize: '1rem',
+                      borderRadius: '4px',
+                      paddingLeft: '80px'
+                    }}
+                    buttonStyle={{
+                      borderRadius: '4px 0 0 4px',
+                      width: '50px',
+                      padding: '0px 0px 0px 5px'
+                    }}
+                    containerStyle={{
+                      width: '100%'
+                    }}
+                    dropdownStyle={{
+                      width: 'auto',
+                      minWidth: '375px',
+                      padding: '0',
+                      margin: '0'
+                    }}
+                    countryDropdownStyle={{
+                      padding: '0',
+                      margin: '0',
+                      lineHeight: '1',
+                      height: 'auto'
+                    }}
+                  />
+                </Box>
+
+                <TextField
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  fullWidth
+                  margin="normal"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  InputProps={{
+                    style: { height: '56px' },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
+
+                {/* Password Strength Indicator */}
+                <Box className="password-strength">
+                  <Box className="strength-meter">
+                    <Box
+                      className="strength-meter-fill"
+                      sx={{
+                        width: getPasswordStrengthWidth(passwordStrength),
+                        backgroundColor: getPasswordStrengthColor(passwordStrength)
+                      }}
+                    />
+                  </Box>
+                  <Box className="strength-text">
+                    <Typography variant="caption">
+                      Password Strength
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ color: getPasswordStrengthColor(passwordStrength) }}
+                    >
+                      {getPasswordStrengthLabel(passwordStrength)}
+                    </Typography>
+                  </Box>
+                  <Box className="strength-requirements">
+                    <Box className={`requirement ${hasMinLength(password) ? 'valid' : 'invalid'}`}>
+                      {hasMinLength(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+                      <Typography variant="caption">8+ characters</Typography>
                     </Box>
-                  ))}
-                </Box>
-
-                {/* Data Row */}
-                <Box sx={{ display: 'table-row', borderBottom: '1px solid #A5D6A7' }}>
-                  <Box sx={{ display: 'table-cell', padding: '6px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>1. ISO Certification</Typography>
-                    <Typography sx={{ fontSize: '0.575rem', fontStyle: 'italic' }}>(HSN/SAC: 111111)</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>18%</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>1</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
-                  </Box>
-                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
-                    <Typography sx={{ fontSize: '0.575rem' }}>₹68.00</Typography>
+                    <Box className={`requirement ${hasUppercase(password) ? 'valid' : 'invalid'}`}>
+                      {hasUppercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+                      <Typography variant="caption">Uppercase</Typography>
+                    </Box>
+                    <Box className={`requirement ${hasLowercase(password) ? 'valid' : 'invalid'}`}>
+                      {hasLowercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+                      <Typography variant="caption">Lowercase</Typography>
+                    </Box>
+                    <Box className={`requirement ${hasNumber(password) ? 'valid' : 'invalid'}`}>
+                      {hasNumber(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+                      <Typography variant="caption">Number</Typography>
+                    </Box>
+                    <Box className={`requirement ${hasSpecialChar(password) ? 'valid' : 'invalid'}`}>
+                      {hasSpecialChar(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
+                      <Typography variant="caption">Special character</Typography>
+                    </Box>
                   </Box>
                 </Box>
 
-                {/* Footer Row */}
-                <Box sx={{ display: 'table-row', backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
+                <TextField
+                  label="Confirm Password"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  fullWidth
+                  margin="normal"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  InputProps={{
+                    style: { height: '56px' },
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                          {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    )
+                  }}
+                />
 
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={termsAgreed}
+                      onChange={(e) => setTermsAgreed(e.target.checked)}
+                      color="primary"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2">
+                      I agree to the{' '}
+                      <Link component={RouterLink} to="/terms" target="_blank">
+                        Terms of Service
+                      </Link>{' '}
+                      and{' '}
+                      <Link component={RouterLink} to="/privacy" target="_blank">
+                        Privacy Policy
+                      </Link>
+                    </Typography>
+                  }
+                  sx={{ mt: 2 }}
+                />
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 2 }}
+                  disabled={loading}
+                >
+                  {loading ? 'Registering...' : 'Register'}
+                </Button>
+              </form>
+              <Typography sx={{ mt: 2 }} align="center">
+                Already have an account?{' '}
+                <Link component={RouterLink} to="/login" underline="hover">
+                  Login
+                </Link>
+              </Typography>
+            </Paper>
+          </Grid>
+
+          <Grid item xs={12} md={5} sx={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginLeft: 'auto',
+            paddingLeft: '0 !important'
+          }}>
+            <Paper
+              elevation={3}
+              sx={{
+                height: '100%',
+                padding: '20px',
+                backgroundColor: '#FFF8E1',
+                display: 'flex',
+                maxWidth: '500px',
+                flexDirection: 'column',
+                borderTop: '4px solid #FFB74D',
+                borderRadius: '8px'
+              }}
+            >
+              <Typography variant="h5" gutterBottom align="center" color="primary">
+                Invoice Preview
+              </Typography>
+
+              <Box sx={{
+                border: '1px dashed #FFB74D',
+                borderRadius: '8px',
+                padding: '15px',
+                backgroundColor: 'white',
+                flexGrow: 1,
+                display: 'flex',
+                flexDirection: 'column'
+              }}>
+                <Typography variant="h6" color="primary" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold',color: 'black' }}>
+                  Sample Tax Invoice
+                </Typography>
+                  <Box sx={{ mb: 2, textAlign: 'right' }}>
+                      <img
+                          src={office_building}
+                          alt="Sunshine Tower"
+                          style={{ marginBottom: 8, width: 80, height: 80,objectFit: 'contain' }}
+                        />
+                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
+                          Sunshine Tower
+                        </Typography>
+                        <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+                          "Excellence in Every Service"
+                        </Typography>
+                  </Box>
+                <Box sx={{ mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                      Invoice No #
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'black' }}>
+                      INV-2025-001
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                      Invoice Date
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'black' }}>
+                      July 24, 2025
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                      Due Date
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'black' }}>
+                      August 23, 2025
+                    </Typography>
+                  </Box>
                 </Box>
-              </Box>
+                <Box sx={{ my: 2 }}>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+                  <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }} >Billed By:</Typography>
+                    <Typography variant="body1">Your Company Name</Typography>
+                    <Typography variant="body2">123 Business Street</Typography>
+                    <Typography variant="body2">City, Country</Typography>
+                      <Typography variant="body2">
+                        <strong style={{ color: 'black' }}>GSTIN:</strong> 27ABCDE1234F0G0
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong style={{ color: 'black' }}>PAN:</strong> ABCDE1234F
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong style={{ color: 'black' }}>Email:</strong> test@test.com
+                      </Typography>
+                      <Typography variant="body2">
+                        <strong style={{ color: 'black' }}>Phone:</strong> +91 99999 00000
+                      </Typography>
+                  </Box>
+                  <Box sx={{ textAlign: 'left' }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
+                    <Typography variant="body1">Client Name</Typography>
+                    <Typography variant="body2">456 Client Avenue</Typography>
+                    <Typography variant="body2">Client City, Country</Typography>
+                  </Box>
+                </Box>
 
+                <Box sx={{
+                  backgroundColor: '#E8F5E9',
+                  borderRadius: '4px',
+                  p: 1,
+                  mb: 2,
+                  border: '1px solid #A5D6A7'
+                }}>
+                  <Grid container>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">GST Registration No:</Typography>
+                      <Typography variant="body2">22AAAAA0000A1Z5</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" color="text.secondary">PAN:</Typography>
+                      <Typography variant="body2">AAAAA0000A</Typography>
+                    </Grid>
+                  </Grid>
+                </Box>
 
-<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, mb: 2 }}>
-  {/* Left Section: Amount in Words */}
+                <Box sx={{ display: 'table', width: '100%', borderSpacing: 0 }}>
+                  <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' , maxWidth: '500px' }}>
+                    {['Item', 'GST Rate', 'Quantity', 'Rate', 'Amount', 'CGST', 'SGST', 'Total'].map((text, i) => (
+                      <Box key={i} sx={{ display: 'table-cell', padding: '6px', fontWeight: 'bold', fontSize: '0.575rem' }}>
+                        {text}
+                      </Box>
+                    ))}
+                  </Box>
+
+                  <Box sx={{ display: 'table-row', borderBottom: '1px solid #A5D6A7' }}>
+                    <Box sx={{ display: 'table-cell', padding: '6px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>1. ISO Certification</Typography>
+                      <Typography sx={{ fontSize: '0.575rem', fontStyle: 'italic' }}>(HSN/SAC: 111111)</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>18%</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>1</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
+                    </Box>
+                    <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                      <Typography sx={{ fontSize: '0.575rem' }}>₹68.00</Typography>
+                    </Box>
+                  </Box>
+
+                  <Box sx={{ display: 'table-row', backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, mb: 2 }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
                       Amount in Words:
@@ -647,7 +645,6 @@ function numberToWords(num) {
                       {numberToWords(88.50)}
                     </Typography>
                   </Box>
-                  {/* Right Section: Amount Table */}
                   <Box sx={{ flexShrink: 0 }}>
                     <Box
                       sx={{
@@ -696,17 +693,16 @@ function numberToWords(num) {
                     </Box>
                   </Box>
                 </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 'auto', textAlign: 'center' }}>
-                Create your account to start generating professional invoices like this
-              </Typography>
-            </Box>
-          </Paper>
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 'auto', textAlign: 'center' }}>
+                  Create your account to start generating professional invoices like this
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
         </Grid>
-      </Grid>
+      </Box>
     </Box>
   );
 };
-
-
 
 export default RegisterPage;
