@@ -255,7 +255,7 @@ useEffect(() => {
       }}>
         <Grid container spacing={3} alignItems="stretch">
           <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' }}>
-            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '500px', height: '100%', }}>
               <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Registration Tutorial
               </Typography>
@@ -629,45 +629,67 @@ useEffect(() => {
                 <Typography variant="h6" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold', color: 'black' }}>
                   Sample Tax Invoice
                 </Typography>
-                <Box sx={{ mb: 2, textAlign: 'right' }}>
-                  <img
-                    src={office_building}
-                    alt="Sunshine Tower"
-                    style={{ marginBottom: 8, width: 80, height: 80, objectFit: 'contain' }}
-                  />
-                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                    Sunshine Tower
-                  </Typography>
-                  <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-                    "Excellence in Every Service"
-                  </Typography>
-                </Box>
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-                      Invoice No #
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'black' }}>
-                      INV-2025-001
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-                      Invoice Date
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'black' }}>
-                      July 24, 2025
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
-                      Due Date
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'black' }}>
-                      August 23, 2025
-                    </Typography>
-                  </Box>
-                </Box>
+
+
+
+
+                     <Box sx={{
+                       display: 'flex',
+                       justifyContent: 'space-between',
+                       alignItems: 'flex-start',
+                       mb: 2
+                     }}>
+                       {/* Left Box - Invoice Details */}
+                       <Box sx={{ flex: 1 }}>
+                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                           <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                             Invoice No #
+                           </Typography>
+                           <Typography variant="body2" sx={{ color: 'black' }}>
+                             INV-2025-001
+                           </Typography>
+                         </Box>
+                         <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                           <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                             Invoice Date
+                           </Typography>
+                           <Typography variant="body2" sx={{ color: 'black' }}>
+                             July 24, 2025
+                           </Typography>
+                         </Box>
+                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                           <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
+                             Due Date
+                           </Typography>
+                           <Typography variant="body2" sx={{ color: 'black' }}>
+                             August 23, 2025
+                           </Typography>
+                         </Box>
+                       </Box>
+
+                       {/* Right Box - Logo */}
+                       <Box sx={{
+                         textAlign: 'right',
+                         display: 'flex',
+                         flexDirection: 'column',
+                         alignItems: 'flex-end'
+                       }}>
+                         <img
+                           src={office_building}
+                           alt="Sunshine Tower"
+                           style={{ marginBottom: 8, width: 80, height: 80, objectFit: 'contain' }}
+                         />
+                         <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
+                           Sunshine Tower
+                         </Typography>
+                       </Box>
+                     </Box>
+
+
+
+
+
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                   <Box>
                     <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed By:</Typography>
