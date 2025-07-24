@@ -769,7 +769,8 @@ useEffect(() => {
                         display: 'table',
                         borderCollapse: 'collapse',
                         border: '1px solid #A5D6A7',
-                        minWidth: '200px',
+                        minWidth: '100px',
+                        fontSize: '0.575rem',
                       }}
                     >
                       {[
