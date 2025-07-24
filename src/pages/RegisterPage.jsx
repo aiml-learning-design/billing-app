@@ -49,6 +49,8 @@ const RegisterPage = () => {
   const [passwordStrength, setPasswordStrength] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordMatchError, setPasswordMatchError] = useState('');
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -101,8 +103,19 @@ const RegisterPage = () => {
     return re.test(email);
   };
 
+useEffect(() => {
+  if (confirmPassword && password !== confirmPassword) {
+    setPasswordMatchError("Passwords don't match");
+  } else {
+    setPasswordMatchError('');
+  }
+}, [password, confirmPassword]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+      setError('');
+      setPasswordMatchError('');
 
     if (!validateEmail(email)) {
       return setError('Please enter a valid email address');
@@ -113,8 +126,9 @@ const RegisterPage = () => {
     }
 
     if (password !== confirmPassword) {
-      return setError("Passwords don't match");
-    }
+        setPasswordMatchError("Passwords don't match");
+        return setError("Passwords don't match");
+      }
 
     if (!termsAgreed) {
       return setError('You must agree to the Terms of Service and Privacy Policy');
@@ -507,29 +521,31 @@ const RegisterPage = () => {
       </Box>
 
       {/* Confirm Password */}
-      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-        <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Confirm:</Typography>
-        <TextField
-          fullWidth
-          size="small"
-          type={showConfirmPassword ? 'text' : 'password'}
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  size="small"
-                >
-                  {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-                </IconButton>
-              </InputAdornment>
-            )
-          }}
-        />
-      </Box>
+<Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+  <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Confirm:</Typography>
+  <TextField
+    fullWidth
+    size="small"
+    type={showConfirmPassword ? 'text' : 'password'}
+    value={confirmPassword}
+    onChange={(e) => setConfirmPassword(e.target.value)}
+    required
+    error={!!passwordMatchError}
+    helperText={passwordMatchError}
+    InputProps={{
+      endAdornment: (
+        <InputAdornment position="end">
+          <IconButton
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            size="small"
+          >
+            {showConfirmPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+          </IconButton>
+        </InputAdornment>
+      )
+    }}
+  />
+</Box>
 
       {/* Terms */}
       <Box sx={{ display: 'flex', mb: 2 }}>
