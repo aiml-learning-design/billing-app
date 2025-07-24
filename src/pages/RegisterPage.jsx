@@ -262,6 +262,9 @@ const RegisterPage = () => {
                 width: 'auto',
                 minWidth: '300px'
               }}
+              countryDropdownStyle={{
+                paddingLeft: '46px'
+              }}
             />
           </Box>
 
