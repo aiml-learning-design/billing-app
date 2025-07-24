@@ -501,31 +501,31 @@ const RegisterPage = () => {
               <Box sx={{ mb: 2, flexGrow: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Items:</Typography>
                 <Box sx={{ 
-                  border: '1px solid #FFE0B2', 
+                  border: '1px solid #33CC33', 
                   borderRadius: '4px',
                   overflow: 'hidden'
                 }}>
-                  <Grid container sx={{ backgroundColor: '#FFB74D', p: 1, color: 'white' }}>
+                  <Grid container sx={{ backgroundColor: '#33CC33', p: 1, color: 'white' }}>
                     <Grid item xs={6}><Typography variant="body2" fontWeight="bold">Description</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #FFE0B2' }}>
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7' }}>
                     <Grid item xs={6}><Typography variant="body2">Service 1</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">1</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">$100.00</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #FFE0B2' }}>
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7' }}>
                     <Grid item xs={6}><Typography variant="body2">Service 2</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">2</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">$150.00</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, backgroundColor: '#FFEFD5', borderTop: '2px solid #FFB74D' }}>
-                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold" color="#FF8F00">Total</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold" color="#FF8F00">$250.00</Typography></Grid>
+                  <Grid container sx={{ p: 1, backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
+                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold" color="#1B5E20">Total</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$250.00</Typography></Grid>
                   </Grid>
                 </Box>
               </Box>
