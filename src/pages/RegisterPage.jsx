@@ -195,7 +195,6 @@ const RegisterPage = () => {
         zIndex: 1100,
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        {/* Company Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <img
             src={company_logo}
@@ -206,8 +205,6 @@ const RegisterPage = () => {
             Invoice Generator Pro
           </Typography>
         </Box>
-
-        {/* Support and Login Links - Dark and Bold */}
         <Box sx={{ display: 'flex', gap: 3 }}>
           <Link
             component={RouterLink}
@@ -245,9 +242,10 @@ const RegisterPage = () => {
         borderRadius: '4px',
         pt: '84px'
       }}>
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={3}>
-            <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+        <Grid container spacing={3} alignItems="stretch">
+          {/* Left - Youtube thumbnail grid */}
+          <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' }}>
+            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Registration Tutorial
               </Typography>
@@ -255,9 +253,7 @@ const RegisterPage = () => {
                 sx={{
                   position: 'relative',
                   cursor: 'pointer',
-                  '&:hover .play-button': {
-                    transform: 'scale(1.1)'
-                  }
+                  '&:hover .play-button': { transform: 'scale(1.1)' }
                 }}
                 onClick={() => window.open('https://youtube.com', '_blank')}
               >
@@ -295,15 +291,16 @@ const RegisterPage = () => {
               </Typography>
             </Paper>
           </Grid>
-
-          {/* Middle Column - Registration Form */}
-          <Grid item xs={12} md={6}>
+          <Grid item xs={12} md={6} sx={{ flex: '0 0 40%' }}>
             <Paper
               elevation={3}
               sx={{
                 width: '100%',
-                padding: '30px',
-                margin: '0 auto'
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                p: 3,
               }}
             >
               <Typography variant="h5" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
@@ -541,13 +538,14 @@ const RegisterPage = () => {
             </Paper>
           </Grid>
 
-          {/* Right Column - Invoice Preview */}
-          <Grid item xs={12} md={3}>
+          <Grid item xs={12} md={3} sx={{ flex: '0 0 30%' }}>
             <Paper
               elevation={3}
               sx={{
                 height: '100%',
-                padding: '20px',
+                width: '100%',
+                flex: 1,
+                p: 2,
                 backgroundColor: '#FFF8E1',
                 display: 'flex',
                 flexDirection: 'column',
