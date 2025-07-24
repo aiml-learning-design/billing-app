@@ -358,11 +358,10 @@ useEffect(() => {
               <TextField
                 fullWidth
                 size="small"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="family-name"
               />
             </Box>
 
