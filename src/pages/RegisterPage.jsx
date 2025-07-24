@@ -460,19 +460,32 @@ const RegisterPage = () => {
               display: 'flex',
               flexDirection: 'column'
             }}>
-              <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                Sample Invoice
+              <Typography variant="h6" color="primary" sx={{ mb: 1 }}>
+                Sample Tax Invoice
               </Typography>
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="body2">Invoice Number: INV-2025-001</Typography>
+                <Typography variant="body2">Invoice Date: July 24, 2025</Typography>
+                <Typography variant="body2">Due Date: August 23, 2025</Typography>
+              </Box>
               
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">From:</Typography>
+                  <Typography variant="body2" color="text.secondary">Billed By:</Typography>
                   <Typography variant="body1">Your Company Name</Typography>
                   <Typography variant="body2">123 Business Street</Typography>
                   <Typography variant="body2">City, Country</Typography>
                 </Box>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">To:</Typography>
+                <Box sx={{ textAlign: 'right' }}>
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
+                      Sunshine Tower
+                    </Typography>
+                    <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+                      "Excellence in Every Service"
+                    </Typography>
+                  </Box>
+                  <Typography variant="body2" color="text.secondary">Billed To:</Typography>
                   <Typography variant="body1">Client Name</Typography>
                   <Typography variant="body2">456 Client Avenue</Typography>
                   <Typography variant="body2">Client City, Country</Typography>
@@ -488,12 +501,12 @@ const RegisterPage = () => {
               }}>
                 <Grid container>
                   <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Invoice Number:</Typography>
-                    <Typography variant="body2">INV-2025-001</Typography>
+                    <Typography variant="body2" color="text.secondary">GST Registration No:</Typography>
+                    <Typography variant="body2">22AAAAA0000A1Z5</Typography>
                   </Grid>
                   <Grid item xs={6}>
-                    <Typography variant="body2" color="text.secondary">Date:</Typography>
-                    <Typography variant="body2">July 24, 2025</Typography>
+                    <Typography variant="body2" color="text.secondary">PAN:</Typography>
+                    <Typography variant="body2">AAAAA0000A</Typography>
                   </Grid>
                 </Grid>
               </Box>
@@ -503,29 +516,39 @@ const RegisterPage = () => {
                 <Box sx={{ 
                   border: '1px solid #33CC33', 
                   borderRadius: '4px',
-                  overflow: 'hidden'
+                  overflow: 'auto'
                 }}>
                   <Grid container sx={{ backgroundColor: '#33CC33', p: 1, color: 'white' }}>
-                    <Grid item xs={6}><Typography variant="body2" fontWeight="bold">Description</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
+                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Item</Typography></Grid>
+                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">GST Rate</Typography></Grid>
+                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">Quantity</Typography></Grid>
+                    <Grid item xs={1}><Typography variant="body2" fontWeight="bold">Rate</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">CGST</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">SGST</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold">Total</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7' }}>
-                    <Grid item xs={6}><Typography variant="body2">Service 1</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2">1</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2">$100.00</Typography></Grid>
-                  </Grid>
-                  
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7' }}>
-                    <Grid item xs={6}><Typography variant="body2">Service 2</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2">2</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2">$150.00</Typography></Grid>
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #A5D6A7', alignItems: 'center' }}>
+                    <Grid item xs={3}>
+                      <Typography variant="body2">1. ISO Certification</Typography>
+                      <Typography variant="caption">(HSN/SAC: 111111)</Typography>
+                    </Grid>
+                    <Grid item xs={1}><Typography variant="body2">18%</Typography></Grid>
+                    <Grid item xs={1}><Typography variant="body2">1</Typography></Grid>
+                    <Grid item xs={1}><Typography variant="body2">$75.00</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2">$75.00</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2">$6.75</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2">$6.75</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2">$88.50</Typography></Grid>
                   </Grid>
                   
                   <Grid container sx={{ p: 1, backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
-                    <Grid item xs={9}><Typography variant="body2" fontWeight="bold" color="#1B5E20">Total</Typography></Grid>
-                    <Grid item xs={3}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$250.00</Typography></Grid>
+                    <Grid item xs={7.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">Total</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$75.00</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$6.75</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$6.75</Typography></Grid>
+                    <Grid item xs={1.5}><Typography variant="body2" fontWeight="bold" color="#1B5E20">$88.50</Typography></Grid>
                   </Grid>
                 </Box>
               </Box>
