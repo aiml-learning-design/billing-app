@@ -2,22 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import office_building from '../assets/office_building.jpg';
-import { 
+import company_logo from '../assets/company_logo.png';
+import youtube_thumbnail from '../assets/youtube_thumbnail.jpg';
+import {
   Box, TextField, Button, Typography, Link, Paper, Alert, Grid,
   FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment,
-  FormControlLabel, Checkbox, FormHelperText
+  FormControlLabel, Checkbox
 } from '@mui/material';
-import { 
-  Check as CheckIcon, 
+import {
+  Check as CheckIcon,
   Close as CloseIcon,
-  Visibility, 
+  Visibility,
   VisibilityOff
 } from '@mui/icons-material';
 import countries from '../utils/countries';
-import { 
-  calculatePasswordStrength, 
-  getPasswordStrengthLabel, 
-  getPasswordStrengthColor, 
+import {
+  calculatePasswordStrength,
+  getPasswordStrengthLabel,
+  getPasswordStrengthColor,
   getPasswordStrengthWidth,
   hasMinLength,
   hasUppercase,
@@ -29,7 +31,6 @@ import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/material.css';
 import 'react-phone-input-2/lib/style.css';
 import axios from 'axios';
-
 
 const RegisterPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -57,7 +58,7 @@ const RegisterPage = () => {
       try {
         const response = await axios.get('https://ipapi.co/json/');
         const userData = response.data;
-        const countryNames = countries.map(country => country.name);
+        const countryNames = countries.map(c => c.name);
         if (userData?.country_name && countryNames.includes(userData.country_name)) {
           setSelectedCountry(userData.country_name);
           const detectedCountryCode = userData.country_code.toLowerCase();
@@ -77,28 +78,25 @@ const RegisterPage = () => {
         setPhone(defaultCountry.dialCode.replace('+', ''));
       }
     };
-    
+
     fetchLocationData();
   }, []);
-
 
   // Update phone country code when selected country changes
   useEffect(() => {
     const selectedCountryData = countries.find(c => c.name === selectedCountry);
     if (selectedCountryData) {
       setCountryCode(selectedCountryData.code.toLowerCase());
-      // Optionally update the phone number with the country's dialing code
       if (!phone) {
         setPhone(selectedCountryData.dialCode.replace('+', ''));
       }
     }
   }, [selectedCountry]);
 
-    // Update password strength when password changes
-    useEffect(() => {
-      setPasswordStrength(calculatePasswordStrength(password));
-    }, [password]);
-
+  // Update password strength when password changes
+  useEffect(() => {
+    setPasswordStrength(calculatePasswordStrength(password));
+  }, [password]);
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -111,11 +109,11 @@ const RegisterPage = () => {
     if (!validateEmail(email)) {
       return setError('Please enter a valid email address');
     }
-    
+
     if (passwordStrength < 3) {
       return setError('Please use a stronger password');
     }
-    
+
     if (password !== confirmPassword) {
       return setError("Passwords don't match");
     }
@@ -127,8 +125,7 @@ const RegisterPage = () => {
     try {
       setError('');
       setLoading(true);
-      
-      // Create user data object with all required fields
+
       const userData = {
         firstName,
         middleName,
@@ -139,11 +136,10 @@ const RegisterPage = () => {
         phone: phone,
         userRole: 'USER'
       };
-      
+
       await register(userData);
       navigate('/dashboard');
     } catch (err) {
-      // Handle specific error codes from backend
       if (err.response?.data?.code === 'REGISTRATION_ERROR') {
         setError(err.response.data.message);
       } else if (err.response?.data?.code === 'VALIDATION_ERROR') {
@@ -184,49 +180,133 @@ const RegisterPage = () => {
 
   return (
     <Box sx={{ position: 'relative', width: '100%' }}>
-      {/* Support and Login Links at the top */}
+      {/* Top Navigation Bar */}
       <Box sx={{
-        position: 'absolute',
-        top: 16,
-        right: 24,
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '64px',
+        backgroundColor: '#1A237E',
         display: 'flex',
-        gap: 2,
-        zIndex: 10
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '0 24px',
+        zIndex: 1100,
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
       }}>
-        <Link component={RouterLink} to="/support" underline="hover" variant="body2" color="primary">
-          Support
-        </Link>
-        <Link component={RouterLink} to="/login" underline="hover" variant="body2" color="primary">
-          Login
-        </Link>
+        {/* Company Logo */}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <img
+            src={company_logo}
+            alt="Company Logo"
+            style={{ height: '40px', marginRight: '16px' }}
+          />
+          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+            Invoice Generator Pro
+          </Typography>
+        </Box>
+
+        {/* Support and Login Links - Dark and Bold */}
+        <Box sx={{ display: 'flex', gap: 3 }}>
+          <Link
+            component={RouterLink}
+            to="/support"
+            underline="none"
+            sx={{
+              color: 'white',
+              fontWeight: 'bold',
+              '&:hover': { color: '#FFD700' }
+            }}
+          >
+            Support
+          </Link>
+          <Link
+            component={RouterLink}
+            to="/login"
+            underline="none"
+            sx={{
+              color: 'white',
+              fontWeight: 'bold',
+              '&:hover': { color: '#FFD700' }
+            }}
+          >
+            Login
+          </Link>
+        </Box>
       </Box>
 
-      <Box className="auth-container" sx={{
+      <Box sx={{
         width: '100%',
-        maxWidth: '1500px',
+        maxWidth: '1800px',
         margin: '0 auto',
         backgroundColor: '#E3F2FD',
-        padding: '5px',
+        padding: '20px',
         borderRadius: '4px',
-        pt: 6 // Add padding top to make space for the links
+        pt: '84px'
       }}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} md={7} sx={{
-            display: 'flex',
-            justifyContent: 'flex-start',
-            paddingLeft: '0 !important'
-          }}>
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={3}>
+            <Paper elevation={3} sx={{ p: 2, height: '100%' }}>
+              <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+                Registration Tutorial
+              </Typography>
+              <Box
+                sx={{
+                  position: 'relative',
+                  cursor: 'pointer',
+                  '&:hover .play-button': {
+                    transform: 'scale(1.1)'
+                  }
+                }}
+                onClick={() => window.open('https://youtube.com', '_blank')}
+              >
+                <img
+                  src={youtube_thumbnail}
+                  alt="How to Register"
+                  style={{
+                    width: '100%',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 8px rgba(0,0,0,0.2)'
+                  }}
+                />
+                <Box
+                  className="play-button"
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(255,0,0,0.8)',
+                    borderRadius: '50%',
+                    width: '60px',
+                    height: '60px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.3s ease'
+                  }}
+                >
+                  <Typography variant="h4" sx={{ color: 'white' }}>▶</Typography>
+                </Box>
+              </Box>
+              <Typography variant="body2" sx={{ mt: 2, textAlign: 'center' }}>
+                Watch our step-by-step guide to registration
+              </Typography>
+            </Paper>
+          </Grid>
+
+          {/* Middle Column - Registration Form */}
+          <Grid item xs={12} md={6}>
             <Paper
               elevation={3}
-              className="auth-paper"
               sx={{
                 width: '100%',
-                maxWidth: '650px',
                 padding: '30px',
-                margin: '0'
+                margin: '0 auto'
               }}
             >
-              <Typography variant="h5" gutterBottom align="center">
+              <Typography variant="h5" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Create Your Account
               </Typography>
               {error && (
@@ -279,30 +359,23 @@ const RegisterPage = () => {
                 />
 
                 <FormControl fullWidth margin="normal">
-                    <InputLabel>Country</InputLabel>
-                    <Select
-                      value={selectedCountry}
-                      onChange={(e) => setSelectedCountry(e.target.value)}
-                      label="Country"
-                      required
-                    >
-                      {countries.map((country) => (
-                        <MenuItem key={country.name} value={country.name}>
-                          {country.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
+                  <InputLabel>Country</InputLabel>
+                  <Select
+                    value={selectedCountry}
+                    onChange={(e) => setSelectedCountry(e.target.value)}
+                    label="Country"
+                    required
+                  >
+                    {countries.map((country) => (
+                      <MenuItem key={country.name} value={country.name}>
+                        {country.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
                 </FormControl>
 
                 <Box sx={{ mt: 2, mb: 1 }}>
                   <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
-                  <style>
-                    {`
-                      .react-tel-input .country-list .country {
-                        padding: 5px 35px;
-                      }
-                    `}
-                  </style>
                   <PhoneInput
                     country={countryCode}
                     value={phone}
@@ -326,18 +399,6 @@ const RegisterPage = () => {
                     }}
                     containerStyle={{
                       width: '100%'
-                    }}
-                    dropdownStyle={{
-                      width: 'auto',
-                      minWidth: '375px',
-                      padding: '0',
-                      margin: '0'
-                    }}
-                    countryDropdownStyle={{
-                      padding: '0',
-                      margin: '0',
-                      lineHeight: '1',
-                      height: 'auto'
                     }}
                   />
                 </Box>
@@ -363,20 +424,19 @@ const RegisterPage = () => {
                 />
 
                 {/* Password Strength Indicator */}
-                <Box className="password-strength">
-                  <Box className="strength-meter">
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ height: '4px', backgroundColor: '#e0e0e0', borderRadius: '2px', mb: 1 }}>
                     <Box
-                      className="strength-meter-fill"
                       sx={{
+                        height: '100%',
                         width: getPasswordStrengthWidth(passwordStrength),
-                        backgroundColor: getPasswordStrengthColor(passwordStrength)
+                        backgroundColor: getPasswordStrengthColor(passwordStrength),
+                        borderRadius: '2px'
                       }}
                     />
                   </Box>
-                  <Box className="strength-text">
-                    <Typography variant="caption">
-                      Password Strength
-                    </Typography>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                    <Typography variant="caption">Password Strength</Typography>
                     <Typography
                       variant="caption"
                       sx={{ color: getPasswordStrengthColor(passwordStrength) }}
@@ -384,28 +444,38 @@ const RegisterPage = () => {
                       {getPasswordStrengthLabel(passwordStrength)}
                     </Typography>
                   </Box>
-                  <Box className="strength-requirements">
-                    <Box className={`requirement ${hasMinLength(password) ? 'valid' : 'invalid'}`}>
-                      {hasMinLength(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                      <Typography variant="caption">8+ characters</Typography>
-                    </Box>
-                    <Box className={`requirement ${hasUppercase(password) ? 'valid' : 'invalid'}`}>
-                      {hasUppercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                      <Typography variant="caption">Uppercase</Typography>
-                    </Box>
-                    <Box className={`requirement ${hasLowercase(password) ? 'valid' : 'invalid'}`}>
-                      {hasLowercase(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                      <Typography variant="caption">Lowercase</Typography>
-                    </Box>
-                    <Box className={`requirement ${hasNumber(password) ? 'valid' : 'invalid'}`}>
-                      {hasNumber(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                      <Typography variant="caption">Number</Typography>
-                    </Box>
-                    <Box className={`requirement ${hasSpecialChar(password) ? 'valid' : 'invalid'}`}>
-                      {hasSpecialChar(password) ? <CheckIcon fontSize="small" /> : <CloseIcon fontSize="small" />}
-                      <Typography variant="caption">Special character</Typography>
-                    </Box>
-                  </Box>
+                  <Grid container spacing={1}>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {hasMinLength(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
+                        <Typography variant="caption" sx={{ ml: 1 }}>8+ characters</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {hasUppercase(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
+                        <Typography variant="caption" sx={{ ml: 1 }}>Uppercase</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {hasLowercase(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
+                        <Typography variant="caption" sx={{ ml: 1 }}>Lowercase</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {hasNumber(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
+                        <Typography variant="caption" sx={{ ml: 1 }}>Number</Typography>
+                      </Box>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        {hasSpecialChar(password) ? <CheckIcon fontSize="small" color="success" /> : <CloseIcon fontSize="small" color="error" />}
+                        <Typography variant="caption" sx={{ ml: 1 }}>Special character</Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
                 </Box>
 
                 <TextField
@@ -471,12 +541,8 @@ const RegisterPage = () => {
             </Paper>
           </Grid>
 
-          <Grid item xs={12} md={5} sx={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginLeft: 'auto',
-            paddingLeft: '0 !important'
-          }}>
+          {/* Right Column - Invoice Preview */}
+          <Grid item xs={12} md={3}>
             <Paper
               elevation={3}
               sx={{
@@ -484,13 +550,12 @@ const RegisterPage = () => {
                 padding: '20px',
                 backgroundColor: '#FFF8E1',
                 display: 'flex',
-                maxWidth: '500px',
                 flexDirection: 'column',
                 borderTop: '4px solid #FFB74D',
                 borderRadius: '8px'
               }}
             >
-              <Typography variant="h5" gutterBottom align="center" color="primary">
+              <Typography variant="h5" gutterBottom align="center" sx={{ color: '#1A237E', fontWeight: 'bold' }}>
                 Invoice Preview
               </Typography>
 
@@ -503,22 +568,22 @@ const RegisterPage = () => {
                 display: 'flex',
                 flexDirection: 'column'
               }}>
-                <Typography variant="h6" color="primary" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold',color: 'black' }}>
+                <Typography variant="h6" sx={{ mb: 1, textAlign: 'left', fontWeight: 'bold', color: 'black' }}>
                   Sample Tax Invoice
                 </Typography>
-                  <Box sx={{ mb: 2, textAlign: 'right' }}>
-                      <img
-                          src={office_building}
-                          alt="Sunshine Tower"
-                          style={{ marginBottom: 8, width: 80, height: 80,objectFit: 'contain' }}
-                        />
-                        <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
-                          Sunshine Tower
-                        </Typography>
-                        <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
-                          "Excellence in Every Service"
-                        </Typography>
-                  </Box>
+                <Box sx={{ mb: 2, textAlign: 'right' }}>
+                  <img
+                    src={office_building}
+                    alt="Sunshine Tower"
+                    style={{ marginBottom: 8, width: 80, height: 80, objectFit: 'contain' }}
+                  />
+                  <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'primary.main' }}>
+                    Sunshine Tower
+                  </Typography>
+                  <Typography variant="caption" sx={{ fontStyle: 'italic' }}>
+                    "Excellence in Every Service"
+                  </Typography>
+                </Box>
                 <Box sx={{ mb: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
@@ -528,7 +593,6 @@ const RegisterPage = () => {
                       INV-2025-001
                     </Typography>
                   </Box>
-
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
                       Invoice Date
@@ -537,7 +601,6 @@ const RegisterPage = () => {
                       July 24, 2025
                     </Typography>
                   </Box>
-
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
                     <Typography variant="body2" sx={{ color: 'gray', fontWeight: 500, width: '120px' }}>
                       Due Date
@@ -547,63 +610,40 @@ const RegisterPage = () => {
                     </Typography>
                   </Box>
                 </Box>
-                <Box sx={{ my: 2 }}>
-                </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
                   <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }} >Billed By:</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed By:</Typography>
                     <Typography variant="body1">Your Company Name</Typography>
                     <Typography variant="body2">123 Business Street</Typography>
                     <Typography variant="body2">City, Country</Typography>
-                      <Typography variant="body2">
-                        <strong style={{ color: 'black' }}>GSTIN:</strong> 27ABCDE1234F0G0
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong style={{ color: 'black' }}>PAN:</strong> ABCDE1234F
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong style={{ color: 'black' }}>Email:</strong> test@test.com
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong style={{ color: 'black' }}>Phone:</strong> +91 99999 00000
-                      </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>GSTIN:</strong> 27ABCDE1234F0G0
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>PAN:</strong> ABCDE1234F
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>Email:</strong> test@test.com
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>Phone:</strong> +91 99999 00000
+                    </Typography>
                   </Box>
                   <Box sx={{ textAlign: 'left' }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
                     <Typography variant="body1">Client Name</Typography>
                     <Typography variant="body2">456 Client Avenue</Typography>
                     <Typography variant="body2">Client City, Country</Typography>
                   </Box>
                 </Box>
-
-                <Box sx={{
-                  backgroundColor: '#E8F5E9',
-                  borderRadius: '4px',
-                  p: 1,
-                  mb: 2,
-                  border: '1px solid #A5D6A7'
-                }}>
-                  <Grid container>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">GST Registration No:</Typography>
-                      <Typography variant="body2">22AAAAA0000A1Z5</Typography>
-                    </Grid>
-                    <Grid item xs={6}>
-                      <Typography variant="body2" color="text.secondary">PAN:</Typography>
-                      <Typography variant="body2">AAAAA0000A</Typography>
-                    </Grid>
-                  </Grid>
-                </Box>
-
                 <Box sx={{ display: 'table', width: '100%', borderSpacing: 0 }}>
-                  <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' , maxWidth: '500px' }}>
+                  <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white', maxWidth: '500px' }}>
                     {['Item', 'GST Rate', 'Quantity', 'Rate', 'Amount', 'CGST', 'SGST', 'Total'].map((text, i) => (
                       <Box key={i} sx={{ display: 'table-cell', padding: '6px', fontWeight: 'bold', fontSize: '0.575rem' }}>
                         {text}
                       </Box>
                     ))}
                   </Box>
-
                   <Box sx={{ display: 'table-row', borderBottom: '1px solid #A5D6A7' }}>
                     <Box sx={{ display: 'table-cell', padding: '6px' }}>
                       <Typography sx={{ fontSize: '0.575rem' }}>1. ISO Certification</Typography>
@@ -631,11 +671,9 @@ const RegisterPage = () => {
                       <Typography sx={{ fontSize: '0.575rem' }}>₹68.00</Typography>
                     </Box>
                   </Box>
-
                   <Box sx={{ display: 'table-row', backgroundColor: '#E8F5E9', borderTop: '2px solid #33CC33' }}>
                   </Box>
                 </Box>
-
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, mb: 2 }}>
                   <Box sx={{ flex: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
