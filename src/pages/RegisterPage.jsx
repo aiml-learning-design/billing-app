@@ -156,12 +156,13 @@ const RegisterPage = () => {
     }
   };
 
+
   return (
     <Box className="auth-container" sx={{ 
       width: '100%', 
       maxWidth: '1400px', 
       margin: '0 auto',
-      backgroundColor: '#F0F7FF', // Light blue background for the entire page
+      backgroundColor: '#E3F2FD', // Lighter blue background for the entire page
       padding: '20px',
       borderRadius: '8px'
     }}>
@@ -173,9 +174,7 @@ const RegisterPage = () => {
             sx={{ 
               width: '100%', 
               maxWidth: '750px',  // Increased width by approximately 50%
-              padding: '20px 30px',
-              backgroundColor: '#E6F0FF', // Light blue background for the registration form
-              borderTop: '4px solid #7986CB' // Purple-blue accent border
+              padding: '20px 30px'
             }}
           >
             <Typography variant="h5" gutterBottom align="center">
@@ -453,7 +452,7 @@ const RegisterPage = () => {
             </Typography>
             
             <Box sx={{ 
-              border: '1px dashed #ccc', 
+              border: '1px dashed #FFB74D', 
               borderRadius: '8px', 
               padding: '15px',
               backgroundColor: 'white',
@@ -502,7 +501,7 @@ const RegisterPage = () => {
               <Box sx={{ mb: 2, flexGrow: 1 }}>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>Items:</Typography>
                 <Box sx={{ 
-                  border: '1px solid #eee', 
+                  border: '1px solid #FFE0B2', 
                   borderRadius: '4px',
                   overflow: 'hidden'
                 }}>
@@ -512,13 +511,13 @@ const RegisterPage = () => {
                     <Grid item xs={3}><Typography variant="body2" fontWeight="bold">Amount</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #eee' }}>
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #FFE0B2' }}>
                     <Grid item xs={6}><Typography variant="body2">Service 1</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">1</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">$100.00</Typography></Grid>
                   </Grid>
                   
-                  <Grid container sx={{ p: 1, borderBottom: '1px solid #eee' }}>
+                  <Grid container sx={{ p: 1, borderBottom: '1px solid #FFE0B2' }}>
                     <Grid item xs={6}><Typography variant="body2">Service 2</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">2</Typography></Grid>
                     <Grid item xs={3}><Typography variant="body2">$150.00</Typography></Grid>
