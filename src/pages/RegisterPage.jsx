@@ -423,6 +423,14 @@ useEffect(() => {
         <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Phone:</Typography>
 
         <Box sx={{ width: '100%' }}>
+            <style>
+                {`
+                  .react-tel-input .country-list .country {
+                    padding: 5px 35px;
+                  }
+                `}
+              </style>
+
           <PhoneInput
             country={countryCode}
             value={phone}
