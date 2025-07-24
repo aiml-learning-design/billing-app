@@ -9,6 +9,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import Dashboard from './pages/Dashboard';
 import BusinessPage from './pages/BusinessPage';
+import BusinessSetupPage from './pages/BusinessSetupPage';
 import InvoicesPage from './pages/InvoicesPage';
 import InvoiceFormPage from './pages/InvoiceFormPage';
 import ProtectedRoute from './components/layout/ProtectedRoute';
@@ -33,6 +34,8 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/business" element={<BusinessPage />} />
+          <Route path="/business-setup" element={<BusinessSetupPage />} />
+          <Route path="/:businessName" element={<Dashboard />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/invoices/new" element={<InvoiceFormPage />} />
           <Route path="/invoices/edit/:id" element={<InvoiceFormPage />} />

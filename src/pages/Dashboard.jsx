@@ -2,18 +2,26 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Box, Typography, Button, Grid, Card, CardContent,
-  CircularProgress, Divider, Chip, Alert
+  CircularProgress, Divider, Chip, Alert, MenuItem, Select, FormControl, InputLabel
 } from '@mui/material';
-import { Business, ListAlt, Add, Paid, Pending } from '@mui/icons-material';
+import { Business, ListAlt, Add, Paid, Pending, Store } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const Dashboard = () => {
-  const { user } = useAuth();
+  const { user, businesses } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+
+  // Initialize selected business when businesses are loaded
+  useEffect(() => {
+    if (businesses && businesses.length > 0) {
+      setSelectedBusiness(businesses[0]);
+    }
+  }, [businesses]);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -63,6 +71,83 @@ const Dashboard = () => {
           <Typography variant="subtitle1" gutterBottom>
             Welcome back, {user.email}
           </Typography>
+          
+          {businesses && businesses.length === 0 && (
+            <Box sx={{ mb: 3 }}>
+              <Alert severity="info" sx={{ mb: 2 }}>
+                You don't have any businesses set up yet. Create your first business to get started.
+              </Alert>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                startIcon={<Add />}
+                onClick={() => navigate('/business-setup')}
+              >
+                Create Business
+              </Button>
+            </Box>
+          )}
+          
+          {businesses && businesses.length > 0 && selectedBusiness && (
+            <Box sx={{ mb: 3 }}>
+              {businesses.length > 1 && (
+                <FormControl sx={{ mb: 2, minWidth: 250 }}>
+                  <InputLabel id="business-select-label">Select Business</InputLabel>
+                  <Select
+                    labelId="business-select-label"
+                    id="business-select"
+                    value={selectedBusiness.businessName}
+                    label="Select Business"
+                    onChange={(e) => {
+                      const selected = businesses.find(b => b.businessName === e.target.value);
+                      setSelectedBusiness(selected);
+                    }}
+                  >
+                    {businesses.map((business) => (
+                      <MenuItem key={business.businessName} value={business.businessName}>
+                        {business.businessName}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Store color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6">
+                      {selectedBusiness.businessName}
+                    </Typography>
+                  </Box>
+                  
+                  <Grid container spacing={2}>
+                    {selectedBusiness.pan && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          PAN:
+                        </Typography>
+                        <Typography variant="body1">
+                          {selectedBusiness.pan}
+                        </Typography>
+                      </Grid>
+                    )}
+                    
+                    {selectedBusiness.gstin && (
+                      <Grid item xs={12} sm={6}>
+                        <Typography variant="body2" color="text.secondary">
+                          GSTIN:
+                        </Typography>
+                        <Typography variant="body1">
+                          {selectedBusiness.gstin}
+                        </Typography>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
 
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

@@ -31,9 +31,15 @@ const refreshToken = async () => {
       }
     );
     
-    localStorage.setItem('token', response.data.token);
-    localStorage.setItem('refreshToken', response.data.refreshToken);
-    return response.data.token;
+    // Extract tokens from the new response structure
+    const accessToken = response.data.accessToken;
+    const newRefreshToken = response.data.authentication?.refreshToken;
+    
+    localStorage.setItem('token', accessToken);
+    if (newRefreshToken) {
+      localStorage.setItem('refreshToken', newRefreshToken);
+    }
+    return accessToken;
   } catch (error) {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');

@@ -1,3 +1,4 @@
+/*
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -25,7 +26,7 @@ const Login = () => {
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: 'auto', mt: 8 }}>
+    <Box sx={{ maxWidth: 800, mx: 'auto', mt: 8 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h5" gutterBottom align="center">
           Login
@@ -75,4 +76,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Login; */
