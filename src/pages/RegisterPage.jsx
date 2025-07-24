@@ -3,12 +3,14 @@ import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Box, TextField, Button, Typography, Link, Paper, Alert, Grid,
-  FormControl, InputLabel, Select, MenuItem, InputAdornment,
+  FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment,
   FormControlLabel, Checkbox, FormHelperText
 } from '@mui/material';
 import { 
   Check as CheckIcon, 
-  Close as CloseIcon 
+  Close as CloseIcon,
+  Visibility, 
+  VisibilityOff
 } from '@mui/icons-material';
 import countries from '../utils/countries';
 import { 
@@ -22,6 +24,10 @@ import {
   hasNumber,
   hasSpecialChar
 } from '../utils/passwordUtils';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/material.css';
+import axios from 'axios';
+
 
 const RegisterPage = () => {
   const [firstName, setFirstName] = useState('');
@@ -31,22 +37,27 @@ const RegisterPage = () => {
   const [country, setCountry] = useState('IN');
   const [phoneCode, setPhoneCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [phone, setPhone] = useState('');
+  const [countryCode, setCountryCode] = useState('in');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAgreed, setTermsAgreed] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const { register } = useAuth();
   const navigate = useNavigate();
 
   // Update phone code when country changes
   useEffect(() => {
-    const selectedCountry = countries.find(c => c.code === country);
-    if (selectedCountry) {
-      setPhoneCode(selectedCountry.dialCode);
-    }
-  }, [country]);
+  axios.get('https://ipapi.co/json/')
+      .then(response => {
+        const countryCode = response.data.country_code.toLowerCase();
+        setCountryCode(countryCode);
+      })
+      .catch(() => setCountryCode('in'));
+  }, []);
 
   // Update password strength when password changes
   useEffect(() => {
@@ -182,7 +193,7 @@ const RegisterPage = () => {
           </FormControl>
 
           <Grid container spacing={2} sx={{ mt: 0.5 }}>
-            <Grid item xs={4}>
+            {/* <Grid item xs={4}>
               <TextField
                 label="Code"
                 fullWidth
@@ -202,10 +213,22 @@ const RegisterPage = () => {
                 autoComplete="tel"
                 placeholder="Enter phone number"
               />
-            </Grid>
+            </Grid> */}
+            <PhoneInput
+              country={countryCode}
+              value={phone}
+              onChange={setPhone}
+              inputProps={{
+                name: 'phone',
+                required: true,
+                autoFocus: false
+              }}
+              inputStyle={{ width: '100%' }}
+              containerStyle={{ marginTop: '16px' }}
+            />
           </Grid>
 
-          <TextField
+          {/* <TextField
             label="Password"
             type="password"
             fullWidth
@@ -214,6 +237,25 @@ const RegisterPage = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="new-password"
+          /> */}
+
+          <TextField
+            label="Password"
+            type={showPassword ? 'text' : 'password'}
+            fullWidth
+            margin="normal"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              )
+            }}
           />
 
           {/* Password Strength Indicator */}

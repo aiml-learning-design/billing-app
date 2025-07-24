@@ -15,6 +15,7 @@ import InvoiceFormPage from './pages/InvoiceFormPage';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import NotFoundPage from './pages/NotFoundPage';
+import PhoneInput from 'react-phone-input-2';
 
 function App() {
   return (
