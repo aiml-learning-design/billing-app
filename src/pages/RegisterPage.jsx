@@ -157,6 +157,30 @@ const RegisterPage = () => {
     }
   };
 
+function numberToWords(num) {
+  const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"];
+  const teens = ["Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"];
+  const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"];
+
+  if (num === 0) return "Zero";
+
+  const intPart = Math.floor(num);
+  const decimalPart = Math.round((num - intPart) * 100);
+
+  function convertTwoDigits(n) {
+    if (n < 10) return ones[n];
+    else if (n < 20) return teens[n - 10];
+    else return tens[Math.floor(n / 10)] + (n % 10 ? " " + ones[n % 10] : "");
+  }
+
+  let words = "";
+  if (intPart >= 100) {
+    words += ones[Math.floor(intPart / 100)] + " Hundred ";
+  }
+  words += convertTwoDigits(intPart % 100);
+
+  return words.trim() + " Rupees Only";
+}
 
   return (
     <Box className="auth-container" sx={{ 
@@ -178,7 +202,7 @@ const RegisterPage = () => {
             className="auth-paper" 
             sx={{ 
               width: '100%', 
-              maxWidth: '600px',  // Increased width by approximately 50%
+              maxWidth: '650px',  // Increased width by approximately 50%
               padding: '30px',
               margin: '0'
             }}
@@ -438,9 +462,13 @@ const RegisterPage = () => {
         </Typography>
       </Paper>
         </Grid>
-        
-        {/* Invoice-related styling on the right side */}
-        <Grid item xs={12} md={5}>
+
+        <Grid item xs={12} md={5} sx={{
+          display: 'flex',
+          justifyContent: 'flex-end',
+          marginLeft: 'auto', // This is key to pushing it to the right
+          paddingLeft: '0 !important'
+        }}>
           <Paper 
             elevation={3}
             sx={{
@@ -448,6 +476,7 @@ const RegisterPage = () => {
               padding: '20px',
               backgroundColor: '#FFF8E1', // Yellowish background for invoice preview
               display: 'flex',
+              maxWidth: '500px',
               flexDirection: 'column',
               borderTop: '4px solid #FFB74D', // Orange accent border
               borderRadius: '8px'
@@ -522,6 +551,18 @@ const RegisterPage = () => {
                   <Typography variant="body1">Your Company Name</Typography>
                   <Typography variant="body2">123 Business Street</Typography>
                   <Typography variant="body2">City, Country</Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>GSTIN:</strong> 27ABCDE1234F0G0
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>PAN:</strong> ABCDE1234F
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>Email:</strong> test@test.com
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong style={{ color: 'black' }}>Phone:</strong> +91 99999 00000
+                    </Typography>
                 </Box>
                 <Box sx={{ textAlign: 'left' }}>
                   <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'bold', fontSize: '1rem', color: 'blue' }}>Billed To:</Typography>
@@ -552,9 +593,9 @@ const RegisterPage = () => {
 
               <Box sx={{ display: 'table', width: '100%', borderSpacing: 0 }}>
                 {/* Header Row */}
-                <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' }}>
+                <Box sx={{ display: 'table-row', backgroundColor: '#33CC33', color: 'white' , maxWidth: '500px' }}>
                   {['Item', 'GST Rate', 'Quantity', 'Rate', 'Amount', 'CGST', 'SGST', 'Total'].map((text, i) => (
-                    <Box key={i} sx={{ display: 'table-cell', padding: '8px', fontWeight: 'bold', fontSize: '0.875rem' }}>
+                    <Box key={i} sx={{ display: 'table-cell', padding: '6px', fontWeight: 'bold', fontSize: '0.575rem' }}>
                       {text}
                     </Box>
                   ))}
@@ -562,17 +603,31 @@ const RegisterPage = () => {
 
                 {/* Data Row */}
                 <Box sx={{ display: 'table-row', borderBottom: '1px solid #A5D6A7' }}>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}>
-                    <Typography variant="body2">1. ISO Certification</Typography>
-                    <Typography variant="caption">(HSN/SAC: 111111)</Typography>
+                  <Box sx={{ display: 'table-cell', padding: '6px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>1. ISO Certification</Typography>
+                    <Typography sx={{ fontSize: '0.575rem', fontStyle: 'italic' }}>(HSN/SAC: 111111)</Typography>
                   </Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">18%</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">1</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$75.00</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$75.00</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$6.75</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$6.75</Typography></Box>
-                  <Box sx={{ display: 'table-cell', padding: '8px' }}><Typography variant="body2">$88.50</Typography></Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>18%</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>1</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>50.00</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>₹9.00</Typography>
+                  </Box>
+                  <Box sx={{ display: 'table-cell', padding: '4px' }}>
+                    <Typography sx={{ fontSize: '0.575rem' }}>₹68.00</Typography>
+                  </Box>
                 </Box>
 
                 {/* Footer Row */}
@@ -580,7 +635,67 @@ const RegisterPage = () => {
 
                 </Box>
               </Box>
-              
+
+
+<Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2, mb: 2 }}>
+  {/* Left Section: Amount in Words */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
+                      Amount in Words:
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontStyle: 'italic', color: 'gray' }}>
+                      {numberToWords(88.50)}
+                    </Typography>
+                  </Box>
+                  {/* Right Section: Amount Table */}
+                  <Box sx={{ flexShrink: 0 }}>
+                    <Box
+                      sx={{
+                        display: 'table',
+                        borderCollapse: 'collapse',
+                        border: '1px solid #A5D6A7',
+                        minWidth: '200px',
+                      }}
+                    >
+                      {[
+                        { label: 'Amount', value: '₹50.00' },
+                        { label: 'CGST', value: '₹9.00' },
+                        { label: 'SGST', value: '₹9.00' },
+                        { label: 'Total (INR)', value: '₹68.00' },
+                      ].map(({ label, value }, i) => (
+                        <Box
+                          key={i}
+                          sx={{
+                            display: 'table-row',
+                            backgroundColor: i % 2 === 0 ? '#F1F8E9' : 'white',
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: 'table-cell',
+                              padding: '8px 12px',
+                              fontWeight: 'bold',
+                              border: '1px solid #A5D6A7',
+                            }}
+                          >
+                            {label}
+                          </Box>
+                          <Box
+                            sx={{
+                              display: 'table-cell',
+                              padding: '8px 12px',
+                              textAlign: 'right',
+                              border: '1px solid #A5D6A7',
+                              minWidth: '100px',
+                            }}
+                          >
+                            {value}
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                </Box>
               <Typography variant="body2" color="text.secondary" sx={{ mt: 'auto', textAlign: 'center' }}>
                 Create your account to start generating professional invoices like this
               </Typography>
@@ -591,5 +706,7 @@ const RegisterPage = () => {
     </Box>
   );
 };
+
+
 
 export default RegisterPage;
