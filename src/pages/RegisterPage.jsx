@@ -255,7 +255,7 @@ useEffect(() => {
       }}>
         <Grid container spacing={3} alignItems="stretch">
           <Grid item xs={12} md={3} sx={{ flex: '0 0 25%' }}>
-            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minHeight: '500px', height: '100%', }}>
+            <Paper elevation={3} sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '91.5%', }}>
               <Typography variant="h6" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 Registration Tutorial
               </Typography>
