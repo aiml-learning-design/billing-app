@@ -54,6 +54,10 @@ const RegisterPage = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
 
+
+
+
+
   // Fetch user's location and set country defaults
   useEffect(() => {
     const fetchLocationData = async () => {
@@ -336,7 +340,9 @@ useEffect(() => {
                   onChange={(e) => setFirstName(e.target.value)}
                   required
                   autoComplete="given-name"
-                  sx={{ mr: 2 }} // Add right margin for spacing
+                  sx={{ '& .MuiOutlinedInput-root': {
+                                  backgroundColor: 'white',
+                                }, mr: 2 }} // Add right margin for spacing
                 />
 
                 <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Middle Name:</Typography>
@@ -346,6 +352,9 @@ useEffect(() => {
                   value={middleName}
                   onChange={(e) => setMiddleName(e.target.value)}
                   autoComplete="additional-name"
+                  sx={{ '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'white',
+                                                  }, mr: 2 }}
                 />
               </Box>
 
@@ -363,6 +372,9 @@ useEffect(() => {
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 autoComplete="family-name"
+                sx={{ '& .MuiOutlinedInput-root': {
+                                                  backgroundColor: 'white',
+                                                }, mr: 2 }}
               />
             </Box>
 
@@ -377,13 +389,20 @@ useEffect(() => {
           onChange={(e) => setEmail(e.target.value)}
           required
           autoComplete="username"
+          sx={{ '& .MuiOutlinedInput-root': {
+                                            backgroundColor: 'white',
+                                          }, mr: 2 }}
         />
       </Box>
 
       {/* Country */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
         <Typography variant="caption" sx={{ width: '90px', fontWeight: 'bold', flexShrink: 0 }}>Country:</Typography>
-        <FormControl fullWidth size="small">
+        <FormControl fullWidth size="small" sx={{
+                                                  '& .MuiOutlinedInput-root': {
+                                                    backgroundColor: 'white',
+                                                  }
+                                                }}>
           <Select
             value={selectedCountry}
             onChange={(e) => setSelectedCountry(e.target.value)}
@@ -441,6 +460,11 @@ useEffect(() => {
               </InputAdornment>
             )
           }}
+      sx={{
+            '& .MuiOutlinedInput-root': {
+              backgroundColor: 'white',
+            }
+          }}
         />
       </Box>
 
@@ -448,6 +472,7 @@ useEffect(() => {
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                       <Box
                             sx={{
+
                               position: 'relative',
                               display: 'inline-flex',
                               alignItems: 'center',
@@ -456,6 +481,7 @@ useEffect(() => {
                                 visibility: 'visible',
                                 opacity: 1
                               }
+
                             }}
                           >
       <Typography variant="caption">Password Strength</Typography>
@@ -464,7 +490,7 @@ useEffect(() => {
               sx={{
                 fontWeight: 'bold',
                 ml: 0.5,
-                color: '#666'
+                color: '#616161'
               }}
             >
               ?
@@ -546,6 +572,11 @@ useEffect(() => {
           </IconButton>
         </InputAdornment>
       )
+    }}
+sx={{
+      '& .MuiOutlinedInput-root': {
+        backgroundColor: 'white',
+      }
     }}
   />
 </Box>
