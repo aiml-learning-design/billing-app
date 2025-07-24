@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link as RouterLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import '../css/PhoneInputOverrides.css';
 import { 
   Box, TextField, Button, Typography, Link, Paper, Alert, Grid,
   FormControl, InputLabel, Select, MenuItem, IconButton, InputAdornment,
@@ -80,11 +81,7 @@ const RegisterPage = () => {
     fetchLocationData();
   }, []);
 
-  // Update password strength when password changes
-  useEffect(() => {
-    setPasswordStrength(calculatePasswordStrength(password));
-  }, [password]);
-  
+
   // Update phone country code when selected country changes
   useEffect(() => {
     const selectedCountryData = countries.find(c => c.name === selectedCountry);
@@ -96,6 +93,12 @@ const RegisterPage = () => {
       }
     }
   }, [selectedCountry]);
+
+    // Update password strength when password changes
+    useEffect(() => {
+      setPasswordStrength(calculatePasswordStrength(password));
+    }, [password]);
+
 
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -227,6 +230,13 @@ const RegisterPage = () => {
 
           <Box sx={{ mt: 2, mb: 1 }}>
             <Typography variant="body1" sx={{ mb: 1 }}>Phone Number *</Typography>
+            <style>
+              {`
+                .react-tel-input .country-list .country {
+                  padding: 5px 35px;
+                }
+              `}
+            </style>
             <PhoneInput
               country={countryCode}
               value={phone}
