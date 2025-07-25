@@ -37,7 +37,6 @@ const RegisterPage = () => {
   const [middleName, setMiddleName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
-  const [country, setCountry] = useState('IN');
   const [phone, setPhone] = useState('');
   const [countryCode, setCountryCode] = useState('in');
   const [selectedCountry, setSelectedCountry] = useState('India');
@@ -56,8 +55,6 @@ const RegisterPage = () => {
 
 
 
-
-
   // Fetch user's location and set country defaults
   useEffect(() => {
     const fetchLocationData = async () => {
@@ -65,18 +62,33 @@ const RegisterPage = () => {
         const response = await axios.get('https://ipapi.co/json/');
         const userData = response.data;
         const countryNames = countries.map(c => c.name);
+        console.log('Selected country changed:', selectedCountry);
         if (userData?.country_name && countryNames.includes(userData.country_name)) {
+          console.log('Selected country changed:', selectedCountry);
           setSelectedCountry(userData.country_name);
           const detectedCountryCode = userData.country_code.toLowerCase();
-          setCountryCode(detectedCountryCode);
+          setCountryCode(detectedCountryCode); 
           setPhone(userData.country_calling_code ? userData.country_calling_code.replace('+', '') : '');
+          console.log('Found country data:', selectedCountry);
+           if (selectedCountry) {
+              console.log('Setting country code to:', selectedCountry.code.toLowerCase());
+              setCountryCode(selectedCountry.code.toLowerCase());
+              if (!phone) {
+                setPhone(selectedCountry.dialCode.replace('+', ''));
+              }
+            }
+
+          
         } else {
           const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
+          console.log('Selected country changed:', selectedCountry);
           setSelectedCountry(defaultCountry.name);
           setCountryCode(defaultCountry.code.toLowerCase());
           setPhone(defaultCountry.dialCode.replace('+', ''));
+
         }
       } catch (error) {
+        console.log('Selected country changed:', selectedCountry);
         console.error("Failed to fetch location data", error);
         const defaultCountry = countries.find(c => c.code === 'in') || countries.find(c => c.name === 'India');
         setSelectedCountry(defaultCountry.name);
@@ -118,6 +130,15 @@ useEffect(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+     console.log('Form submitted with selectedCountry:', selectedCountry);
+     const countryData = countries.find(c => c.name === selectedCountry);
+      console.log('Country data found for submission:', countryData);
+      if (!countryData) {
+        console.error('Invalid country selected:', selectedCountry);
+        setError('Please select a valid country');
+        return;
+      }
+
       setError('');
       setPasswordMatchError('');
 
@@ -138,6 +159,8 @@ useEffect(() => {
       return setError('You must agree to the Terms of Service and Privacy Policy');
     }
 
+    console.log(countries)
+
     try {
       setError('');
       setLoading(true);
@@ -148,7 +171,8 @@ useEffect(() => {
         lastName,
         email,
         password,
-        country,
+        country: countryData.code, 
+        countryName: selectedCountry,
         phone: phone,
         userRole: 'USER'
       };
@@ -156,12 +180,30 @@ useEffect(() => {
       await register(userData);
       navigate('/dashboard');
     } catch (err) {
-      if (err.response?.data?.code === 'REGISTRATION_ERROR') {
+      if (err.name === 'AbortError') {
+        console.log('Request was cancelled');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        setError(err.response.data.message);
+      }
+      else if (err.response?.data?.code === 'REGISTRATION_ERROR') {
+        console.log('Registration Error');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
         setError(err.response.data.message);
       } else if (err.response?.data?.code === 'VALIDATION_ERROR') {
         setError(err.response.data.message);
+      } else if (err === 'User Profile on this email already registered') {
+        setError(err);
+        console.error("Registration error:", err);
+        navigate('/login', {
+          state: { 
+            error: "Email already registered. Kindly use a different email for registration. If you have forgotten your password, click on 'Forgot Password' to reset it.",
+            email: email // Optional: pre-fill email field on login page
+          }
+        });
       } else {
-        setError('Registration failed. Please try again later.');
+        setError(err);
         console.error("Registration error:", err);
       }
     } finally {
@@ -406,7 +448,10 @@ useEffect(() => {
                                                 }}>
           <Select
             value={selectedCountry}
-            onChange={(e) => setSelectedCountry(e.target.value)}
+            onChange={(e) => {
+              console.log('Country selected:', e.target.value);
+              setSelectedCountry(e.target.value);
+            }}
             required
           >
             {countries.map((country) => (

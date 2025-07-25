@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
   Box, TextField, Button, Typography, Link, Paper, Alert, Divider,
@@ -21,6 +21,18 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    if (location.state?.error) {
+      setError(location.state.error);
+      if (location.state.email) {
+        setEmail(location.state.email);
+      }
+      // Clear the state to prevent showing again on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

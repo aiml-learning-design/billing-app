@@ -5,6 +5,16 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
 });
 
+const authUtils = {
+  clearTokens: () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+  },
+  redirectToLogin: () => {
+    window.location.href = '/login';
+  }
+};
+
 // Check if token is expired
 const isTokenExpired = (token) => {
   try {
@@ -30,15 +40,15 @@ const refreshToken = async () => {
         }
       }
     );
-    
     // Extract tokens from the new response structure
-    const accessToken = response.data.accessToken;
-    const newRefreshToken = response.data.authentication?.refreshToken;
-    
-    localStorage.setItem('token', accessToken);
-    if (newRefreshToken) {
-      localStorage.setItem('refreshToken', newRefreshToken);
+    const { accessToken, authentication } = response.data;
+     if (!accessToken || !authentication?.refreshToken) {
+      throw new Error('Invalid token response');
     }
+    // const newRefreshToken = response.data.authentication?.refreshToken;
+    
+     localStorage.setItem('token', accessToken);
+    localStorage.setItem('refreshToken', authentication.refreshToken);
     return accessToken;
   } catch (error) {
     localStorage.removeItem('token');
@@ -103,5 +113,8 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+api.clearAuthTokens = authUtils.clearTokens;
+
 
 export default api;
