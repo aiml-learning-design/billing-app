@@ -1,0 +1,31 @@
+.login-page {
+  position: relative;
+  height: 100vh;
+  background-color: #f8f9fa; /* Light background */
+  overflow: hidden;
+}
+
+.brand-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: 10rem;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.05); /* Very light watermark */
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+}
+
+.login-box {
+  position: relative;
+  z-index: 1;
+  max-width: 400px;
+  margin: auto;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

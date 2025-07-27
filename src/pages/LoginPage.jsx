@@ -12,6 +12,7 @@ import {
   Lock as LockIcon
 } from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
+import companyLogo from '../assets/company_logo.png'; // Import the logo
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -29,7 +30,6 @@ const LoginPage = () => {
       if (location.state.email) {
         setEmail(location.state.email);
       }
-      // Clear the state to prevent showing again on refresh
       window.history.replaceState({}, document.title);
     }
   }, [location]);
@@ -68,21 +68,44 @@ const LoginPage = () => {
   };
 
   return (
-    <Box className="auth-container">
-      <Paper elevation={3} className="auth-paper">
+    <Box
+      sx={{
+        position: 'relative',
+        minHeight: '100vh',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        background: `linear-gradient(rgba(255,255,255,0.9), rgba(255,255,255,0.9)), url(${companyLogo})`,
+        backgroundSize: 'contain',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        backgroundAttachment: 'fixed',
+      }}
+    >
+      <Paper
+        elevation={3}
+        sx={{
+          width: '100%',
+          maxWidth: 450,
+          p: 4,
+          mx: 2,
+          backgroundColor: 'background.paper',
+          backdropFilter: 'blur(2px)',
+        }}
+      >
         <Typography variant="h5" gutterBottom align="center">
           Welcome Back
         </Typography>
         <Typography variant="body2" align="center" color="textSecondary" sx={{ mb: 3 }}>
           Sign in to continue to your account
         </Typography>
-        
+
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <TextField
             label="Email"
@@ -101,7 +124,7 @@ const LoginPage = () => {
               ),
             }}
           />
-          
+
           <TextField
             label="Password"
             type={showPassword ? 'text' : 'password'}
@@ -130,13 +153,13 @@ const LoginPage = () => {
               ),
             }}
           />
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1, mb: 2 }}>
             <Link component={RouterLink} to="/forgot-password" underline="hover" variant="body2">
               Forgot password?
             </Link>
           </Box>
-          
+
           <Button
             type="submit"
             fullWidth
