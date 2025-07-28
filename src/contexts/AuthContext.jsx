@@ -22,6 +22,16 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const handleGoogleAuth = async (authResponseJson) => {
+    try {
+      const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
+      return handleAuthResponse(authResponse);
+    } catch (error) {
+      setError('Failed to process Google authentication');
+      throw error;
+    }
+  };
+
   // Refresh token function
   const refreshToken = async () => {
     try {
@@ -119,29 +129,39 @@ export function AuthProvider({ children }) {
   };
 
   // Google OAuth login
-  const loginWithGoogle = async (googleData) => {
-    try {
-      setError(null);
-      setLoading(true);
+// In your AuthContext.js
+// Update loginWithGoogle to ensure proper state handling
+const loginWithGoogle = async (googleData) => {
+  try {
+    setError(null);
+    setLoading(true);
 
-      // For direct token from Google OAuth
-      if (googleData.credential) {
-        const response = await api.post('/api/auth/google', {
-          token: googleData.credential
-        });
-        handleAuthResponse(response);
+    if (googleData.authResponse) {
+      const authResponse = JSON.parse(decodeURIComponent(googleData.authResponse));
+
+      // Store tokens
+      localStorage.setItem('token', authResponse.accessToken);
+      localStorage.setItem('authData', JSON.stringify(authResponse));
+
+      if (authResponse.invoktaAuthentication?.refreshToken) {
+        localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
       }
-      // For authResponse from backend redirect
-      else if (googleData.authResponse) {
-        handleAuthResponse(googleData.authResponse);
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || 'Google login failed');
-      throw error;
-    } finally {
-      setLoading(false);
+
+      // Decode and set user
+      const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
+      setUser(userData);
+      setAuthData(authResponse);
+
+      return userData;
     }
-  };
+    throw new Error('Invalid auth response format');
+  } catch (error) {
+    setError(error.message || 'Google login failed');
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Registration
   const register = async (userData) => {
@@ -183,7 +203,8 @@ export function AuthProvider({ children }) {
     logout,
     loginWithGoogle,
     setError,
-    refreshToken
+    refreshToken,
+    handleGoogleAuth
   };
 
   return (

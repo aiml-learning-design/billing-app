@@ -16,6 +16,8 @@ import ProtectedRoute from './components/layout/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
 import NotFoundPage from './pages/NotFoundPage';
 import PhoneInput from 'react-phone-input-2';
+import OAuthCallback from './pages/OAuthCallback';
+
 
 function App() {
   return (
@@ -24,6 +26,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
