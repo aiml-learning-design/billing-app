@@ -68,7 +68,7 @@ A comprehensive billing and invoice management system built with React and Mater
 3. **Set up environment variables**
    Create a `.env` file in the root directory with the following variables:
    ```
-   REACT_APP_API_URL=http://localhost:8087
+   REACT_APP_API_URL=http://localhost:8087/invokta
    REACT_APP_ENV=development
    REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
    ```
@@ -110,7 +110,7 @@ A comprehensive billing and invoice management system built with React and Mater
    ./gradlew bootRun
    ```
    
-   The backend API will be available at http://localhost:8087
+   The backend API will be available at http://localhost:8087/invokta
 
 > **Note:** Make sure the backend is running before starting the frontend application to ensure proper integration.
 
@@ -218,7 +218,7 @@ The frontend application is fully integrated with the backend API as defined in 
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| REACT_APP_API_URL | Backend API URL | http://localhost:8087 |
+| REACT_APP_API_URL | Backend API URL | http://localhost:8087/invokta |
 | REACT_APP_ENV | Environment (development/production) | development |
 | REACT_APP_GOOGLE_CLIENT_ID | Google OAuth Client ID | - |
 

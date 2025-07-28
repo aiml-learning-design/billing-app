@@ -7,6 +7,7 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [authData, setAuthData] = useState(null); // Stores complete auth response
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
@@ -34,28 +35,32 @@ export function AuthProvider({ children }) {
       });
       
       localStorage.setItem('token', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
+      if (response.refreshToken) {
+        localStorage.setItem('refreshToken', response.refreshToken);
+      }
       return response.accessToken;
     } catch (error) {
-    //  console.error('Failed to refresh token:', error);
       logout();
       throw error;
     }
   };
 
+  // Initialize authentication state
   useEffect(() => {
     const initAuth = async () => {
       const token = localStorage.getItem('token');
+      const storedAuthData = localStorage.getItem('authData');
+      
       if (token) {
-        if (isTokenExpired(token)) {
-          try {
+        try {
+          if (isTokenExpired(token)) {
             const newToken = await refreshToken();
-            setUser(jwt_decode(newToken));
-          } catch (error) {
-            // If refresh fails, user will be logged out in the refreshToken function
+            updateAuthState(newToken, storedAuthData);
+          } else {
+            updateAuthState(token, storedAuthData);
           }
-        } else {
-          setUser(jwt_decode(token));
+        } catch (error) {
+          console.error('Authentication initialization error:', error);
         }
       }
       setLoading(false);
@@ -64,81 +69,121 @@ export function AuthProvider({ children }) {
     initAuth();
   }, []);
 
+  // Update both user and auth data state
+  const updateAuthState = (token, storedAuthData) => {
+    try {
+      const decoded = jwt_decode(token);
+      setUser(decoded);
+      
+      if (storedAuthData) {
+        const parsedAuthData = JSON.parse(storedAuthData);
+        setAuthData(parsedAuthData);
+      }
+    } catch (error) {
+      console.error('Token decoding error:', error);
+      logout();
+    }
+  };
+
+  // Unified auth response handler
+  const handleAuthResponse = (response) => {
+    localStorage.setItem('token', response.accessToken);
+    localStorage.setItem('authData', JSON.stringify(response));
+
+    if (response.invoktaAuthentication?.refreshToken) {
+      localStorage.setItem('refreshToken', response.invoktaAuthentication.refreshToken);
+    }
+
+    setUser(jwt_decode(response.accessToken));
+    setAuthData(response);
+
+    // Redirect to dashboard or pre-auth path
+    const preAuthPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
+    sessionStorage.removeItem('preAuthPath');
+    navigate(preAuthPath);
+  };
+
+  // Email/password login
   const login = async (email, password) => {
     try {
       setError(null);
+      setLoading(true);
       const response = await api.post('/api/auth/authenticate', { email, password });
-      localStorage.setItem('token', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
-      setUser(jwt_decode(response.accessToken));
-      navigate('/dashboard');
+      handleAuthResponse(response);
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const register = async (userData) => {
-    api.clearAuthTokens();
-    try {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      setError(null);
-      const response = await api.post('/api/auth/register', userData);
-      if (response.accessToken) {
-        localStorage.setItem('token', response.accessToken);
-        if (response.refreshToken) {
-            localStorage.setItem('refreshToken', response.refreshToken);
-          }
-          setUser(jwt_decode(response.accessToken));
-      }
-      navigate('/business-setup');
-    } catch (error) {
-      api.clearAuthTokens();
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      setError(error.response?.data?.message || 'Registration failed');
-      throw error;
-    }
-  };
-
+  // Google OAuth login
   const loginWithGoogle = async (googleData) => {
     try {
       setError(null);
-      const response = await api.post('/api/auth/google', {
-        token: googleData.credential
-      });
-      if (response.accessToken) {
-        localStorage.setItem('token', response.accessToken);
-        if (response.refreshToken) {
-            localStorage.setItem('refreshToken', response.refreshToken);
-          }
-          setUser(jwt_decode(response.accessToken));
+      setLoading(true);
+
+      // For direct token from Google OAuth
+      if (googleData.credential) {
+        const response = await api.post('/api/auth/google', {
+          token: googleData.credential
+        });
+        handleAuthResponse(response);
       }
-      navigate('/dashboard');
+      // For authResponse from backend redirect
+      else if (googleData.authResponse) {
+        handleAuthResponse(googleData.authResponse);
+      }
     } catch (error) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
       setError(error.response?.data?.message || 'Google login failed');
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Registration
+  const register = async (userData) => {
+    try {
+      setError(null);
+      setLoading(true);
+      api.clearAuthTokens();
+      
+      const response = await api.post('/api/auth/register', userData);
+      if (response.accessToken) {
+        handleAuthResponse(response);
+        navigate('/business-setup');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Registration failed');
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Logout
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('authData');
     setUser(null);
+    setAuthData(null);
     navigate('/login');
   };
 
   const value = {
     user,
+    authData, // Provides complete auth response to components
     loading,
     error,
     login,
     register,
     logout,
     loginWithGoogle,
-    setError
+    setError,
+    refreshToken
   };
 
   return (

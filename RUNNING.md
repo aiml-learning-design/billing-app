@@ -42,7 +42,7 @@ This guide provides step-by-step instructions for running both the frontend (UI)
    ./gradlew bootRun
    ```
    
-   The backend API will be available at http://localhost:8087
+   The backend API will be available at http://localhost:8087/invokta
 
 ## Running the Frontend (UI)
 
@@ -61,7 +61,7 @@ This guide provides step-by-step instructions for running both the frontend (UI)
    
    Create or edit the `.env` file in the root directory:
    ```
-   REACT_APP_API_URL=http://localhost:8087
+   REACT_APP_API_URL=http://localhost:8087/invokta
    REACT_APP_ENV=development
    REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
    ```
@@ -90,7 +90,7 @@ This guide provides step-by-step instructions for running both the frontend (UI)
 ## Troubleshooting
 
 1. **Backend Connection Issues**
-   - Ensure the backend server is running at http://localhost:8087
+   - Ensure the backend server is running at http://localhost:8087/invokta
    - Check that your database is properly configured and running
    - Verify that the REACT_APP_API_URL in the .env file matches the backend URL
 

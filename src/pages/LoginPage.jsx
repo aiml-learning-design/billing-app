@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
+import { useNavigate, Link as RouterLink, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
+import {
   Box, TextField, Button, Typography, Link, Paper, Alert, Divider,
-  InputAdornment, IconButton
+  InputAdornment, IconButton, CircularProgress
 } from '@mui/material';
-import { 
-  Visibility as VisibilityIcon, 
+import {
+  Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Email as EmailIcon,
   Lock as LockIcon
 } from '@mui/icons-material';
-import { GoogleLogin } from '@react-oauth/google';
-import companyLogo from '../assets/company_logo.png'; // Import the logo
+import companyLogo from '../assets/company_logo.png';
+import jwt_decode from 'jwt-decode';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -20,11 +20,14 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, loginWithGoogle } = useAuth();
+  const [oauthLoading, setOauthLoading] = useState(false);
+  const { login, loginWithGoogle, setUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    // Handle regular errors from location state
     if (location.state?.error) {
       setError(location.state.error);
       if (location.state.email) {
@@ -32,7 +35,41 @@ const LoginPage = () => {
       }
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+
+    // Handle OAuth callback with authResponse
+    const authResponseJson = searchParams.get('authResponse');
+    if (authResponseJson) {
+      handleOAuthCallback(authResponseJson);
+    }
+  }, [location, searchParams]);
+
+  const handleOAuthCallback = async (authResponseJson) => {
+    try {
+      setOauthLoading(true);
+      const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
+
+      // Store auth data
+      localStorage.setItem('authData', JSON.stringify(authResponse));
+      localStorage.setItem('token', authResponse.accessToken);
+
+      if (authResponse.invoktaAuthentication?.refreshToken) {
+        localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
+      }
+
+      // Set user in context
+      const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
+      setUser(userData);
+
+      // Clean URL and redirect
+      window.history.replaceState({}, document.title, window.location.pathname);
+      navigate('/dashboard');
+    } catch (error) {
+      setError('Failed to process authentication response');
+      console.error('Auth response error:', error);
+    } finally {
+      setOauthLoading(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -47,25 +84,37 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      setError('');
-      setLoading(true);
-      await loginWithGoogle(credentialResponse);
-    } catch (err) {
-      setError(err.message || 'Google login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleGoogleLogin = () => {
+    setError('');
+    setOauthLoading(true);
 
-  const handleGoogleFailure = () => {
-    setError('Google login failed. Please try again.');
+    // Store current path for redirect after login
+    sessionStorage.setItem('preAuthPath', window.location.pathname);
+
+    // Open Google auth - backend should handle the redirect
+    window.location.href = 'http://localhost:8087/invokta/oauth2/authorization/google?redirect_uri=' +
+      encodeURIComponent(window.location.origin + '/oauth-callback');
   };
 
   const toggleShowPassword = () => {
     setShowPassword(!showPassword);
   };
+
+  if (oauthLoading) {
+    return (
+      <Box sx={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh'
+      }}>
+        <CircularProgress size={60} />
+        <Typography variant="h6" sx={{ ml: 2 }}>
+          Signing in with Google...
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box
@@ -180,16 +229,27 @@ const LoginPage = () => {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleFailure}
-            useOneTap
-            theme="filled_blue"
-            shape="pill"
-            size="large"
-            text="continue_with"
-            width="280px"
-          />
+          <Button
+            onClick={handleGoogleLogin}
+            fullWidth
+            variant="contained"
+            disabled={loading || oauthLoading}
+            startIcon={
+              <img
+                src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                alt="Google"
+                width={20}
+                style={{ marginRight: 8 }}
+              />
+            }
+            sx={{
+              py: 1.5,
+              backgroundColor: '#4285F4',
+              '&:hover': { backgroundColor: '#357ABD' }
+            }}
+          >
+            Continue with Google
+          </Button>
         </Box>
 
         <Typography align="center" variant="body2">
