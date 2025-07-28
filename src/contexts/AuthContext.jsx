@@ -22,15 +22,32 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const handleGoogleAuth = async (authResponseJson) => {
-    try {
-      const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
-      return handleAuthResponse(authResponse);
-    } catch (error) {
-      setError('Failed to process Google authentication');
-      throw error;
+// In your AuthContext.js
+const handleGoogleAuth = async (authResponseJson) => {
+  try {
+    setLoading(true);
+    const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
+
+    // Store tokens
+    localStorage.setItem('token', authResponse.accessToken);
+    localStorage.setItem('authData', JSON.stringify(authResponse));
+
+    if (authResponse.refreshToken) {
+      localStorage.setItem('refreshToken', authResponse.refreshToken);
     }
-  };
+
+    // Set user state
+    const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
+    setUser(userData);
+
+    return userData;
+  } catch (error) {
+    setError('Failed to process authentication');
+    throw error;
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Refresh token function
   const refreshToken = async () => {
