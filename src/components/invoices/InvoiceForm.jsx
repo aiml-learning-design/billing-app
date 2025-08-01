@@ -6,6 +6,7 @@ import {
   MenuItem, Alert, FormControl, InputLabel, Select
 } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
 import api from '../../services/api';
 
 const validationSchema = Yup.object().shape({
@@ -33,7 +34,7 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
       status: 'DRAFT',
       gstStatus: 'INTRA',
       gstRate: 18,
-      invoiceDate: new Date(),
+      invoiceDate: dayjs(),
       dueDate: null,
       placeOfSupply: '',
     },
@@ -63,8 +64,8 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
 
         const payload = {
           ...values,
-          invoiceDate: values.invoiceDate.toISOString().split('T')[0],
-          dueDate: values.dueDate ? values.dueDate.toISOString().split('T')[0] : null,
+          invoiceDate: dayjs(values.invoiceDate).format('YYYY-MM-DD'),
+          dueDate: values.dueDate ? dayjs(values.dueDate).format('YYYY-MM-DD') : null,
           dueAmount,
           igst,
           cgst,
@@ -98,8 +99,8 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
             status: response.data.status || 'DRAFT',
             gstStatus: response.data.gstStatus || 'INTRA',
             gstRate: response.data.gstRate || 18,
-            invoiceDate: new Date(response.data.invoiceDate) || new Date(),
-            dueDate: response.data.dueDate ? new Date(response.data.dueDate) : null,
+            invoiceDate: response.data.invoiceDate ? dayjs(response.data.invoiceDate) : dayjs(),
+            dueDate: response.data.dueDate ? dayjs(response.data.dueDate) : null,
             placeOfSupply: response.data.placeOfSupply || '',
           });
         } catch (error) {
@@ -114,8 +115,7 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
 
   const calculateDueDate = (date) => {
     if (date) {
-      const dueDate = new Date(date);
-      dueDate.setDate(dueDate.getDate() + 30);
+      const dueDate = dayjs(date).add(30, 'day');
       formik.setFieldValue('dueDate', dueDate);
     }
   };
@@ -204,22 +204,32 @@ const InvoiceForm = ({ invoiceId, onSuccess }) => {
                 label="Invoice Date"
                 value={formik.values.invoiceDate}
                 onChange={(date) => {
-                  formik.setFieldValue('invoiceDate', date);
-                  calculateDueDate(date);
+                  // Ensure date is a dayjs object
+                  const dayjsDate = dayjs(date);
+                  formik.setFieldValue('invoiceDate', dayjsDate);
+                  calculateDueDate(dayjsDate);
                 }}
-                renderInput={(params) => (
-                  <TextField {...params} fullWidth />
-                )}
+                slotProps={{
+                  textField: {
+                    fullWidth: true
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={4}>
               <DatePicker
                 label="Due Date"
                 value={formik.values.dueDate}
-                onChange={(date) => formik.setFieldValue('dueDate', date)}
-                renderInput={(params) => (
-                  <TextField {...params} fullWidth />
-                )}
+                onChange={(date) => {
+                  // Ensure date is a dayjs object or null
+                  const dayjsDate = date ? dayjs(date) : null;
+                  formik.setFieldValue('dueDate', dayjsDate);
+                }}
+                slotProps={{
+                  textField: {
+                    fullWidth: true
+                  }
+                }}
               />
             </Grid>
             <Grid item xs={12} md={4}>

@@ -62,8 +62,8 @@ const Dashboard = () => {
     { text: 'GST Reports', icon: <Receipt />, new: true },
     { text: 'Workflows', icon: <ListAlt /> },
     { text: 'Bank & Payments', icon: <MonetizationOn /> },
-    { text: 'Profile', icon: <Person /> },
-    { text: 'View Profile', icon: <Person /> }
+    { text: 'Profile', icon: <Person />, onClick: () => navigate('/profile') },
+    { text: 'View Profile', icon: <Person />, onClick: () => navigate('/profile') }
   ];
 
   const quickActions = [
@@ -71,7 +71,7 @@ const Dashboard = () => {
       title: 'Create Invoice',
       description: 'Generate a new invoice for your client',
       icon: <Add fontSize="large" />,
-      action: () => navigate('/invoices/new'),
+      action: () => navigate('/invoices/new-invoice'),
       buttonText: 'Create'
     },
     {
@@ -128,6 +128,7 @@ const Dashboard = () => {
             <ListItem
               button
               key={index}
+              onClick={item.onClick}
               sx={{
                 borderRadius: 1,
                 mb: 0.5,
