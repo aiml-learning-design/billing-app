@@ -11,6 +11,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  
+  // Helper function to check if user has business details
+  const hasBusinessDetails = (userData) => {
+    return userData?.businesses && userData.businesses.length > 0;
+  };
 
   // Check if token is expired
   const isTokenExpired = (token) => {
@@ -24,28 +29,75 @@ export function AuthProvider({ children }) {
 
 // In your AuthContext.js
 const handleGoogleAuth = async (authResponseJson) => {
+  // Set a timeout to ensure loading state is reset even if something goes wrong
+  const loadingTimeout = setTimeout(() => {
+    console.log('handleGoogleAuth: Safety timeout triggered - resetting loading state');
+    setLoading(false);
+  }, 10000); // 10 seconds timeout as a safety measure
+
   try {
+    console.log('handleGoogleAuth: Starting authentication process');
     setLoading(true);
+    
+    console.log('handleGoogleAuth: Parsing auth response');
+    if (!authResponseJson) {
+      throw new Error('Auth response JSON is null or undefined');
+    }
+    
     const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
+    console.log('handleGoogleAuth: Auth response parsed successfully');
+
+    if (!authResponse || !authResponse.accessToken) {
+      throw new Error('Invalid auth response format - missing access token');
+    }
 
     // Store tokens
     localStorage.setItem('token', authResponse.accessToken);
     localStorage.setItem('authData', JSON.stringify(authResponse));
+    console.log('handleGoogleAuth: Tokens stored in localStorage');
 
     if (authResponse.refreshToken) {
       localStorage.setItem('refreshToken', authResponse.refreshToken);
     }
 
     // Set user state
+    console.log('handleGoogleAuth: Extracting user data');
     const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
+    console.log('handleGoogleAuth: User data extracted', userData ? 'successfully' : 'failed');
+    
+    if (!userData) {
+      throw new Error('Failed to extract user data from token');
+    }
+    
+    console.log('handleGoogleAuth: Setting user state');
     setUser(userData);
+    console.log('handleGoogleAuth: Setting auth data state');
+    setAuthData(authResponse);
+    
+    // Note: We're not navigating here anymore
+    // Let OAuthCallback.js handle the navigation based on user state
+    // This avoids conflicts between multiple navigation attempts
+    console.log('handleGoogleAuth: Authentication process completed successfully');
 
     return userData;
   } catch (error) {
+    console.error('handleGoogleAuth: Error during authentication', error);
     setError('Failed to process authentication');
     throw error;
   } finally {
+    // Clear the safety timeout
+    clearTimeout(loadingTimeout);
+    
+    console.log('handleGoogleAuth: Setting loading state to false');
     setLoading(false);
+    
+    // Double-check loading state after a short delay
+    setTimeout(() => {
+      if (loading) {
+        console.log('handleGoogleAuth: Loading state still true after completion - forcing reset');
+        setLoading(false);
+      }
+    }, 500);
   }
 };
 
@@ -121,13 +173,20 @@ const handleGoogleAuth = async (authResponseJson) => {
       localStorage.setItem('refreshToken', response.invoktaAuthentication.refreshToken);
     }
 
-    setUser(jwt_decode(response.accessToken));
+    const userData = jwt_decode(response.accessToken);
+    setUser(userData);
     setAuthData(response);
 
-    // Redirect to dashboard or pre-auth path
-    const preAuthPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
-    sessionStorage.removeItem('preAuthPath');
-    navigate(preAuthPath);
+    // Check if user has business details
+    if (!hasBusinessDetails(userData)) {
+      // If no business details, redirect to business setup page
+      navigate('/business-setup');
+    } else {
+      // Redirect to dashboard or pre-auth path
+      const preAuthPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
+      sessionStorage.removeItem('preAuthPath');
+      navigate(preAuthPath);
+    }
   };
 
   // Email/password login
@@ -147,7 +206,7 @@ const handleGoogleAuth = async (authResponseJson) => {
 
   // Google OAuth login
 // In your AuthContext.js
-// Update loginWithGoogle to ensure proper state handling
+// Update loginWithGoogle to ensure proper state handling and check for business details
 const loginWithGoogle = async (googleData) => {
   try {
     setError(null);
@@ -169,6 +228,12 @@ const loginWithGoogle = async (googleData) => {
       setUser(userData);
       setAuthData(authResponse);
 
+      // Check if user has business details
+      if (!hasBusinessDetails(userData)) {
+        // If no business details, redirect to business setup page
+        navigate('/business-setup');
+      }
+
       return userData;
     }
     throw new Error('Invalid auth response format');
@@ -189,8 +254,9 @@ const loginWithGoogle = async (googleData) => {
       
       const response = await api.post('/api/auth/register', userData);
       if (response.accessToken) {
+        // Use handleAuthResponse which already has logic to check for business details
+        // and redirect accordingly. No need for explicit navigation here.
         handleAuthResponse(response);
-        navigate('/business-setup');
       }
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
@@ -224,9 +290,28 @@ const loginWithGoogle = async (googleData) => {
     handleGoogleAuth
   };
 
+  // Log the current state before rendering
+  console.log('AuthProvider: Rendering with state', { 
+    userExists: !!user, 
+    isLoading: loading,
+    hasAuthData: !!authData
+  });
+
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {/* Only render children when not loading */}
+      {!loading ? (
+        children
+      ) : (
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          height: '100vh' 
+        }}>
+          <p>Loading authentication...</p>
+        </div>
+      )}
     </AuthContext.Provider>
   );
 }
