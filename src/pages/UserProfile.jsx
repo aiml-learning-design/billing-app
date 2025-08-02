@@ -94,11 +94,12 @@ const UserProfile = () => {
       };
 
       // Call API to update user
-      const response = await api.put('/api/users/profile', userData);
+      const response = await api.put('/api/users/profile/update', userData);
       
       // Update local user context
       if (updateUser) {
-        updateUser(response.data);
+      //  updateUser(response.data);
+        updateUser(response);
       }
 
       setAlert({
