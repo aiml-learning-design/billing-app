@@ -21,10 +21,37 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [lastInvoice, setLastInvoice] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [businessDetails, setBusinessDetails] = useState(null);
 
-  // Set selected business when user data is loaded
+  // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
-    if (user?.businesses && user.businesses.length > 0) {
+    // First try to get business details from localStorage (for newly created businesses)
+    const storedBusinessDetails = localStorage.getItem('businessDetails');
+    
+    if (storedBusinessDetails) {
+      try {
+        const parsedBusinessDetails = JSON.parse(storedBusinessDetails);
+        setBusinessDetails(parsedBusinessDetails);
+        
+        // If user data is also available, update the selected business
+        if (user?.businesses && user.businesses.length > 0) {
+          // Find the business in user.businesses that matches the stored business ID
+          const matchingBusiness = user.businesses.find(
+            b => b.business_id === parsedBusinessDetails.businessId
+          );
+          
+          // If found, use it; otherwise use the first business
+          setSelectedBusiness(matchingBusiness || user.businesses[0]);
+        }
+      } catch (error) {
+        console.error('Error parsing business details from localStorage:', error);
+        // Fall back to user data if available
+        if (user?.businesses && user.businesses.length > 0) {
+          setSelectedBusiness(user.businesses[0]);
+        }
+      }
+    } else if (user?.businesses && user.businesses.length > 0) {
+      // If no localStorage data, use user data
       setSelectedBusiness(user.businesses[0]);
     }
   }, [user]);
@@ -110,7 +137,7 @@ const Dashboard = () => {
         flexDirection: 'column'
       }}>
         <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
-          Dheeraj & Sons
+          {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}
         </Typography>
         <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
           Premium Trial
@@ -156,7 +183,7 @@ const Dashboard = () => {
       <Box sx={{ flex: 1, p: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Hello {getUserName()} Welcome to Dheeraj & Sons!
+            Hello {getUserName()} Welcome to {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}!
           </Typography>
 
           {user?.businesses?.length > 1 && (
