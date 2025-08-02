@@ -26,10 +26,46 @@ const UserProfile = () => {
   const [profilePicture, setProfilePicture] = useState(null);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
 
-  // Load user data
+  // Load user data from API
   useEffect(() => {
     const fetchUserData = async () => {
       try {
+        setLoading(true);
+        // Fetch user data from the specified API endpoint
+        const response = await fetch('http://localhost:8087/invokta/api/users');
+        
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const userData = await response.json();
+        console.log("===========================================")
+        console.log(response)
+        console.log("===========================================")
+        console.log(userData)
+
+        
+        // Set profile data from API response
+        setProfileData({
+          firstName: userData.firstName || '',
+          middleName: userData.middleName || '',
+          lastName: userData.lastName || '',
+          email: userData.email || '',
+          phone: userData.phone || '',
+          country: userData.country || ''
+        });
+        
+        // Set profile picture if available
+        setProfilePicture(userData.image || null);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        setAlert({
+          open: true,
+          message: 'Failed to load user data from API',
+          severity: 'error'
+        });
+        
+        // Fallback to user context data if API fails
         if (user) {
           setProfileData({
             firstName: user.firstName || '',
@@ -41,13 +77,6 @@ const UserProfile = () => {
           });
           setProfilePicture(user.pictureUrl || null);
         }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        setAlert({
-          open: true,
-          message: 'Failed to load user data',
-          severity: 'error'
-        });
       } finally {
         setLoading(false);
       }
@@ -83,11 +112,10 @@ const UserProfile = () => {
     setSaving(true);
 
     try {
-      // Prepare data for API
+      // Prepare data for API - only include editable fields
+      // firstName, middleName, lastName are not editable as per requirements
       const userData = {
-        firstName: profileData.firstName,
-        middleName: profileData.middleName,
-        lastName: profileData.lastName,
+        email: profileData.email,
         phone: profileData.phone,
         country: profileData.country,
         pictureUrl: profilePicture
@@ -98,7 +126,6 @@ const UserProfile = () => {
       
       // Update local user context
       if (updateUser) {
-      //  updateUser(response.data);
         updateUser(response);
       }
 
@@ -182,9 +209,10 @@ const UserProfile = () => {
                 label="First Name"
                 name="firstName"
                 value={profileData.firstName}
-                onChange={handleInputChange}
+                disabled
                 fullWidth
                 required
+                helperText="First name cannot be edited"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -192,8 +220,9 @@ const UserProfile = () => {
                 label="Middle Name"
                 name="middleName"
                 value={profileData.middleName}
-                onChange={handleInputChange}
+                disabled
                 fullWidth
+                helperText="Middle name cannot be edited"
               />
             </Grid>
             <Grid item xs={12} sm={4}>
@@ -201,9 +230,10 @@ const UserProfile = () => {
                 label="Last Name"
                 name="lastName"
                 value={profileData.lastName}
-                onChange={handleInputChange}
+                disabled
                 fullWidth
                 required
+                helperText="Last name cannot be edited"
               />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -211,8 +241,9 @@ const UserProfile = () => {
                 label="Email"
                 name="email"
                 value={profileData.email}
-                disabled
+                onChange={handleInputChange}
                 fullWidth
+                required
               />
             </Grid>
             <Grid item xs={12} sm={6}>
