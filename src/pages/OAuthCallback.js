@@ -10,6 +10,26 @@ if (typeof window !== 'undefined') {
     // Log to console and attempt to navigate after an error
     try {
       console.log('Attempting emergency navigation after global error');
+      
+      // Try to get user data from localStorage to check if user has business details
+      const authData = localStorage.getItem('authData');
+      if (authData) {
+        try {
+          const parsedAuthData = JSON.parse(authData);
+          const userData = parsedAuthData.userDetails;
+          
+          // Check if user has business details
+          if (userData && userData.businesses && userData.businesses.length > 0) {
+            console.log('User has business details. Redirecting to dashboard...');
+            window.location.href = '/dashboard';
+            return true;
+          }
+        } catch (parseError) {
+          console.error('Error parsing auth data:', parseError);
+        }
+      }
+      
+      // If no business details or error parsing, redirect to business setup
       window.location.href = '/business-setup';
     } catch (e) {
       console.error('Failed emergency navigation:', e);
@@ -33,20 +53,58 @@ const OAuthCallback = () => {
   useEffect(() => {
     // Set a timeout to force navigation if redirection doesn't happen
     safetyTimeoutRef.current = setTimeout(() => {
-      console.log('OAuthCallback: Safety timeout triggered - forcing navigation to business setup');
+      console.log('OAuthCallback: Safety timeout triggered - checking if user has business details');
       
       try {
-        // Try React Router navigation first
-        navigate('/business-setup', { replace: true });
-        
-        // As a backup, use direct browser navigation after a short delay
-        setTimeout(() => {
-          console.log('OAuthCallback: Safety timeout - Forcing direct browser navigation');
-          window.location.href = '/business-setup';
-        }, 100);
+        // Check if user has business details
+        if (user && user.businesses && user.businesses.length > 0) {
+          console.log('OAuthCallback: Safety timeout - User has business details, redirecting to dashboard');
+          
+          // Try React Router navigation first
+          navigate('/dashboard', { replace: true });
+          
+          // As a backup, use direct browser navigation after a short delay
+          setTimeout(() => {
+            console.log('OAuthCallback: Safety timeout - Forcing direct browser navigation to dashboard');
+            window.location.href = '/dashboard';
+          }, 100);
+        } else {
+          console.log('OAuthCallback: Safety timeout - User has no business details, redirecting to business setup');
+          
+          // Try React Router navigation first
+          navigate('/business-setup', { replace: true });
+          
+          // As a backup, use direct browser navigation after a short delay
+          setTimeout(() => {
+            console.log('OAuthCallback: Safety timeout - Forcing direct browser navigation to business setup');
+            window.location.href = '/business-setup';
+          }, 100);
+        }
       } catch (error) {
-        console.error('OAuthCallback: Safety timeout - Navigation error, using direct browser navigation', error);
-        window.location.href = '/business-setup';
+        console.error('OAuthCallback: Safety timeout - Navigation error, trying to check localStorage', error);
+        
+        // Fallback to checking localStorage if user object is not available
+        try {
+          const authData = localStorage.getItem('authData');
+          if (authData) {
+            const parsedAuthData = JSON.parse(authData);
+            const userData = parsedAuthData.userDetails;
+            
+            // Check if user has business details
+            if (userData && userData.businesses && userData.businesses.length > 0) {
+              console.log('OAuthCallback: Safety timeout - User has business details (from localStorage), redirecting to dashboard');
+              window.location.href = '/dashboard';
+              return;
+            }
+          }
+          
+          // If no business details or error parsing, redirect to business setup
+          console.log('OAuthCallback: Safety timeout - No business details found in localStorage, redirecting to business setup');
+          window.location.href = '/business-setup';
+        } catch (localStorageError) {
+          console.error('OAuthCallback: Safety timeout - Error checking localStorage, using direct browser navigation to business setup', localStorageError);
+          window.location.href = '/business-setup';
+        }
       }
     }, 15000); // 15 seconds timeout
     
@@ -222,17 +280,55 @@ const OAuthCallback = () => {
     }
     
     try {
-      // Try React Router navigation first
-      navigate('/business-setup', { replace: true });
-      
-      // As a backup, use direct browser navigation after a short delay
-      setTimeout(() => {
-        console.log('OAuthCallback: Forcing direct browser navigation');
-        window.location.href = '/business-setup';
-      }, 100);
+      // Check if user has business details
+      if (user && user.businesses && user.businesses.length > 0) {
+        console.log('OAuthCallback: Manual navigation - User has business details, redirecting to dashboard');
+        
+        // Try React Router navigation first
+        navigate('/dashboard', { replace: true });
+        
+        // As a backup, use direct browser navigation after a short delay
+        setTimeout(() => {
+          console.log('OAuthCallback: Manual navigation - Forcing direct browser navigation to dashboard');
+          window.location.href = '/dashboard';
+        }, 100);
+      } else {
+        console.log('OAuthCallback: Manual navigation - User has no business details, redirecting to business setup');
+        
+        // Try React Router navigation first
+        navigate('/business-setup', { replace: true });
+        
+        // As a backup, use direct browser navigation after a short delay
+        setTimeout(() => {
+          console.log('OAuthCallback: Manual navigation - Forcing direct browser navigation to business setup');
+          window.location.href = '/business-setup';
+        }, 100);
+      }
     } catch (error) {
-      console.error('OAuthCallback: Navigation error, using direct browser navigation', error);
-      window.location.href = '/business-setup';
+      console.error('OAuthCallback: Manual navigation - Navigation error, trying to check localStorage', error);
+      
+      // Fallback to checking localStorage if user object is not available
+      try {
+        const authData = localStorage.getItem('authData');
+        if (authData) {
+          const parsedAuthData = JSON.parse(authData);
+          const userData = parsedAuthData.userDetails;
+          
+          // Check if user has business details
+          if (userData && userData.businesses && userData.businesses.length > 0) {
+            console.log('OAuthCallback: Manual navigation - User has business details (from localStorage), redirecting to dashboard');
+            window.location.href = '/dashboard';
+            return;
+          }
+        }
+        
+        // If no business details or error parsing, redirect to business setup
+        console.log('OAuthCallback: Manual navigation - No business details found in localStorage, redirecting to business setup');
+        window.location.href = '/business-setup';
+      } catch (localStorageError) {
+        console.error('OAuthCallback: Manual navigation - Error checking localStorage, using direct browser navigation to business setup', localStorageError);
+        window.location.href = '/business-setup';
+      }
     }
   };
 

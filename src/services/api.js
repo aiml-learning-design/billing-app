@@ -1,17 +1,18 @@
 import axios from 'axios';
 import jwt_decode from 'jwt-decode';
+import { API_CONFIG, AUTH_CONFIG } from '../config/config';
 
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL,
+  baseURL: API_CONFIG.BASE_URL,
 });
 
 const authUtils = {
   clearTokens: () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
+    localStorage.removeItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
   },
   redirectToLogin: () => {
-    window.location.href = '/login';
+    window.location.href = AUTH_CONFIG.ROUTES.LOGIN;
   }
 };
 
@@ -28,39 +29,38 @@ const isTokenExpired = (token) => {
 // Function to refresh token
 const refreshToken = async () => {
   try {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = localStorage.getItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
     if (!refreshToken) throw new Error('No refresh token available');
     
     const response = await axios.post(
-      `${process.env.REACT_APP_API_URL}/api/auth/refresh-token`, 
+      `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`, 
       {}, 
       {
         headers: {
-          'X-Refresh-Token': refreshToken
+          [API_CONFIG.HEADERS.REFRESH_TOKEN]: refreshToken
         }
       }
     );
     // Extract tokens from the new response structure
     const { accessToken, authentication } = response.data;
-     if (!accessToken || !authentication?.refreshToken) {
+    if (!accessToken || !authentication?.refreshToken) {
       throw new Error('Invalid token response');
     }
-    // const newRefreshToken = response.data.authentication?.refreshToken;
     
-     localStorage.setItem('token', accessToken);
-    localStorage.setItem('refreshToken', authentication.refreshToken);
+    localStorage.setItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN, accessToken);
+    localStorage.setItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN, authentication.refreshToken);
     return accessToken;
   } catch (error) {
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    window.location.href = '/login';
+    localStorage.removeItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
+    localStorage.removeItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
+    window.location.href = AUTH_CONFIG.ROUTES.LOGIN;
     throw error;
   }
 };
 
 // Request interceptor
 api.interceptors.request.use(async config => {
-  let token = localStorage.getItem('token');
+  let token = localStorage.getItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
   
   // If token exists but is expired, try to refresh it
   if (token && isTokenExpired(token)) {
@@ -74,7 +74,7 @@ api.interceptors.request.use(async config => {
   
   // Add token to request headers
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+    config.headers[API_CONFIG.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
   }
   
   return config;
@@ -95,7 +95,7 @@ api.interceptors.response.use(
         const token = await refreshToken();
         
         // Update the authorization header
-        originalRequest.headers.Authorization = `Bearer ${token}`;
+        originalRequest.headers[API_CONFIG.HEADERS.AUTHORIZATION] = `Bearer ${token}`;
         
         // Retry the original request
         return api(originalRequest);

@@ -12,6 +12,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { UI_CONFIG } from '../config/config';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -79,18 +80,27 @@ const Dashboard = () => {
     fetchData();
   }, [selectedBusiness]);
 
-  const menuItems = [
-    { text: 'Sales', icon: <Receipt />, new: true },
-    { text: 'Purchases', icon: <Description />, new: true },
-    { text: 'Accounting', icon: <MonetizationOn />, new: true },
-    { text: 'Sales CRM', icon: <Person />, new: true },
-    { text: 'Inventory', icon: <Store />, new: true },
-    { text: 'Accounting Reports', icon: <Description />, new: true },
-    { text: 'GST Reports', icon: <Receipt />, new: true },
-    { text: 'Workflows', icon: <ListAlt /> },
-    { text: 'Bank & Payments', icon: <MonetizationOn /> },
-    { text: 'Profile', icon: <Person />, onClick: () => navigate('/profile') }
-  ];
+  // Map icon strings from config to actual icon components
+  const getIconComponent = (iconName) => {
+    switch (iconName) {
+      case 'Receipt': return <Receipt />;
+      case 'Description': return <Description />;
+      case 'MonetizationOn': return <MonetizationOn />;
+      case 'Person': return <Person />;
+      case 'Store': return <Store />;
+      case 'ListAlt': return <ListAlt />;
+      case 'Business': return <Business />;
+      default: return <Description />;
+    }
+  };
+
+  // Use menu items from config
+  const menuItems = UI_CONFIG.MENU_ITEMS.map(item => ({
+    text: item.text,
+    icon: getIconComponent(item.icon),
+    new: item.new,
+    onClick: item.route ? () => navigate(item.route) : undefined
+  }));
 
   const quickActions = [
     {
@@ -127,50 +137,97 @@ const Dashboard = () => {
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* Sidebar */}
-      <Paper sx={{
-        width: 250,
-        p: 2,
-        borderRadius: 0,
-        boxShadow: 2,
-        display: 'flex',
-        flexDirection: 'column'
-      }}>
-        <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
-          {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}
-        </Typography>
-        <Typography variant="subtitle2" sx={{ mb: 2, color: 'text.secondary' }}>
-          Premium Trial
-        </Typography>
-        <Typography variant="subtitle2" sx={{ mb: 3, color: 'text.secondary' }}>
-          Uggrabb
-        </Typography>
+      <Paper 
+        className="dashboard-sidebar"
+        sx={{
+          borderRadius: 0,
+          boxShadow: 2,
+          display: 'flex',
+          flexDirection: 'column',
+          bgcolor: 'var(--parrot-green)',
+          color: 'white',
+          width: '60px',
+          transition: 'width 0.3s ease',
+          overflow: 'hidden',
+          '&:hover': {
+            width: '250px'
+          }
+        }}
+      >
+        <Box sx={{ 
+          p: 2, 
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          transition: 'opacity 0.2s ease',
+          opacity: { xs: 0, sm: 0 },
+          '&:hover': { opacity: 1 }
+        }} className="sidebar-header">
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
+            {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}
+          </Typography>
+          <Typography variant="subtitle2" sx={{ mb: 2 }}>
+            Premium Trial
+          </Typography>
+          <Typography variant="subtitle2" sx={{ mb: 3 }}>
+            Uggrabb
+          </Typography>
 
-        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
-          Dashboard
-        </Typography>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 'bold' }}>
+            Dashboard
+          </Typography>
+        </Box>
 
-        <List>
+        <List sx={{ p: 0 }}>
           {menuItems.map((item, index) => (
             <ListItem
               button
               key={index}
               onClick={item.onClick}
+              className="dashboard-sidebar-item"
               sx={{
-                borderRadius: 1,
+                borderRadius: 0,
                 mb: 0.5,
-                '&:hover': { backgroundColor: 'action.hover' }
+                color: 'var(--orange)',
+                backgroundColor: 'var(--light-sky-color)',
+                '&:hover': { 
+                  backgroundColor: 'var(--parrot-green-dark)' 
+                }
               }}
             >
-              <ListItemIcon sx={{ minWidth: 36 }}>
+              <ListItemIcon 
+                className="dashboard-sidebar-icon"
+                sx={{ 
+                  minWidth: 36, 
+                  color: 'var(--orange)'
+                }}
+              >
                 {item.icon}
               </ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemText 
+                primary={item.text} 
+                sx={{
+                  '& .MuiTypography-root': {
+                    transition: 'opacity 0.2s ease',
+                    opacity: { xs: 0, sm: 0 },
+                    '.dashboard-sidebar:hover &': { opacity: 1 }
+                  }
+                }}
+                className="dashboard-sidebar-text"
+              />
               {item.new && (
                 <Chip
                   label="New"
                   size="small"
-                  color="primary"
-                  sx={{ ml: 1, height: 20, fontSize: '0.65rem' }}
+                  sx={{ 
+                    ml: 1, 
+                    height: 20, 
+                    fontSize: '0.65rem',
+                    bgcolor: 'var(--orange)',
+                    color: 'white',
+                    transition: 'opacity 0.2s ease',
+                    opacity: { xs: 0, sm: 0 },
+                    '.dashboard-sidebar:hover &': { opacity: 1 }
+                  }}
                 />
               )}
             </ListItem>

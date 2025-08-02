@@ -26,6 +26,7 @@ import api from '../services/api';
 import countries from '../utils/countries';
 import countryStates from '../utils/countryStates';
 import axios from 'axios';
+import { useAuth } from '../contexts/AuthContext';
 
 // Main validation schema
 const validationSchema = Yup.object().shape({
@@ -58,6 +59,17 @@ const BusinessSetupPage = () => {
   const [pincodeError, setPincodeError] = useState(null);
   const [pincodeSuccess, setPincodeSuccess] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Check if user already has business details and redirect to dashboard if they do
+  useEffect(() => {
+    const hasBusinessDetails = user?.businesses && user.businesses.length > 0;
+    
+    if (hasBusinessDetails) {
+      console.log('User already has business details. Redirecting to dashboard...');
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   
   const formik = useFormik({
     initialValues: {
