@@ -66,9 +66,9 @@ const Dashboard = () => {
           api.get(`/api/invoices?businessId=${selectedBusiness.business_id}&limit=1&sort=desc`)
         ]);
 
-        setStats(statsResponse.data);
-        if (invoicesResponse.data.length > 0) {
-          setLastInvoice(invoicesResponse.data[0]);
+        setStats(statsResponse);
+        if (invoicesResponse.length > 0) {
+          setLastInvoice(invoicesResponse[0]);
         }
       } catch (err) {
         setError('Failed to load dashboard data');
@@ -218,30 +218,30 @@ const Dashboard = () => {
                     {selectedBusiness.businessName}
                   </Typography>
 
-                  {selectedBusiness.officeAddresses?.[0] && (
+                  {selectedBusiness.officeAddress && (
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <LocationOn color="action" sx={{ mr: 1 }} />
                       <Typography variant="body2">
-                        {selectedBusiness.officeAddresses[0].addressLine}, {selectedBusiness.officeAddresses[0].city},
-                        {selectedBusiness.officeAddresses[0].state} - {selectedBusiness.officeAddresses[0].pincode}
+                        {selectedBusiness.officeAddress.addressLine}, {selectedBusiness.officeAddress.city},
+                        {selectedBusiness.officeAddress.state} - {selectedBusiness.officeAddress.pincode}
                       </Typography>
                     </Box>
                   )}
 
-                  {selectedBusiness.officeAddresses?.[0]?.phone && (
+                  {selectedBusiness.officeAddress?.phone && (
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Phone color="action" sx={{ mr: 1 }} />
                       <Typography variant="body2">
-                        {selectedBusiness.officeAddresses[0].phone}
+                        {selectedBusiness.officeAddress.phone}
                       </Typography>
                     </Box>
                   )}
 
-                  {selectedBusiness.officeAddresses?.[0]?.primaryEmail && (
+                  {selectedBusiness.officeAddress?.email && (
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Email color="action" sx={{ mr: 1 }} />
                       <Typography variant="body2">
-                        {selectedBusiness.officeAddresses[0].primaryEmail}
+                        {selectedBusiness.officeAddress.email}
                       </Typography>
                     </Box>
                   )}

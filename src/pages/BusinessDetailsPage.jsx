@@ -46,9 +46,7 @@ const BusinessDetailsPage = () => {
             
             // Initialize form with first business data
             const business = user.businesses[0];
-            const address = business.officeAddresses && business.officeAddresses.length > 0 
-              ? business.officeAddresses[0] 
-              : {};
+            const address = business.officeAddress || {};
               
             setFormData({
               businessName: business.businessName || '',
@@ -86,9 +84,7 @@ const BusinessDetailsPage = () => {
       const business = businesses[newValue];
       setCurrentBusiness(business);
       
-      const address = business.officeAddresses && business.officeAddresses.length > 0 
-        ? business.officeAddresses[0] 
-        : {};
+      const address = business.officeAddress || {};
         
       setFormData({
         businessName: business.businessName || '',
@@ -149,11 +145,11 @@ const BusinessDetailsPage = () => {
       
       // Update local state
       const updatedBusinesses = businesses.map(business => 
-        business.business_id === currentBusiness.business_id ? response.data : business
+        business.business_id === currentBusiness.business_id ? response : business
       );
       
       setBusinesses(updatedBusinesses);
-      setCurrentBusiness(response.data);
+      setCurrentBusiness(response);
       setEditMode(false);
 
       setAlert({
@@ -183,9 +179,9 @@ const BusinessDetailsPage = () => {
       });
       
       // Update local state
-      setBusinesses([...businesses, response.data]);
+      setBusinesses([...businesses, response]);
       setSelectedTab(businesses.length);
-      setCurrentBusiness(response.data);
+      setCurrentBusiness(response);
       
       // Initialize form with new business data
       setFormData({
@@ -424,26 +420,26 @@ const BusinessDetailsPage = () => {
                     <Typography variant="h6" gutterBottom>
                       Contact Information
                     </Typography>
-                    {currentBusiness.officeAddresses && currentBusiness.officeAddresses.length > 0 ? (
+                    {currentBusiness.officeAddress ? (
                       <List>
                         <ListItem>
                           <ListItemText 
                             primary="Email" 
-                            secondary={currentBusiness.officeAddresses[0].email || 'Not provided'} 
+                            secondary={currentBusiness.officeAddress.email || 'Not provided'} 
                           />
                         </ListItem>
                         <ListItem>
                           <ListItemText 
                             primary="Phone" 
-                            secondary={currentBusiness.officeAddresses[0].phone || 'Not provided'} 
+                            secondary={currentBusiness.officeAddress.phone || 'Not provided'} 
                           />
                         </ListItem>
                         <ListItem>
                           <ListItemText 
                             primary="Address" 
                             secondary={
-                              currentBusiness.officeAddresses[0].addressLine ? 
-                              `${currentBusiness.officeAddresses[0].addressLine}, ${currentBusiness.officeAddresses[0].city || ''}, ${currentBusiness.officeAddresses[0].state || ''} - ${currentBusiness.officeAddresses[0].pincode || ''}` :
+                              currentBusiness.officeAddress.addressLine ? 
+                              `${currentBusiness.officeAddress.addressLine}, ${currentBusiness.officeAddress.city || ''}, ${currentBusiness.officeAddress.state || ''} - ${currentBusiness.officeAddress.pincode || ''}` :
                               'Not provided'
                             } 
                           />
