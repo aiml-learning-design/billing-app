@@ -87,13 +87,12 @@ const LoginPage = () => {
   const handleGoogleLogin = () => {
     setError('');
     setOauthLoading(true);
-
+    
     // Store current path for redirect after login
     sessionStorage.setItem('preAuthPath', window.location.pathname);
-
-    // Open Google auth - backend should handle the redirect
-    window.location.href = 'http://localhost:8087/invokta/oauth2/authorization/google?redirect_uri=' +
-      encodeURIComponent(window.location.origin + '/oauth-callback');
+    
+    // Redirect to backend Google OAuth endpoint
+    window.location.href = 'http://localhost:8087/invokta/oauth2/authorization/google';
   };
 
   const toggleShowPassword = () => {

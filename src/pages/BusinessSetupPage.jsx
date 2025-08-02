@@ -130,6 +130,9 @@ const BusinessSetupPage = () => {
           // Save the business details to localStorage
           localStorage.setItem('businessDetails', JSON.stringify(response));
           
+          // Set flag to indicate business setup is completed
+          localStorage.setItem('businessSetupCompleted', 'true');
+          
           // Show success message briefly before redirecting
           setError(null); // Clear any existing error
           setSuccessMessage('Business setup successful! Redirecting to dashboard...');

@@ -1,386 +1,61 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Box, CircularProgress, Typography, Button, Alert } from '@mui/material';
-
-// Global error handler for debugging
-if (typeof window !== 'undefined') {
-  window.onerror = function(message, source, lineno, colno, error) {
-    console.error('Global error caught in OAuthCallback:', { message, source, lineno, colno, error });
-    // Log to console and attempt to navigate after an error
-    try {
-      console.log('Attempting emergency navigation after global error');
-      
-      // Try to get user data from localStorage to check if user has business details
-      const authData = localStorage.getItem('authData');
-      if (authData) {
-        try {
-          const parsedAuthData = JSON.parse(authData);
-          const userData = parsedAuthData.userDetails;
-          
-          // Check if user has business details
-          if (userData && userData.businesses && userData.businesses.length > 0) {
-            console.log('User has business details. Redirecting to dashboard...');
-            window.location.href = '/dashboard';
-            return true;
-          }
-        } catch (parseError) {
-          console.error('Error parsing auth data:', parseError);
-        }
-      }
-      
-      // If no business details or error parsing, redirect to business setup
-      window.location.href = '/business-setup';
-    } catch (e) {
-      console.error('Failed emergency navigation:', e);
-    }
-    return true; // Prevents the default error handling
-  };
-}
+import { Box, CircularProgress, Typography } from '@mui/material';
 
 const OAuthCallback = () => {
-  // Add error state to display any errors to the user
-  const [error, setError] = useState(null);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { handleGoogleAuth, user, loading } = useAuth();
-  const safetyTimeoutRef = useRef(null);
-  const processingRef = useRef(false);
-
-  console.log('OAuthCallback: Component rendered', { user, loading });
-  
-  // Safety timeout to ensure users don't get stuck on the loading screen
-  useEffect(() => {
-    // Set a timeout to force navigation if redirection doesn't happen
-    safetyTimeoutRef.current = setTimeout(() => {
-      console.log('OAuthCallback: Safety timeout triggered - checking if user has business details');
-      
-      try {
-        // Check if user has business details
-        if (user && user.businesses && user.businesses.length > 0) {
-          console.log('OAuthCallback: Safety timeout - User has business details, redirecting to dashboard');
-          
-          // Try React Router navigation first
-          navigate('/dashboard', { replace: true });
-          
-          // As a backup, use direct browser navigation after a short delay
-          setTimeout(() => {
-            console.log('OAuthCallback: Safety timeout - Forcing direct browser navigation to dashboard');
-            window.location.href = '/dashboard';
-          }, 100);
-        } else {
-          console.log('OAuthCallback: Safety timeout - User has no business details, redirecting to business setup');
-          
-          // Try React Router navigation first
-          navigate('/business-setup', { replace: true });
-          
-          // As a backup, use direct browser navigation after a short delay
-          setTimeout(() => {
-            console.log('OAuthCallback: Safety timeout - Forcing direct browser navigation to business setup');
-            window.location.href = '/business-setup';
-          }, 100);
-        }
-      } catch (error) {
-        console.error('OAuthCallback: Safety timeout - Navigation error, trying to check localStorage', error);
-        
-        // Fallback to checking localStorage if user object is not available
-        try {
-          const authData = localStorage.getItem('authData');
-          if (authData) {
-            const parsedAuthData = JSON.parse(authData);
-            const userData = parsedAuthData.userDetails;
-            
-            // Check if user has business details
-            if (userData && userData.businesses && userData.businesses.length > 0) {
-              console.log('OAuthCallback: Safety timeout - User has business details (from localStorage), redirecting to dashboard');
-              window.location.href = '/dashboard';
-              return;
-            }
-          }
-          
-          // If no business details or error parsing, redirect to business setup
-          console.log('OAuthCallback: Safety timeout - No business details found in localStorage, redirecting to business setup');
-          window.location.href = '/business-setup';
-        } catch (localStorageError) {
-          console.error('OAuthCallback: Safety timeout - Error checking localStorage, using direct browser navigation to business setup', localStorageError);
-          window.location.href = '/business-setup';
-        }
-      }
-    }, 15000); // 15 seconds timeout
-    
-    return () => {
-      // Clear the timeout when component unmounts or when navigation happens
-      if (safetyTimeoutRef.current) {
-        clearTimeout(safetyTimeoutRef.current);
-      }
-    };
-  }, [navigate]);
+  const { handleGoogleAuth, user } = useAuth();
 
   useEffect(() => {
-    console.log('OAuthCallback: First useEffect triggered');
     const authResponse = searchParams.get('authResponse');
-    console.log('OAuthCallback: Auth response from URL', authResponse ? 'present' : 'missing');
 
-    const processAuth = async () => {
-      console.log('OAuthCallback: Starting processAuth');
-      try {
-        if (!authResponse) {
-          console.error('OAuthCallback: Missing authentication response');
-          const errorMsg = 'Missing authentication response';
-          setError(errorMsg);
-          throw new Error(errorMsg);
-        }
-
-        console.log('OAuthCallback: Calling handleGoogleAuth');
-        await handleGoogleAuth(authResponse);
-        console.log('OAuthCallback: handleGoogleAuth completed successfully');
-      } catch (error) {
-        console.error('OAuthCallback: OAuth processing error:', error);
-        setError(error.message || 'Google authentication failed');
-        
-        // Try to navigate to login page with error state
-        try {
-          navigate('/login', {
-            state: {
-              error: error.message || 'Google authentication failed',
-              from: 'oauth-callback'
-            },
-            replace: true
-          });
+    if (authResponse) {
+      handleGoogleAuth(authResponse)
+        .then((userData) => {
+          // Check if user has business details or has completed business setup
+          const hasBusinessDetails = userData?.businesses && userData.businesses.length > 0;
+          const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
           
-          // Fallback to direct navigation after a short delay
-          setTimeout(() => {
-            console.log('OAuthCallback: Fallback navigation to login page');
-            window.location.href = '/login?error=' + encodeURIComponent(error.message || 'Google authentication failed');
-          }, 500);
-        } catch (navError) {
-          console.error('OAuthCallback: Navigation error after auth failure:', navError);
-          // Last resort - direct navigation
-          window.location.href = '/login?error=' + encodeURIComponent(error.message || 'Google authentication failed');
-        }
-      }
-    };
+          console.log('OAuthCallback: Checking user status');
+          console.log('- Has business details:', hasBusinessDetails);
+          console.log('- Has completed business setup:', hasCompletedBusinessSetup);
 
-    processAuth();
-  }, [searchParams, navigate, handleGoogleAuth]);
-
-  useEffect(() => {
-    console.log('OAuthCallback: Second useEffect triggered', { user, loading });
-    
-    try {
-      if (user && !loading) {
-        console.log('OAuthCallback: User authenticated and not loading');
-        
-        // Log the structure of the user object to help debug
-        console.log('OAuthCallback: User object structure:', JSON.stringify(user, null, 2));
-        
-        // Check if user has the expected properties
-        if (!user.hasOwnProperty('businesses')) {
-          console.error('OAuthCallback: User object is missing businesses property');
-          console.log('OAuthCallback: Redirecting to business setup page due to missing businesses property');
-          setError('User object is missing businesses property. Redirecting to business setup page...');
-          
-          try {
-            navigate('/business-setup', { replace: true });
-            
-            // Fallback direct navigation
-            setTimeout(() => {
-              console.log('OAuthCallback: Fallback direct navigation to business setup');
-              window.location.href = '/business-setup';
-            }, 500);
-          } catch (navError) {
-            console.error('OAuthCallback: Navigation error:', navError);
-            window.location.href = '/business-setup';
-          }
-          return;
-        }
-        
-        // Check if user has business details
-        const hasBusinessDetails = user.businesses && user.businesses.length > 0;
-        console.log('OAuthCallback: User has business details?', hasBusinessDetails);
-        console.log('OAuthCallback: Businesses:', user.businesses);
-        
-        if (hasBusinessDetails) {
-          // If user has business details, redirect to dashboard or pre-auth path
-          const redirectPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
-          console.log('OAuthCallback: Redirecting to', redirectPath);
-          sessionStorage.removeItem('preAuthPath');
-          
-          try {
+          if (hasBusinessDetails || hasCompletedBusinessSetup) {
+            // User has business details or has completed setup - redirect to dashboard
+            console.log('OAuthCallback: User has business details or has completed setup, redirecting to dashboard');
+            const redirectPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
+            sessionStorage.removeItem('preAuthPath');
             navigate(redirectPath, { replace: true });
-            
-            // Fallback direct navigation
-            setTimeout(() => {
-              console.log('OAuthCallback: Fallback direct navigation to', redirectPath);
-              window.location.href = redirectPath;
-            }, 500);
-          } catch (navError) {
-            console.error('OAuthCallback: Navigation error:', navError);
-            window.location.href = redirectPath;
-          }
-        } else {
-          // If user doesn't have business details, redirect to business setup page
-          console.log('OAuthCallback: Redirecting to business setup page');
-          
-          try {
+          } else {
+            // First-time user - redirect to business setup
+            console.log('OAuthCallback: First-time user, redirecting to business setup');
             navigate('/business-setup', { replace: true });
-            
-            // Fallback direct navigation
-            setTimeout(() => {
-              console.log('OAuthCallback: Fallback direct navigation to business setup');
-              window.location.href = '/business-setup';
-            }, 500);
-          } catch (navError) {
-            console.error('OAuthCallback: Navigation error:', navError);
-            window.location.href = '/business-setup';
           }
-        }
-      } else {
-        console.log('OAuthCallback: Waiting for user authentication', { 
-          userExists: !!user, 
-          isLoading: loading 
-        });
-        
-        // If user exists but we're still loading, log more details
-        if (user && loading) {
-          console.log('OAuthCallback: User exists but still loading. User:', user);
-        }
-      }
-    } catch (error) {
-      console.error('OAuthCallback: Error in second useEffect:', error);
-      setError('Error during authentication process: ' + error.message);
-      
-      // Emergency navigation to business setup
-      try {
-        window.location.href = '/business-setup';
-      } catch (e) {
-        console.error('OAuthCallback: Failed emergency navigation:', e);
-      }
+        })
+        .catch(() => navigate('/login', {
+          state: { error: 'Google authentication failed' }
+        }));
+    } else {
+      navigate('/login', {
+        state: { error: 'Authentication response missing' }
+      });
     }
-  }, [user, loading, navigate]);
-
-  // State to show manual navigation button after a delay
-  const [showManualNav, setShowManualNav] = useState(false);
-  
-  // Show manual navigation button after 5 seconds
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowManualNav(true);
-    }, 5000);
-    
-    return () => clearTimeout(timer);
-  }, []);
-  
-  // Handle manual navigation
-  const handleManualContinue = () => {
-    console.log('OAuthCallback: Manual navigation triggered by user');
-    // Clear the safety timeout
-    if (safetyTimeoutRef.current) {
-      clearTimeout(safetyTimeoutRef.current);
-    }
-    
-    try {
-      // Check if user has business details
-      if (user && user.businesses && user.businesses.length > 0) {
-        console.log('OAuthCallback: Manual navigation - User has business details, redirecting to dashboard');
-        
-        // Try React Router navigation first
-        navigate('/dashboard', { replace: true });
-        
-        // As a backup, use direct browser navigation after a short delay
-        setTimeout(() => {
-          console.log('OAuthCallback: Manual navigation - Forcing direct browser navigation to dashboard');
-          window.location.href = '/dashboard';
-        }, 100);
-      } else {
-        console.log('OAuthCallback: Manual navigation - User has no business details, redirecting to business setup');
-        
-        // Try React Router navigation first
-        navigate('/business-setup', { replace: true });
-        
-        // As a backup, use direct browser navigation after a short delay
-        setTimeout(() => {
-          console.log('OAuthCallback: Manual navigation - Forcing direct browser navigation to business setup');
-          window.location.href = '/business-setup';
-        }, 100);
-      }
-    } catch (error) {
-      console.error('OAuthCallback: Manual navigation - Navigation error, trying to check localStorage', error);
-      
-      // Fallback to checking localStorage if user object is not available
-      try {
-        const authData = localStorage.getItem('authData');
-        if (authData) {
-          const parsedAuthData = JSON.parse(authData);
-          const userData = parsedAuthData.userDetails;
-          
-          // Check if user has business details
-          if (userData && userData.businesses && userData.businesses.length > 0) {
-            console.log('OAuthCallback: Manual navigation - User has business details (from localStorage), redirecting to dashboard');
-            window.location.href = '/dashboard';
-            return;
-          }
-        }
-        
-        // If no business details or error parsing, redirect to business setup
-        console.log('OAuthCallback: Manual navigation - No business details found in localStorage, redirecting to business setup');
-        window.location.href = '/business-setup';
-      } catch (localStorageError) {
-        console.error('OAuthCallback: Manual navigation - Error checking localStorage, using direct browser navigation to business setup', localStorageError);
-        window.location.href = '/business-setup';
-      }
-    }
-  };
+  }, [searchParams, navigate, handleGoogleAuth, user]);
 
   return (
-    <Box sx={{
-      display: 'flex',
+    <Box sx={{ 
+      display: 'flex', 
       flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      gap: 2
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      height: '100vh' 
     }}>
       <CircularProgress size={60} />
-      <Typography variant="h6">Completing authentication...</Typography>
-
-      {/* Show manual navigation option after delay */}
-      {showManualNav && (
-        <Box sx={{
-          mt: 4,
-          textAlign: 'center',
-          p: 3,
-          border: '2px solid #f50057',
-          borderRadius: 2,
-          backgroundColor: 'rgba(245, 0, 87, 0.05)'
-        }}>
-          <Typography variant="h6" color="error" sx={{ mb: 1, fontWeight: 'bold' }}>
-            Authentication Taking Too Long
-          </Typography>
-          <Typography variant="body1" sx={{ mb: 3 }}>
-            We're having trouble completing the authentication process automatically.
-            Please click the button below to continue to the Business Setup page:
-          </Typography>
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleManualContinue}
-            size="large"
-            sx={{
-              py: 1.5,
-              px: 4,
-              fontSize: '1.1rem',
-              boxShadow: 3,
-              '&:hover': {
-                backgroundColor: '#c51162',
-                boxShadow: 5
-              }
-            }}
-          >
-            Continue to Business Setup Now
-          </Button>
-        </Box>
-      )}
+      <Typography variant="h6" sx={{ mt: 2 }}>
+        Processing Google login...
+      </Typography>
     </Box>
   );
 };
