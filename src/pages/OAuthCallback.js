@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
@@ -7,30 +7,24 @@ const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { handleGoogleAuth } = useAuth();
-  // Use a ref to track processed auth responses to prevent duplicate processing
-  const processedAuthResponses = useRef(new Set());
-
-  // Clear the processed auth responses when the component mounts
-  useEffect(() => {
-    // Clear the Set when the component mounts (page refresh)
-    processedAuthResponses.current.clear();
-    console.log('OAuthCallback: Cleared processed auth responses');
-  }, []);
+  
+  // Get the localStorage key for tracking processed auth responses
+  const PROCESSED_AUTH_RESPONSES_KEY = 'processedAuthResponses';
 
   useEffect(() => {
     const authResponse = searchParams.get('authResponse');
 
     if (authResponse) {
+      // Get the processed auth responses from localStorage
+      const processedResponses = localStorage.getItem(PROCESSED_AUTH_RESPONSES_KEY);
+      const processedResponsesArray = processedResponses ? JSON.parse(processedResponses) : [];
+
       // Check if we've already processed this auth response
-      if (processedAuthResponses.current.has(authResponse)) {
+      if (processedResponsesArray.includes(authResponse)) {
         console.log('OAuthCallback: Auth response already processed, skipping');
         return;
       }
 
-      // Mark this auth response as processed before handling it
-      // This prevents duplicate processing if the component re-renders
-      processedAuthResponses.current.add(authResponse);
-      console.log('OAuthCallback: Processing new auth response');
 
       // Process the auth response
       handleGoogleAuth(authResponse)
@@ -44,7 +38,11 @@ const OAuthCallback = () => {
           const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
           console.log('- Has businesses in profile:', hasBusinessDetails);
           console.log('- Has completed business setup:', hasCompletedBusinessSetup);
-
+          // Mark this auth response as processed before handling it
+          // This prevents duplicate processing if the component re-renders
+          processedResponsesArray.push(authResponse);
+          localStorage.setItem(PROCESSED_AUTH_RESPONSES_KEY, JSON.stringify(processedResponsesArray));
+          console.log('OAuthCallback: Processing new auth response');
           if (hasBusinessDetails || hasCompletedBusinessSetup) {
             // User has business details or has completed setup - redirect to dashboard
             console.log('OAuthCallback: User has business details or has completed setup, redirecting to dashboard');

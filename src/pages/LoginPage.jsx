@@ -55,9 +55,13 @@ const handleGoogleLogin = () => {
 
     // Store current path for post-login redirect
     sessionStorage.setItem('preAuthPath', window.location.pathname);
+    
+    // Clear the processed auth responses in localStorage
+    localStorage.removeItem('processedAuthResponses');
+    console.log('LoginPage: Cleared processed auth responses in localStorage');
 
     // Redirect to backend OAuth endpoint
-    window.location.href = "http://localhost:8087/invokta/oauth2/authorization/google";
+    window.location.href = `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.GOOGLE_AUTH}`;
   };
 
   const toggleShowPassword = () => {
