@@ -81,7 +81,7 @@ const Navbar = () => {
           sx={{ ml: 2 }}
         >
           <Avatar sx={{ width: 32, height: 32 }}>
-            {user.email.charAt(0).toUpperCase()}
+            {user.userEmail ? user.userEmail.charAt(0).toUpperCase() : 'U'}
           </Avatar>
         </IconButton>
         <Menu
@@ -100,7 +100,7 @@ const Navbar = () => {
           onClose={handleClose}
         >
           <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle1">{user.email}</Typography>
+            <Typography variant="subtitle1">{user.email || 'User'}</Typography>
           </Box>
           <Divider />
           <MenuItem onClick={() => { handleClose(); navigate('/dashboard'); }}>

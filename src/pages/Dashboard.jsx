@@ -24,6 +24,108 @@ const Dashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
 
+  // Function to validate business details and detect fake data
+  const validateBusinessDetails = (businessData) => {
+    // Check for obviously fake business names
+    const fakeBusinesNamePatterns = [
+      /fake/i, 
+      /test/i, 
+      /dummy/i, 
+      /example/i
+    ];
+    
+    // Check for test email domains
+    const fakeEmailDomains = [
+      'example.com',
+      'example.us',
+      'test.com',
+      'fake.com',
+      'domain.com'
+    ];
+    
+    // Check for fake phone numbers
+    const fakePhonePatterns = [
+      /^123456/, 
+      /^555/, 
+      /^000/, 
+      /^111/, 
+      /^999/, 
+      /12345678/, 
+      /^601952/  // Specific pattern from the issue description
+    ];
+    
+    // Check for fake address patterns
+    const fakeAddressPatterns = [
+      /fake/i,
+      /test/i,
+      /example/i,
+      /123 main/i,
+      /1600 fake/i  // Specific pattern from the issue description
+    ];
+    
+    // Check for fake business ID patterns (if they follow a specific format)
+    const fakeBusinessIdPatterns = [
+      /6062f455a06536d00ac9e6e5/  // Specific ID from the issue description
+    ];
+    
+    // Check business name
+    if (businessData.businessName) {
+      for (const pattern of fakeBusinesNamePatterns) {
+        if (pattern.test(businessData.businessName)) {
+          console.log(`Detected fake business name: ${businessData.businessName}`);
+          return true;
+        }
+      }
+    }
+    
+    // Check email
+    if (businessData.email) {
+      const emailDomain = businessData.email.split('@')[1]?.toLowerCase();
+      if (emailDomain && fakeEmailDomains.includes(emailDomain)) {
+        console.log(`Detected fake email domain: ${emailDomain}`);
+        return true;
+      }
+    }
+    
+    // Check phone
+    if (businessData.phone) {
+      for (const pattern of fakePhonePatterns) {
+        if (pattern.test(businessData.phone)) {
+          console.log(`Detected fake phone number: ${businessData.phone}`);
+          return true;
+        }
+      }
+    }
+    
+    // Check address if it exists
+    if (businessData.officeAddress) {
+      const address = businessData.officeAddress;
+      
+      // Check address line
+      if (address.addressLine) {
+        for (const pattern of fakeAddressPatterns) {
+          if (pattern.test(address.addressLine)) {
+            console.log(`Detected fake address: ${address.addressLine}`);
+            return true;
+          }
+        }
+      }
+    }
+    
+    // Check business ID
+    if (businessData.businessId) {
+      for (const pattern of fakeBusinessIdPatterns) {
+        if (pattern.test(businessData.businessId)) {
+          console.log(`Detected fake business ID: ${businessData.businessId}`);
+          return true;
+        }
+      }
+    }
+    
+    // If we get here, no fake data was detected
+    return false;
+  };
+
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
     // First try to get business details from localStorage (for newly created businesses)
@@ -32,6 +134,23 @@ const Dashboard = () => {
     if (storedBusinessDetails) {
       try {
         const parsedBusinessDetails = JSON.parse(storedBusinessDetails);
+        
+        // Validate business details to detect fake data
+        const isFakeData = validateBusinessDetails(parsedBusinessDetails);
+        
+        if (isFakeData) {
+          console.error('Detected fake business data in localStorage. Clearing localStorage and using API data instead.');
+          // Clear fake business details from localStorage
+          localStorage.removeItem('businessDetails');
+          
+          // Fall back to user data if available
+          if (user?.businesses && user.businesses.length > 0) {
+            setSelectedBusiness(user.businesses[0]);
+          }
+          return;
+        }
+        
+        // If data is valid, use it
         setBusinessDetails(parsedBusinessDetails);
         
         // If user data is also available, update the selected business

@@ -172,7 +172,7 @@ const BusinessSetupPage = () => {
         const response = await axios.get('https://ipapi.co/json/');
         const userData = response.data;
         console.log("Location data from ipapi.co:", userData);
-        
+
         // Set UAE as default for testing
         if (userData?.country_code === 'AE' || userData?.country_name === 'United Arab Emirates') {
           console.log("UAE detected, setting as default country");
@@ -184,15 +184,15 @@ const BusinessSetupPage = () => {
             return;
           }
         }
-        
+
         const countryNames = countries.map(c => c.name);
-        
+
         if (userData?.country_name && countryNames.includes(userData.country_name)) {
           console.log(`Setting country to ${userData.country_name}`);
           setSelectedCountry(userData.country_name);
           const detectedCountryCode = userData.country_code.toLowerCase();
           setCountryCode(detectedCountryCode);
-          
+
           // Update country with the detected country
           formik.setFieldValue('country', userData.country_name);
         } else if (userData?.country_code) {
@@ -239,35 +239,35 @@ const BusinessSetupPage = () => {
   const handlePincodeLookup = async (pincode) => {
     // Validate pincode format based on country
     if (!pincode) return;
-    
+
     // Reset success state
     setPincodeSuccess(false);
-    
+
     console.log(`Looking up pincode: ${pincode} for country code: ${countryCode}`);
-    
+
     // Different countries have different pincode formats
     // For simplicity, we'll just check minimum length
-    const minLength = countryCode === 'us' ? 5 : 
-                      countryCode === 'ca' ? 6 : 
-                      countryCode === 'gb' ? 5 : 
-                      countryCode === 'au' ? 4 : 
+    const minLength = countryCode === 'us' ? 5 :
+                      countryCode === 'ca' ? 6 :
+                      countryCode === 'gb' ? 5 :
+                      countryCode === 'au' ? 4 :
                       countryCode === 'ae' ? 5 : 5;
-                      
+
     if (pincode.length < minLength) return;
-    
+
     try {
       setPincodeLoading(true);
       setPincodeError(null);
-      
+
       // Use the country code to determine which API endpoint to use
       // Default to 'ae' (UAE) if no country code is set
       const countryCodeForApi = countryCode || 'ae';
-      
+
       console.log(`Using country code for API: ${countryCodeForApi}`);
-      
+
       // Format the pincode based on country requirements
       let formattedPincode = pincode;
-      
+
       // Special handling for certain countries
       if (countryCodeForApi === 'ca') {
         // Canadian postal codes are in format A1A 1A1, but API needs them without spaces
@@ -278,7 +278,7 @@ const BusinessSetupPage = () => {
       } else if (countryCodeForApi === 'ae') {
         // UAE postcodes are typically 5 digits
         formattedPincode = pincode.replace(/\s/g, '');
-        
+
         // Special handling for UAE postcodes
         // If zippopotam.us doesn't support UAE, we can use a hardcoded mapping for common UAE postcodes
         const uaePostcodes = {
@@ -291,15 +291,15 @@ const BusinessSetupPage = () => {
           '66666': { city: 'Fujairah', state: '' },
           // Add more UAE postcodes as needed
         };
-        
+
         // Check if we have a hardcoded mapping for this UAE postcode
         if (uaePostcodes[formattedPincode]) {
           console.log(`Found hardcoded mapping for UAE postcode: ${formattedPincode}`);
           const uaePlace = uaePostcodes[formattedPincode];
-          
+
           // Update city
           formik.setFieldValue('city', uaePlace.city);
-          
+
           // Update country to UAE
           const uaeCountry = countries.find(c => c.code === 'AE');
           if (uaeCountry) {
@@ -307,56 +307,56 @@ const BusinessSetupPage = () => {
             setSelectedCountry(uaeCountry.name);
             setCountryCode('ae');
           }
-          
+
           // Set success state
           setPincodeSuccess(true);
           setTimeout(() => {
             setPincodeSuccess(false);
           }, 3000);
-          
+
           setPincodeLoading(false);
           return;
         }
       }
-      
+
       // Call the zippopotam.us API to get location data based on pincode
       console.log(`Calling API: https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
       const response = await axios.get(`https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
-      
+
       console.log('API response:', response.data);
-      
+
       if (response.data && response.data.places && response.data.places.length > 0) {
         const place = response.data.places[0];
         let fieldsUpdated = false;
-        
+
         // Update city
         if (place['place name']) {
           console.log(`Setting city to: ${place['place name']}`);
           formik.setFieldValue('city', place['place name']);
           fieldsUpdated = true;
         }
-        
+
         // Get the country name from the response or use the current one
         let countryName = response.data.country;
         console.log(`Country from API: ${countryName}`);
-        
+
         // If the API returned a country name that doesn't match our data structure,
         // try to find a matching country in our list
         if (countryName && !countryStates[countryName]) {
           console.log(`Country name doesn't match our data structure: ${countryName}`);
           // Try to find a matching country by name similarity
-          const matchingCountry = Object.keys(countryStates).find(c => 
-            c.toLowerCase() === countryName.toLowerCase() || 
+          const matchingCountry = Object.keys(countryStates).find(c =>
+            c.toLowerCase() === countryName.toLowerCase() ||
             c.toLowerCase().includes(countryName.toLowerCase()) ||
             countryName.toLowerCase().includes(c.toLowerCase())
           );
-          
+
           if (matchingCountry) {
             console.log(`Found matching country: ${matchingCountry}`);
             countryName = matchingCountry;
           }
         }
-        
+
         // If we have a valid country name, update the form
         if (countryName && countryStates[countryName]) {
           // Update country
@@ -364,14 +364,14 @@ const BusinessSetupPage = () => {
           formik.setFieldValue('country', countryName);
           setSelectedCountry(countryName);
           fieldsUpdated = true;
-          
+
           // Find the matching country in our countries list to get the code
           const countryObj = countries.find(c => c.name === countryName);
           if (countryObj) {
             console.log(`Setting country code to: ${countryObj.code.toLowerCase()}`);
             setCountryCode(countryObj.code.toLowerCase());
           }
-          
+
           // Update state if the country has states
           if (countryStates[countryName] && countryStates[countryName].hasStates) {
             // Try to find the state in our list
@@ -379,14 +379,14 @@ const BusinessSetupPage = () => {
             if (stateName) {
               console.log(`State from API: ${stateName}`);
               const statesList = countryStates[countryName].states;
-              
+
               // Find the closest matching state name
-              const matchingState = statesList.find(s => 
-                s.toLowerCase() === stateName.toLowerCase() || 
+              const matchingState = statesList.find(s =>
+                s.toLowerCase() === stateName.toLowerCase() ||
                 s.toLowerCase().includes(stateName.toLowerCase()) ||
                 stateName.toLowerCase().includes(s.toLowerCase())
               );
-              
+
               if (matchingState) {
                 console.log(`Setting state to: ${matchingState}`);
                 formik.setFieldValue('state', matchingState);
@@ -395,7 +395,7 @@ const BusinessSetupPage = () => {
             }
           }
         }
-        
+
         // Set success state if any fields were updated
         if (fieldsUpdated) {
           console.log('Fields updated successfully');
@@ -415,7 +415,7 @@ const BusinessSetupPage = () => {
       }
     } catch (error) {
       console.error('Error looking up pincode:', error);
-      
+
       // Provide more specific error messages based on the error
       if (error.response) {
         if (error.response.status === 404) {

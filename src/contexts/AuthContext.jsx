@@ -12,12 +12,19 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   
-  // Helper function to check if user has business details
   const hasBusinessDetails = (userData) => {
-    return userData?.businesses && userData.businesses.length > 0;
+    // Check if user has businesses in their profile
+    const hasBusinessesInProfile = userData?.businesses && userData.businesses.length > 0;
+    
+    // Check if user has completed business setup (stored in localStorage)
+    const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
+    
+    console.log('Has businesses in profile:', hasBusinessesInProfile);
+    console.log('Has completed business setup:', hasCompletedBusinessSetup);
+    
+    return hasBusinessesInProfile || hasCompletedBusinessSetup;
   };
 
-  // Check if token is expired
   const isTokenExpired = (token) => {
     try {
       const decoded = jwt_decode(token);
@@ -27,19 +34,17 @@ export function AuthProvider({ children }) {
     }
   };
 
-// In your AuthContext.js
 const handleGoogleAuth = async (authResponseJson) => {
   // Set a timeout to ensure loading state is reset even if something goes wrong
   const loadingTimeout = setTimeout(() => {
     console.log('handleGoogleAuth: Safety timeout triggered - resetting loading state');
     setLoading(false);
-  }, 10000); // 10 seconds timeout as a safety measure
+  }, 5000); // 5 seconds timeout as a safety measure
 
   try {
     console.log('handleGoogleAuth: Starting authentication process');
     setLoading(true);
     
-    console.log('handleGoogleAuth: Parsing auth response');
     if (!authResponseJson) {
       throw new Error('Auth response JSON is null or undefined');
     }
@@ -56,13 +61,13 @@ const handleGoogleAuth = async (authResponseJson) => {
     localStorage.setItem('authData', JSON.stringify(authResponse));
     console.log('handleGoogleAuth: Tokens stored in localStorage');
 
-    if (authResponse.refreshToken) {
-      localStorage.setItem('refreshToken', authResponse.refreshToken);
+    if (authResponse.invoktaAuthentication.refreshToken) {
+      localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
     }
 
-    // Set user state
     console.log('handleGoogleAuth: Extracting user data');
-    const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
+    const userData = authResponse.invoktaAuthentication.payload;
+
     console.log('handleGoogleAuth: User data extracted', userData ? 'successfully' : 'failed');
     
     if (!userData) {
@@ -74,9 +79,6 @@ const handleGoogleAuth = async (authResponseJson) => {
     console.log('handleGoogleAuth: Setting auth data state');
     setAuthData(authResponse);
     
-    // Note: We're not navigating here anymore
-    // Let OAuthCallback.js handle the navigation based on user state
-    // This avoids conflicts between multiple navigation attempts
     console.log('handleGoogleAuth: Authentication process completed successfully');
 
     return userData;
@@ -85,13 +87,11 @@ const handleGoogleAuth = async (authResponseJson) => {
     setError('Failed to process authentication');
     throw error;
   } finally {
-    // Clear the safety timeout
     clearTimeout(loadingTimeout);
     
     console.log('handleGoogleAuth: Setting loading state to false');
     setLoading(false);
     
-    // Double-check loading state after a short delay
     setTimeout(() => {
       if (loading) {
         console.log('handleGoogleAuth: Loading state still true after completion - forcing reset');
@@ -204,46 +204,6 @@ const handleGoogleAuth = async (authResponseJson) => {
     }
   };
 
-  // Google OAuth login
-// In your AuthContext.js
-// Update loginWithGoogle to ensure proper state handling and check for business details
-const loginWithGoogle = async (googleData) => {
-  try {
-    setError(null);
-    setLoading(true);
-
-    if (googleData.authResponse) {
-      const authResponse = JSON.parse(decodeURIComponent(googleData.authResponse));
-
-      // Store tokens
-      localStorage.setItem('token', authResponse.accessToken);
-      localStorage.setItem('authData', JSON.stringify(authResponse));
-
-      if (authResponse.invoktaAuthentication?.refreshToken) {
-        localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
-      }
-
-      // Decode and set user
-      const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
-      setUser(userData);
-      setAuthData(authResponse);
-
-      // Check if user has business details
-      if (!hasBusinessDetails(userData)) {
-        // If no business details, redirect to business setup page
-        navigate('/business-setup');
-      }
-
-      return userData;
-    }
-    throw new Error('Invalid auth response format');
-  } catch (error) {
-    setError(error.message || 'Google login failed');
-    throw error;
-  } finally {
-    setLoading(false);
-  }
-};
 
   // Registration
   const register = async (userData) => {
@@ -284,7 +244,6 @@ const loginWithGoogle = async (googleData) => {
     login,
     register,
     logout,
-    loginWithGoogle,
     setError,
     refreshToken,
     handleGoogleAuth

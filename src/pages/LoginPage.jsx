@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link as RouterLink, useLocation, useSearchParams } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, Link as RouterLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Box, TextField, Button, Typography, Link, Paper, Alert, Divider,
@@ -12,7 +12,8 @@ import {
   Lock as LockIcon
 } from '@mui/icons-material';
 import companyLogo from '../assets/company_logo.png';
-import jwt_decode from 'jwt-decode';
+import google_signin_logo from '../assets/google_signin_logo.png';
+import { API_CONFIG } from '../config/config';
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -21,13 +22,12 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const { login, loginWithGoogle, setUser } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [searchParams] = useSearchParams();
 
-  useEffect(() => {
-    // Handle regular errors from location state
+  // Check for error in location state when component mounts
+  React.useEffect(() => {
     if (location.state?.error) {
       setError(location.state.error);
       if (location.state.email) {
@@ -35,41 +35,7 @@ const LoginPage = () => {
       }
       window.history.replaceState({}, document.title);
     }
-
-    // Handle OAuth callback with authResponse
-    const authResponseJson = searchParams.get('authResponse');
-    if (authResponseJson) {
-      handleOAuthCallback(authResponseJson);
-    }
-  }, [location, searchParams]);
-
-  const handleOAuthCallback = async (authResponseJson) => {
-    try {
-      setOauthLoading(true);
-      const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
-
-      // Store auth data
-      localStorage.setItem('authData', JSON.stringify(authResponse));
-      localStorage.setItem('token', authResponse.accessToken);
-
-      if (authResponse.invoktaAuthentication?.refreshToken) {
-        localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
-      }
-
-      // Set user in context
-      const userData = authResponse.userDetails || jwt_decode(authResponse.accessToken);
-      setUser(userData);
-
-      // Clean URL and redirect
-      window.history.replaceState({}, document.title, window.location.pathname);
-      navigate('/dashboard');
-    } catch (error) {
-      setError('Failed to process authentication response');
-      console.error('Auth response error:', error);
-    } finally {
-      setOauthLoading(false);
-    }
-  };
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -84,15 +50,14 @@ const LoginPage = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
+const handleGoogleLogin = () => {
     setError('');
-    setOauthLoading(true);
-    
-    // Store current path for redirect after login
+
+    // Store current path for post-login redirect
     sessionStorage.setItem('preAuthPath', window.location.pathname);
-    
-    // Redirect to backend Google OAuth endpoint
-    window.location.href = 'http://localhost:8087/invokta/oauth2/authorization/google';
+
+    // Redirect to backend OAuth endpoint
+    window.location.href = "http://localhost:8087/invokta/oauth2/authorization/google";
   };
 
   const toggleShowPassword = () => {
@@ -230,24 +195,17 @@ const LoginPage = () => {
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <Button
             onClick={handleGoogleLogin}
-            fullWidth
-            variant="contained"
             disabled={loading || oauthLoading}
             startIcon={
               <img
-                src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg"
+                src= {google_signin_logo}
                 alt="Google"
-                width={20}
-                style={{ marginRight: 8 }}
+                height={70}
+                width={350}
+                style={{ marginRight: -10 }}
               />
             }
-            sx={{
-              py: 1.5,
-              backgroundColor: '#4285F4',
-              '&:hover': { backgroundColor: '#357ABD' }
-            }}
           >
-            Continue with Google
           </Button>
         </Box>
 

@@ -17,6 +17,7 @@ export const API_CONFIG = {
       REFRESH_TOKEN: '/api/auth/refresh-token',
       FORGOT_PASSWORD: '/api/auth/forgot-password',
       RESET_PASSWORD: '/api/auth/reset-password',
+      GOOGLE_AUTH: '/oauth2/authorization/google',
     },
     
     // User
