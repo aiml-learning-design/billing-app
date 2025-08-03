@@ -58,42 +58,65 @@ const RegisterPage = () => {
   // Fetch user's location and set country defaults
   useEffect(() => {
     const fetchLocationData = async () => {
+      // Set default country values immediately to avoid blank state
+      const defaultCountry = countries.find(c => c.code === 'in') || countries.find(c => c.name === 'India');
+      setSelectedCountry(defaultCountry.name);
+      setCountryCode(defaultCountry.code.toLowerCase());
+      setPhone(defaultCountry.dialCode ? defaultCountry.dialCode.replace('+', '') : '');
+      console.log('Set initial default country:', defaultCountry.name);
+      
       try {
-        const response = await axios.get('https://ipapi.co/json/');
+        // Use a Promise with timeout to avoid long-running API calls
+        const fetchWithTimeout = async (url, timeout = 3000) => {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          
+          try {
+            const response = await axios.get(url, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            return response;
+          } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+          }
+        };
+        
+        console.log('Fetching location data...');
+        const response = await fetchWithTimeout('https://ipapi.co/json/', 3000);
         const userData = response.data;
+        
+        if (!userData) {
+          console.log('No location data received');
+          return; // Default values already set
+        }
+        
         const countryNames = countries.map(c => c.name);
-        console.log('Selected country changed:', selectedCountry);
+        console.log('Location data received:', userData);
+        
         if (userData?.country_name && countryNames.includes(userData.country_name)) {
-          console.log('Selected country changed:', selectedCountry);
+          console.log('Setting country to:', userData.country_name);
           setSelectedCountry(userData.country_name);
           const detectedCountryCode = userData.country_code.toLowerCase();
           setCountryCode(detectedCountryCode); 
           setPhone(userData.country_calling_code ? userData.country_calling_code.replace('+', '') : '');
-          console.log('Found country data:', selectedCountry);
-           if (selectedCountry) {
-              console.log('Setting country code to:', selectedCountry.code.toLowerCase());
-              setCountryCode(selectedCountry.code.toLowerCase());
-              if (!phone) {
-                setPhone(selectedCountry.dialCode.replace('+', ''));
-              }
-            }
-
-          
-        } else {
-          const defaultCountry = countries.find(c => c.code === 'US') || countries.find(c => c.name === 'United States');
-          console.log('Selected country changed:', selectedCountry);
-          setSelectedCountry(defaultCountry.name);
-          setCountryCode(defaultCountry.code.toLowerCase());
-          setPhone(defaultCountry.dialCode.replace('+', ''));
-
+        } else if (userData?.country_code) {
+          // Try to find country by code if name doesn't match
+          const countryByCode = countries.find(c => c.code === userData.country_code.toUpperCase());
+          if (countryByCode) {
+            console.log('Found country by code:', countryByCode.name);
+            setSelectedCountry(countryByCode.name);
+            setCountryCode(userData.country_code.toLowerCase());
+            setPhone(countryByCode.dialCode ? countryByCode.dialCode.replace('+', '') : '');
+          }
+          // If not found, we keep the default values set at the beginning
         }
       } catch (error) {
-        console.log('Selected country changed:', selectedCountry);
-        console.error("Failed to fetch location data", error);
-        const defaultCountry = countries.find(c => c.code === 'in') || countries.find(c => c.name === 'India');
-        setSelectedCountry(defaultCountry.name);
-        setCountryCode(defaultCountry.code.toLowerCase());
-        setPhone(defaultCountry.dialCode.replace('+', ''));
+        if (error.name === 'AbortError' || error.name === 'CanceledError') {
+          console.log('Location data fetch timed out');
+        } else {
+          console.error("Failed to fetch location data:", error.message);
+        }
+        // No need to set default values again as they were set at the beginning
       }
     };
 
