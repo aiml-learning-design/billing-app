@@ -25,108 +25,6 @@ const Dashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
 
-  // Function to validate business details and detect fake data
-  const validateBusinessDetails = (businessData) => {
-    // Check for obviously fake business names
-    const fakeBusinesNamePatterns = [
-      /fake/i, 
-      /test/i, 
-      /dummy/i, 
-      /example/i
-    ];
-    
-    // Check for test email domains
-    const fakeEmailDomains = [
-      'example.com',
-      'example.us',
-      'test.com',
-      'fake.com',
-      'domain.com'
-    ];
-    
-    // Check for fake phone numbers
-    const fakePhonePatterns = [
-      /^123456/, 
-      /^555/, 
-      /^000/, 
-      /^111/, 
-      /^999/, 
-      /12345678/, 
-      /^601952/  // Specific pattern from the issue description
-    ];
-    
-    // Check for fake address patterns
-    const fakeAddressPatterns = [
-      /fake/i,
-      /test/i,
-      /example/i,
-      /123 main/i,
-      /1600 fake/i  // Specific pattern from the issue description
-    ];
-    
-    // Check for fake business ID patterns (if they follow a specific format)
-    const fakeBusinessIdPatterns = [
-      /6062f455a06536d00ac9e6e5/  // Specific ID from the issue description
-    ];
-    
-    // Check business name
-    if (businessData.businessName) {
-      for (const pattern of fakeBusinesNamePatterns) {
-        if (pattern.test(businessData.businessName)) {
-          console.log(`Detected fake business name: ${businessData.businessName}`);
-          return true;
-        }
-      }
-    }
-    
-    // Check email
-    if (businessData.email) {
-      const emailDomain = businessData.email.split('@')[1]?.toLowerCase();
-      if (emailDomain && fakeEmailDomains.includes(emailDomain)) {
-        console.log(`Detected fake email domain: ${emailDomain}`);
-        return true;
-      }
-    }
-    
-    // Check phone
-    if (businessData.phone) {
-      for (const pattern of fakePhonePatterns) {
-        if (pattern.test(businessData.phone)) {
-          console.log(`Detected fake phone number: ${businessData.phone}`);
-          return true;
-        }
-      }
-    }
-    
-    // Check address if it exists
-    if (businessData.officeAddress) {
-      const address = businessData.officeAddress;
-      
-      // Check address line
-      if (address.addressLine) {
-        for (const pattern of fakeAddressPatterns) {
-          if (pattern.test(address.addressLine)) {
-            console.log(`Detected fake address: ${address.addressLine}`);
-            return true;
-          }
-        }
-      }
-    }
-    
-    // Check business ID
-    if (businessData.businessId) {
-      for (const pattern of fakeBusinessIdPatterns) {
-        if (pattern.test(businessData.businessId)) {
-          console.log(`Detected fake business ID: ${businessData.businessId}`);
-          return true;
-        }
-      }
-    }
-    
-    // If we get here, no fake data was detected
-    return false;
-  };
-
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
     // First try to get business details from localStorage (for newly created businesses)
@@ -136,22 +34,6 @@ const Dashboard = () => {
       try {
         const parsedBusinessDetails = JSON.parse(storedBusinessDetails);
         
-        // Validate business details to detect fake data
-        const isFakeData = validateBusinessDetails(parsedBusinessDetails);
-        
-        if (isFakeData) {
-          console.error('Detected fake business data in localStorage. Clearing localStorage and using API data instead.');
-          // Clear fake business details from localStorage
-          localStorage.removeItem('businessDetails');
-          
-          // Fall back to user data if available
-          if (user?.businesses && user.businesses.length > 0) {
-            setSelectedBusiness(user.businesses[0]);
-          }
-          return;
-        }
-        
-        // If data is valid, use it
         setBusinessDetails(parsedBusinessDetails);
         
         // If user data is also available, update the selected business
@@ -204,13 +86,112 @@ const Dashboard = () => {
           // No other filters needed to get all invoices
         };
         
-        const [invoicesSearchResponse, latestInvoiceResponse] = await Promise.all([
-          api.get(`${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?searchInvoiceRequest=${encodeURIComponent(JSON.stringify(searchRequest))}`),
-          api.get(`${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}?businessId=${businessId}&limit=1&sort=desc`)
-        ]);
+        // Use try-catch for each API call to handle errors individually
+        let invoicesSearchResponse, latestInvoiceResponse;
+        
+        try {
+          // First API call - search invoices
+          console.log('Making search request with params:', searchRequest);
+          
+          // Try different approaches for passing search parameters
+          try {
+            // Approach 1: Using query parameter with JSON string
+            console.log('Trying search approach 1: Query parameter with JSON string');
+            invoicesSearchResponse = await api.get(
+              `${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?searchInvoiceRequest=${encodeURIComponent(JSON.stringify(searchRequest))}`
+            );
+            console.log('Search approach 1 successful');
+          } catch (approach1Error) {
+            console.error('Search approach 1 failed:', approach1Error);
+            
+            // Approach 2: Using query parameters directly
+            console.log('Trying search approach 2: Direct query parameters');
+            try {
+              invoicesSearchResponse = await api.get(
+                `${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?businessId=${businessId}`
+              );
+              console.log('Search approach 2 successful');
+            } catch (approach2Error) {
+              console.error('Search approach 2 failed:', approach2Error);
+              
+              // Approach 3: Using POST with request body
+              console.log('Trying search approach 3: POST with request body');
+              try {
+                invoicesSearchResponse = await api.post(
+                  API_CONFIG.ENDPOINTS.INVOICE.SEARCH,
+                  searchRequest
+                );
+                console.log('Search approach 3 successful');
+              } catch (approach3Error) {
+                console.error('Search approach 3 failed:', approach3Error);
+                // Re-throw the original error if all approaches fail
+                throw approach1Error;
+              }
+            }
+          }
+          
+          console.log('Search request successful with response:', invoicesSearchResponse);
+        } catch (searchError) {
+          console.error('Error in search request:', searchError);
+          // Set a default response to prevent errors in the next section
+          invoicesSearchResponse = { success: false, message: searchError.message || 'Failed to search invoices' };
+        }
+        
+        try {
+          // Second API call - get latest invoice
+          console.log('Making latest invoice request for businessId:', businessId);
+          
+          // Try different approaches for the latest invoice request
+          try {
+            // Approach 1: Using query parameters
+            console.log('Trying latest invoice approach 1: Query parameters');
+            latestInvoiceResponse = await api.get(
+              `${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}?businessId=${businessId}&limit=1&sort=desc`
+            );
+            console.log('Latest invoice approach 1 successful');
+          } catch (approach1Error) {
+            console.error('Latest invoice approach 1 failed:', approach1Error);
+            
+            // Approach 2: Using a different endpoint format
+            console.log('Trying latest invoice approach 2: Alternative endpoint');
+            try {
+              latestInvoiceResponse = await api.get(
+                `${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}/${businessId}?limit=1&sort=desc`
+              );
+              console.log('Latest invoice approach 2 successful');
+            } catch (approach2Error) {
+              console.error('Latest invoice approach 2 failed:', approach2Error);
+              
+              // Approach 3: Using POST with request body
+              console.log('Trying latest invoice approach 3: POST with request body');
+              try {
+                latestInvoiceResponse = await api.post(
+                  API_CONFIG.ENDPOINTS.INVOICE.GET_ALL,
+                  { businessId, limit: 1, sort: 'desc' }
+                );
+                console.log('Latest invoice approach 3 successful');
+              } catch (approach3Error) {
+                console.error('Latest invoice approach 3 failed:', approach3Error);
+                // Re-throw the original error if all approaches fail
+                throw approach1Error;
+              }
+            }
+          }
+          
+          console.log('Latest invoice request successful with response:', latestInvoiceResponse);
+        } catch (invoiceError) {
+          console.error('Error in latest invoice request:', invoiceError);
+          // Set a default response to prevent errors in the next section
+          latestInvoiceResponse = { success: false, message: invoiceError.message || 'Failed to get latest invoice' };
+        }
         
         console.log('Invoices search response:', invoicesSearchResponse);
         console.log('Latest invoice response:', latestInvoiceResponse);
+
+        // Track if both API calls failed
+        let searchFailed = false;
+        let invoiceFailed = false;
+        let errorMessages = [];
 
         // Check if the search response is successful and extract data
         if (invoicesSearchResponse.success && invoicesSearchResponse.data) {
@@ -236,6 +217,14 @@ const Dashboard = () => {
             pendingInvoices: 0,
             totalAmount: 0
           });
+          
+          // Mark search as failed and collect error message
+          searchFailed = true;
+          if (invoicesSearchResponse.message) {
+            errorMessages.push(`Search failed: ${invoicesSearchResponse.message}`);
+          } else {
+            errorMessages.push('Failed to load invoice statistics');
+          }
         }
 
         // Check if latest invoice response is successful and contains data
@@ -251,10 +240,66 @@ const Dashboard = () => {
           console.error('Invalid latest invoice response format:', latestInvoiceResponse);
           // Don't throw error for empty invoices, just log it
           console.warn('No invoices found or invalid response format');
+          
+          // Mark invoice as failed and collect error message
+          invoiceFailed = true;
+          if (latestInvoiceResponse.message) {
+            errorMessages.push(`Latest invoice failed: ${latestInvoiceResponse.message}`);
+          } else {
+            errorMessages.push('Failed to load latest invoice');
+          }
+        }
+        
+        // Only set error if both API calls failed or if there's a specific error message
+        if (searchFailed && invoiceFailed) {
+          setError(`Failed to load dashboard data: ${errorMessages.join(', ')}`);
+        } else if (errorMessages.length > 0) {
+          // If only one API call failed, show a warning but don't block the dashboard
+          console.warn('Partial dashboard data loaded with errors:', errorMessages.join(', '));
         }
       } catch (err) {
         console.error('Dashboard data loading error:', err);
-        setError('Failed to load dashboard data: ' + (err.message || 'Unknown error'));
+        
+        // Log more detailed error information
+        console.error('Error details:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          response: err.response ? {
+            status: err.response.status,
+            statusText: err.response.statusText,
+            data: err.response.data
+          } : 'No response data',
+          request: err.request ? 'Request exists but no response received' : 'No request data'
+        });
+        
+        // Set a more descriptive error message
+        let errorMessage = 'Failed to load dashboard data';
+        
+        if (err.response) {
+          // The request was made and the server responded with a status code
+          // that falls out of the range of 2xx
+          errorMessage += `: Server responded with ${err.response.status} - ${err.response.statusText || 'Unknown status'}`;
+          
+          // Try to extract more specific error message from response data
+          if (err.response.data) {
+            if (typeof err.response.data === 'string') {
+              errorMessage += ` - ${err.response.data}`;
+            } else if (err.response.data.message) {
+              errorMessage += ` - ${err.response.data.message}`;
+            } else if (err.response.data.error) {
+              errorMessage += ` - ${err.response.data.error}`;
+            }
+          }
+        } else if (err.request) {
+          // The request was made but no response was received
+          errorMessage += ': No response received from server';
+        } else {
+          // Something happened in setting up the request that triggered an Error
+          errorMessage += `: ${err.message || 'Unknown error'}`;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

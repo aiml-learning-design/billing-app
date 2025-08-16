@@ -105,16 +105,6 @@ const handleGoogleAuth = async (apiResponse) => {
     if (authResponse.payload?.user?.usersDto) {
       console.log('handleGoogleAuth: Extracting user data from payload.user.usersDto');
       userData = authResponse.payload.user.usersDto;
-    } 
-    // Then try from payload directly (might be flattened)
-    else if (authResponse.payload?.usersDto) {
-      console.log('handleGoogleAuth: Extracting user data from payload.usersDto');
-      userData = authResponse.payload.usersDto;
-    }
-    // Then try from payload (might contain user data directly)
-    else if (authResponse.payload) {
-      console.log('handleGoogleAuth: Using payload as user data');
-      userData = authResponse.payload;
     }
     // As a last resort, try to decode the token
     else if (accessToken) {
