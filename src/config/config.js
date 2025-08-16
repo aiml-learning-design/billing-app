@@ -38,8 +38,10 @@ export const API_CONFIG = {
     INVOICE: {
       CREATE: '/api/invoices/create',
       GET_ALL: '/api/invoices',
-      GET_BY_ID: (id) => `/api/invoices/${id}`,
-      GET_STATS: '/api/invoices/stats',
+      GET_BY_ID: (id) => `/api/invoices/get/${id}`,
+      SEARCH: '/api/invoices/search',
+      // Note: GET_STATS endpoint doesn't exist in the backend API
+      // Using SEARCH endpoint with calculation instead
     },
   },
   

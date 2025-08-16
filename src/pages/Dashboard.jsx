@@ -13,7 +13,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { UI_CONFIG } from '../config/config';
+import { UI_CONFIG, API_CONFIG } from '../config/config';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -179,20 +179,82 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        if (!selectedBusiness) return;
-
-        const [statsResponse, invoicesResponse] = await Promise.all([
-          api.get(`/api/invoices/stats?businessId=${selectedBusiness.business_id}`),
-          api.get(`/api/invoices?businessId=${selectedBusiness.business_id}&limit=1&sort=desc`)
+        if (!selectedBusiness) {
+          console.log('No selected business, skipping data fetch');
+          return;
+        }
+        
+        console.log('Fetching data for business:', selectedBusiness);
+        console.log('Business ID:', selectedBusiness.business_id || selectedBusiness.businessId);
+        
+        // Use the search endpoint instead of stats endpoint which doesn't exist in Swagger
+        const businessId = selectedBusiness.business_id || selectedBusiness.businessId;
+        
+        if (!businessId) {
+          console.error('Business ID is undefined or null');
+          throw new Error('Invalid business ID');
+        }
+        
+        // Use the search endpoint to get all invoices for this business
+        const searchRequest = {
+          businessId: businessId,
+          // No other filters needed to get all invoices
+        };
+        
+        const [invoicesSearchResponse, latestInvoiceResponse] = await Promise.all([
+          api.get(`${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?searchInvoiceRequest=${encodeURIComponent(JSON.stringify(searchRequest))}`),
+          api.get(`${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}?businessId=${businessId}&limit=1&sort=desc`)
         ]);
+        
+        console.log('Invoices search response:', invoicesSearchResponse);
+        console.log('Latest invoice response:', latestInvoiceResponse);
 
-        setStats(statsResponse);
-        if (invoicesResponse.length > 0) {
-          setLastInvoice(invoicesResponse[0]);
+        // Check if the search response is successful and extract data
+        if (invoicesSearchResponse.success && invoicesSearchResponse.data) {
+          const invoicesPage = invoicesSearchResponse.data;
+          const invoices = invoicesPage.content || [];
+          
+          // Calculate stats from the invoices data
+          const calculatedStats = {
+            totalInvoices: invoices.length,
+            paidInvoices: invoices.filter(inv => inv.status === 'PAID').length,
+            pendingInvoices: invoices.filter(inv => inv.status === 'PENDING').length,
+            totalAmount: invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0)
+          };
+          
+          console.log('Calculated stats:', calculatedStats);
+          setStats(calculatedStats);
+        } else {
+          console.error('Invalid invoices search response format:', invoicesSearchResponse);
+          // Set default empty stats
+          setStats({
+            totalInvoices: 0,
+            paidInvoices: 0,
+            pendingInvoices: 0,
+            totalAmount: 0
+          });
+        }
+
+        // Check if latest invoice response is successful and contains data
+        if (latestInvoiceResponse.success && latestInvoiceResponse.data) {
+          const invoices = latestInvoiceResponse.data;
+          if (Array.isArray(invoices) && invoices.length > 0) {
+            console.log('Setting last invoice:', invoices[0]);
+            setLastInvoice(invoices[0]);
+          } else {
+            console.log('No invoices found in the response');
+          }
+        } else {
+          console.error('Invalid latest invoice response format:', latestInvoiceResponse);
+          // Don't throw error for empty invoices, just log it
+          console.warn('No invoices found or invalid response format');
         }
       } catch (err) {
-        setError('Failed to load dashboard data');
+        console.error('Dashboard data loading error:', err);
+        setError('Failed to load dashboard data: ' + (err.message || 'Unknown error'));
       } finally {
         setLoading(false);
       }
@@ -514,9 +576,77 @@ const Dashboard = () => {
             <CircularProgress />
           </Box>
         ) : error ? (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+            
+            {/* Fallback UI when data cannot be loaded */}
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold', mt: 4 }}>
+              Getting Started
+            </Typography>
+            
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Create Your First Invoice
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      Start by creating your first invoice to track your business transactions.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<Add />}
+                      onClick={() => navigate('/invoices/new-invoice')}
+                    >
+                      Create Invoice
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Manage Your Business
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      Update your business details and settings.
+                    </Typography>
+                    <Button
+                      variant="contained"
+                      startIcon={<Business />}
+                      onClick={() => navigate('/profile')}
+                    >
+                      Business Profile
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+              
+              <Grid item xs={12} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                      Need Help?
+                    </Typography>
+                    <Typography variant="body1" sx={{ mb: 2 }}>
+                      Contact support if you're experiencing issues with the dashboard.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      onClick={() => window.open('mailto:support@invokta.com')}
+                    >
+                      Contact Support
+                    </Button>
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </>
         ) : (
           <>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
