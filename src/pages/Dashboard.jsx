@@ -283,7 +283,7 @@ const Dashboard = () => {
           '&:hover': { opacity: 1 }
         }} className="sidebar-header">
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 'bold' }}>
-            {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}
+            {businessDetails?.businessName || selectedBusiness?.businessName}
           </Typography>
           <Typography variant="subtitle2" sx={{ mb: 2 }}>
             Premium Trial
