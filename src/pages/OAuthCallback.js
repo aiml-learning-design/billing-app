@@ -45,8 +45,7 @@ const OAuthCallback = () => {
           if (hasBusinessDetails || hasCompletedBusinessSetup) {
             // User has business details or has completed setup - redirect to dashboard
             console.log('OAuthCallback: User has business details or has completed setup, redirecting to dashboard');
-            const redirectPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
-            sessionStorage.removeItem('preAuthPath');
+            const redirectPath = '/dashboard';
             navigate(redirectPath, { replace: true });
           } else {
             // First-time user - redirect to business setup
