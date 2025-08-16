@@ -19,10 +19,9 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, error: authError, setError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -35,23 +34,25 @@ const LoginPage = () => {
       }
       window.history.replaceState({}, document.title);
     }
-  }, [location]);
+  }, [location, setError]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      setError('');
+      setError(''); // Clear any previous errors
       setLoading(true);
       await login(email, password);
+      // If login is successful, the AuthContext will handle navigation
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      // Error is already set in AuthContext, no need to set it here
+      console.error('Login error caught in LoginPage:', err);
     } finally {
       setLoading(false);
     }
   };
 
 const handleGoogleLogin = () => {
-    setError('');
+    setError(''); // Clear any previous errors using AuthContext's setError
 
     // Store current path for post-login redirect
     sessionStorage.setItem('preAuthPath', window.location.pathname);
@@ -117,9 +118,9 @@ const handleGoogleLogin = () => {
           Sign in to continue to your account
         </Typography>
 
-        {error && (
+        {authError && (
           <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
+            {authError}
           </Alert>
         )}
 

@@ -190,19 +190,34 @@ const handleGoogleAuth = async (authResponseJson) => {
   };
 
   // Email/password login
-  const login = async (email, password) => {
-    try {
-      setError(null);
-      setLoading(true);
-      const response = await api.post('/api/auth/authenticate', { email, password });
-      handleAuthResponse(response);
-    } catch (error) {
-      setError(error.response?.data?.message || 'Login failed');
-      throw error;
-    } finally {
-      setLoading(false);
+const login = async (email, password) => {
+  try {
+    setError(null);
+    setLoading(true);
+
+    const response = await api.post('/api/auth/authenticate', { email, password });
+    const data = response.data;
+    // Check for custom error response structure
+    if (!response.success || !data) {
+      const backendMessage = response.message || 'Login failed';
+      setError(backendMessage);
+      throw new Error(backendMessage);
     }
-  };
+
+    handleAuthResponse(data);
+  } catch (error) {
+    console.error('Login error:', error);
+
+    // Gracefully extract backend or client error message
+    const backendMessage =
+      error?.response?.data?.message || error?.message || 'Login failed';
+
+    setError(backendMessage);
+    throw new Error(backendMessage); // Optional: rethrow to allow .catch to handle it
+  } finally {
+    setLoading(false);
+  }
+};
 
 
   // Registration
@@ -214,7 +229,6 @@ const handleGoogleAuth = async (authResponseJson) => {
       
       const response = await api.post('/api/auth/register', userData);
       if (response.accessToken) {
-        // Use handleAuthResponse which already has logic to check for business details
         // and redirect accordingly. No need for explicit navigation here.
         handleAuthResponse(response);
       }
