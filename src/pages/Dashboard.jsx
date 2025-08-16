@@ -3,7 +3,8 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   Box, Typography, Button, Grid, Card, CardContent,
   CircularProgress, Divider, Chip, Alert, List, ListItem,
-  ListItemIcon, ListItemText, Paper, Avatar
+  ListItemIcon, ListItemText, Paper, Avatar, FormControl, Select,
+  MenuItem
 } from '@mui/material';
 import {
   Receipt, Description, MonetizationOn,
