@@ -14,8 +14,11 @@ export function AuthProvider({ children }) {
   
   const hasBusinessDetails = (userData) => {
     // Check if user has businesses in their profile
-    const hasBusinessesInProfile = userData?.businesses && userData.businesses.length > 0;
-    
+    // Handle different user data structures:
+    // 1. Direct access to businesses array (from JWT token or usersDto)
+    // 2. Nested access via user.usersDto.businesses (from payload)
+    const hasBusinessesInProfile = userData?.user?.usersDto?.businesses && userData.user.usersDto.businesses.length > 0;
+
     // Check if user has completed business setup (stored in localStorage)
     const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
     
@@ -49,24 +52,42 @@ const handleGoogleAuth = async (authResponseJson) => {
       throw new Error('Auth response JSON is null or undefined');
     }
     
-    const authResponse = JSON.parse(decodeURIComponent(authResponseJson));
+    // Parse the JSON response
+    const parsedResponse = JSON.parse(decodeURIComponent(authResponseJson));
     console.log('handleGoogleAuth: Auth response parsed successfully');
 
-    if (!authResponse || !authResponse.accessToken) {
+    // Check if this is an ApiResponse wrapper or direct AuthResponse
+    let authResponse;
+    if (parsedResponse.data && parsedResponse.success) {
+      // This is an ApiResponse wrapper
+      authResponse = parsedResponse.data;
+    } else {
+      // This might be a direct AuthResponse
+      authResponse = parsedResponse;
+    }
+
+    // Validate the auth response structure
+    if (!authResponse || !authResponse.authenticationData || !authResponse.authenticationData.accessToken) {
       throw new Error('Invalid auth response format - missing access token');
     }
 
+    // Extract tokens from authenticationData
+    const accessToken = authResponse.authenticationData.accessToken;
+    const refreshToken = authResponse.authenticationData.refreshToken;
+
     // Store tokens
-    localStorage.setItem('token', authResponse.accessToken);
+    localStorage.setItem('token', accessToken);
     localStorage.setItem('authData', JSON.stringify(authResponse));
     console.log('handleGoogleAuth: Tokens stored in localStorage');
 
-    if (authResponse.invoktaAuthentication.refreshToken) {
-      localStorage.setItem('refreshToken', authResponse.invoktaAuthentication.refreshToken);
+    if (refreshToken) {
+      localStorage.setItem('refreshToken', refreshToken);
     }
 
     console.log('handleGoogleAuth: Extracting user data');
-    const userData = authResponse.invoktaAuthentication.payload;
+    // Extract user data from payload
+    const userData = authResponse.payload?.user?.usersDto || 
+                     jwt_decode(accessToken);
 
     console.log('handleGoogleAuth: User data extracted', userData ? 'successfully' : 'failed');
     
@@ -113,12 +134,27 @@ const handleGoogleAuth = async (authResponseJson) => {
         }
       });
       
-      localStorage.setItem('token', response.accessToken);
-      if (response.refreshToken) {
-        localStorage.setItem('refreshToken', response.refreshToken);
+      const apiResponse = response.data;
+      
+      // Check for API response structure according to Swagger
+      if (!apiResponse.success || !apiResponse.data) {
+        const backendMessage = apiResponse.message || 'Token refresh failed';
+        throw new Error(backendMessage);
       }
-      return response.accessToken;
+      
+      // Access the actual auth data via response.data.data (AuthResponse object)
+      const authData = apiResponse.data;
+      const accessToken = authData.authenticationData.accessToken;
+      const newRefreshToken = authData.authenticationData.refreshToken;
+      
+      localStorage.setItem('token', accessToken);
+      if (newRefreshToken) {
+        localStorage.setItem('refreshToken', newRefreshToken);
+      }
+      
+      return accessToken;
     } catch (error) {
+      console.error('Token refresh error:', error);
       logout();
       throw error;
     }
@@ -151,12 +187,25 @@ const handleGoogleAuth = async (authResponseJson) => {
   // Update both user and auth data state
   const updateAuthState = (token, storedAuthData) => {
     try {
+      // Decode the token to get user data
       const decoded = jwt_decode(token);
       setUser(decoded);
       
       if (storedAuthData) {
+        // Parse the stored auth data
         const parsedAuthData = JSON.parse(storedAuthData);
-        setAuthData(parsedAuthData);
+        
+        // Check if this is an ApiResponse wrapper or direct AuthResponse
+        let authResponse;
+        if (parsedAuthData.data && parsedAuthData.success) {
+          // This is an ApiResponse wrapper
+          authResponse = parsedAuthData.data;
+        } else {
+          // This might be a direct AuthResponse
+          authResponse = parsedAuthData;
+        }
+        
+        setAuthData(authResponse);
       }
     } catch (error) {
       console.error('Token decoding error:', error);
@@ -165,27 +214,51 @@ const handleGoogleAuth = async (authResponseJson) => {
   };
 
   // Unified auth response handler
-  const handleAuthResponse = (response) => {
-    localStorage.setItem('token', response.accessToken);
-    localStorage.setItem('authData', JSON.stringify(response));
+  const handleAuthResponse = (authResponse) => {
+    // Extract tokens from authenticationData according to Swagger
+    const accessToken = authResponse.authenticationData.accessToken;
+    const refreshToken = authResponse.authenticationData.refreshToken;
+    
+    // Store tokens
+    localStorage.setItem('token', accessToken);
+    localStorage.setItem('refreshToken', refreshToken);
+    localStorage.setItem('authData', JSON.stringify(authResponse));
+    setAuthData(authResponse);
 
-    if (response.invoktaAuthentication?.refreshToken) {
-      localStorage.setItem('refreshToken', response.invoktaAuthentication.refreshToken);
-    }
-
-    const userData = jwt_decode(response.accessToken);
-    setUser(userData);
-    setAuthData(response);
-
-    // Check if user has business details
-    if (!hasBusinessDetails(userData)) {
-      // If no business details, redirect to business setup page
-      navigate('/business-setup');
-    } else {
-      // Redirect to dashboard or pre-auth path
-      const preAuthPath = sessionStorage.getItem('preAuthPath') || '/dashboard';
-      sessionStorage.removeItem('preAuthPath');
-      navigate(preAuthPath);
+    // Extract user data from token and set in state
+    try {
+      // First try to get user data from payload
+      let userData = authResponse.payload;
+      
+      // If payload doesn't have user data in expected format, decode from token
+      if (!userData?.user?.usersDto?.businesses) {
+        userData = jwt_decode(accessToken);
+        console.log('User data extracted from token:', userData);
+      } else {
+        console.log('User data extracted from payload:', userData);
+      }
+      
+      // Set user data in state
+      setUser(userData);
+      
+      console.log('User data set in state:', userData);
+      
+      // Check if user has business details
+      const hasBusinesses = hasBusinessDetails(userData);
+      console.log('Has business details:', hasBusinesses);
+      
+      if (!hasBusinesses) {
+        console.log('Navigating to business setup page');
+        navigate('/business-setup');
+      } else {
+        console.log('Navigating to dashboard');
+        const dashboard = '/dashboard';
+        navigate(dashboard);
+      }
+    } catch (error) {
+      console.error('Error processing authentication response:', error);
+      setError('Failed to process authentication response');
+      navigate('/login');
     }
   };
 
@@ -195,16 +268,22 @@ const login = async (email, password) => {
     setError(null);
     setLoading(true);
 
-    const response = await api.post('/api/auth/authenticate', { email, password });
-    const data = response.data;
-    // Check for custom error response structure
-    if (!response.success || !data) {
-      const backendMessage = response.message || 'Login failed';
+    const apiResponse = await api.post('/api/auth/authenticate', { email, password });
+
+    // Check for API response structure according to Swagger
+    if (!apiResponse.success) {
+      const backendMessage = apiResponse.message || 'Login failed';
       setError(backendMessage);
       throw new Error(backendMessage);
     }
 
-    handleAuthResponse(data);
+    const authResponse = apiResponse.data;
+    if (!authResponse || !authResponse.authenticationData) {
+      const backendMessage = apiResponse.message || 'Login failed';
+      setError(backendMessage);
+      throw new Error(backendMessage);
+    }
+    handleAuthResponse(authResponse);
   } catch (error) {
     console.error('Login error:', error);
 
@@ -228,12 +307,23 @@ const login = async (email, password) => {
       api.clearAuthTokens();
       
       const response = await api.post('/api/auth/register', userData);
-      if (response.accessToken) {
-        // and redirect accordingly. No need for explicit navigation here.
-        handleAuthResponse(response);
+      const apiResponse = response.data;
+      
+      // Check for API response structure according to Swagger
+      if (!apiResponse.success || !apiResponse.data) {
+        const backendMessage = apiResponse.message || 'Registration failed';
+        setError(backendMessage);
+        throw new Error(backendMessage);
       }
+      
+      // Access the actual auth data via response.data.data (AuthResponse object)
+      const authData = apiResponse.data;
+      handleAuthResponse(authData);
     } catch (error) {
-      setError(error.response?.data?.message || 'Registration failed');
+      console.error('Registration error:', error);
+      const backendMessage = 
+        error?.response?.data?.message || error?.message || 'Registration failed';
+      setError(backendMessage);
       throw error;
     } finally {
       setLoading(false);

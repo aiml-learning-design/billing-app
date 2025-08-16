@@ -124,11 +124,14 @@ const BusinessSetupPage = () => {
 
         // Make API call with the API service
         const response = await api.post('/api/business/add', payload);
-        
+        if(!response.success) {
+            setError('Error creating business');
+        }
+        const businessDetails = response.data
         // Store business details in localStorage for use in Dashboard
-        if (response && response.businessId) {
+        if (businessDetails && businessDetails.businessId) {
           // Save the business details to localStorage
-          localStorage.setItem('businessDetails', JSON.stringify(response));
+          localStorage.setItem('businessDetails', JSON.stringify(businessDetails));
           
           // Set flag to indicate business setup is completed
           localStorage.setItem('businessSetupCompleted', 'true');
@@ -142,7 +145,7 @@ const BusinessSetupPage = () => {
             navigate('/dashboard');
           }, 1500);
         } else {
-          throw new Error('No business ID returned from API');
+          throw new Error('Error creating business');
         }
       } catch (error) {
         console.error('Error creating business:', error);

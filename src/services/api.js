@@ -41,14 +41,27 @@ const refreshToken = async () => {
         }
       }
     );
-    // Extract tokens from the new response structure
-    const { accessToken, authentication } = response.data;
-    if (!accessToken || !authentication?.refreshToken) {
+    
+    // Extract API response according to Swagger
+    const apiResponse = response.data;
+    
+    // Check for API response structure
+    if (!apiResponse.success || !apiResponse.data) {
+      const backendMessage = apiResponse.message || 'Token refresh failed';
+      throw new Error(backendMessage);
+    }
+    
+    // Access the actual auth data via response.data.data (AuthResponse object)
+    const authData = apiResponse.data;
+    const accessToken = authData.authenticationData.accessToken;
+    const newRefreshToken = authData.authenticationData.refreshToken;
+    
+    if (!accessToken || !newRefreshToken) {
       throw new Error('Invalid token response');
     }
     
     localStorage.setItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN, accessToken);
-    localStorage.setItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN, authentication.refreshToken);
+    localStorage.setItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
     return accessToken;
   } catch (error) {
     localStorage.removeItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
@@ -82,7 +95,10 @@ api.interceptors.request.use(async config => {
 
 // Response interceptor
 api.interceptors.response.use(
-  response => response.data,
+  response => {
+    // Return the entire response.data to allow components to check success flag
+    return response.data;
+  },
   async error => {
     const originalRequest = error.config;
     
@@ -107,7 +123,9 @@ api.interceptors.response.use(
     
     // For all other errors, pass through the error message
     if (error.response) {
-      return Promise.reject(error.response.data?.message || error.message);
+      // Extract error message from the API response structure
+      const apiResponse = error.response.data;
+      return Promise.reject(apiResponse?.message || error.message);
     }
     
     return Promise.reject(error);
