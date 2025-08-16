@@ -52,10 +52,38 @@ const handleGoogleAuth = async (apiResponse) => {
       throw new Error('Authentication failed');
     }
     
-    const authResponse = apiResponse.authenticationData;
+    // Check if apiResponse is a string (from URL parameter) and parse it
+    let parsedResponse;
+    if (typeof apiResponse === 'string') {
+      console.log('handleGoogleAuth: Received string apiResponse, parsing JSON');
+      try {
+        parsedResponse = JSON.parse(decodeURIComponent(apiResponse));
+        console.log('handleGoogleAuth: Successfully parsed JSON from string');
+      } catch (parseError) {
+        console.error('handleGoogleAuth: Error parsing JSON', parseError);
+        throw new Error('Failed to parse authentication response');
+      }
+    } else {
+      console.log('handleGoogleAuth: Received object apiResponse, using directly');
+      // Already an object
+      parsedResponse = apiResponse;
+    }
+    
+    // Check if this is an ApiResponse wrapper or direct AuthResponse
+    let authResponse;
+    if (parsedResponse.success !== undefined && parsedResponse.data) {
+      // This is an ApiResponse wrapper
+      console.log('handleGoogleAuth: Detected ApiResponse wrapper');
+      authResponse = parsedResponse.data;
+    } else {
+      // This might be a direct AuthResponse
+      console.log('handleGoogleAuth: Using direct AuthResponse');
+      authResponse = parsedResponse;
+    }
 
     // Validate the auth response structure
     if (!authResponse || !authResponse.authenticationData || !authResponse.authenticationData.accessToken) {
+      console.error('handleGoogleAuth: Invalid auth response structure', authResponse);
       throw new Error('Invalid auth response format - missing access token');
     }
 
@@ -70,11 +98,39 @@ const handleGoogleAuth = async (apiResponse) => {
     console.log('handleGoogleAuth: Tokens stored in localStorage');
     console.log('handleGoogleAuth: Extracting user data');
 
-    const userData = authResponse.payload?.user?.usersDto;
-    console.log('handleGoogleAuth: User data extracted', userData ? 'successfully' : 'failed');
+    // Try to extract user data from different possible locations in the response
+    let userData;
+    
+    // First try from payload.user.usersDto (standard structure)
+    if (authResponse.payload?.user?.usersDto) {
+      console.log('handleGoogleAuth: Extracting user data from payload.user.usersDto');
+      userData = authResponse.payload.user.usersDto;
+    } 
+    // Then try from payload directly (might be flattened)
+    else if (authResponse.payload?.usersDto) {
+      console.log('handleGoogleAuth: Extracting user data from payload.usersDto');
+      userData = authResponse.payload.usersDto;
+    }
+    // Then try from payload (might contain user data directly)
+    else if (authResponse.payload) {
+      console.log('handleGoogleAuth: Using payload as user data');
+      userData = authResponse.payload;
+    }
+    // As a last resort, try to decode the token
+    else if (accessToken) {
+      console.log('handleGoogleAuth: Extracting user data from JWT token');
+      try {
+        userData = jwt_decode(accessToken);
+      } catch (decodeError) {
+        console.error('handleGoogleAuth: Error decoding token', decodeError);
+      }
+    }
+    
+    console.log('handleGoogleAuth: User data extraction result:', userData ? 'successful' : 'failed');
     
     if (!userData) {
-      throw new Error('Failed to extract user data from token');
+      console.error('handleGoogleAuth: Failed to extract user data from any source');
+      throw new Error('Failed to extract user data from authentication response');
     }
     
     console.log('handleGoogleAuth: Setting user state');
