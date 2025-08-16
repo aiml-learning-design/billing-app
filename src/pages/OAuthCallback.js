@@ -30,7 +30,7 @@ const OAuthCallback = () => {
       handleGoogleAuth(authResponse)
         .then((userData) => {
           // Check if user has business details or has completed business setup
-          const hasBusinessDetails = userData?.user && userData.user?.usersDto && userData.user.usersDto?.businesses && userData.user.usersDto.businesses.length > 0;
+          const hasBusinessDetails = userData?.businesses && userData.businesses.length > 0;
 
           if(!hasBusinessDetails) {
             localStorage.setItem('businessSetupCompleted', 'false')
@@ -38,7 +38,6 @@ const OAuthCallback = () => {
           const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
           console.log('- Has businesses in profile:', hasBusinessDetails);
           console.log('- Has completed business setup:', hasCompletedBusinessSetup);
-          // Mark this auth response as processed before handling it
           // This prevents duplicate processing if the component re-renders
           processedResponsesArray.push(authResponse);
           localStorage.setItem(PROCESSED_AUTH_RESPONSES_KEY, JSON.stringify(processedResponsesArray));
@@ -68,7 +67,8 @@ const OAuthCallback = () => {
       });
     }
     // Remove 'user' from dependency array to prevent duplicate calls
-  }, [searchParams, navigate, handleGoogleAuth]);
+  //}, [searchParams, navigate, handleGoogleAuth]);
+    }, [handleGoogleAuth]);
 
   return (
     <Box sx={{ 

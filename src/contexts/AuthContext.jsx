@@ -37,7 +37,7 @@ export function AuthProvider({ children }) {
     }
   };
 
-const handleGoogleAuth = async (authResponseJson) => {
+const handleGoogleAuth = async (apiResponse) => {
   // Set a timeout to ensure loading state is reset even if something goes wrong
   const loadingTimeout = setTimeout(() => {
     console.log('handleGoogleAuth: Safety timeout triggered - resetting loading state');
@@ -48,23 +48,11 @@ const handleGoogleAuth = async (authResponseJson) => {
     console.log('handleGoogleAuth: Starting authentication process');
     setLoading(true);
     
-    if (!authResponseJson) {
-      throw new Error('Auth response JSON is null or undefined');
+    if (!apiResponse) {
+      throw new Error('Authentication failed');
     }
     
-    // Parse the JSON response
-    const parsedResponse = JSON.parse(decodeURIComponent(authResponseJson));
-    console.log('handleGoogleAuth: Auth response parsed successfully');
-
-    // Check if this is an ApiResponse wrapper or direct AuthResponse
-    let authResponse;
-    if (parsedResponse.data && parsedResponse.success) {
-      // This is an ApiResponse wrapper
-      authResponse = parsedResponse.data;
-    } else {
-      // This might be a direct AuthResponse
-      authResponse = parsedResponse;
-    }
+    const authResponse = apiResponse.authenticationData;
 
     // Validate the auth response structure
     if (!authResponse || !authResponse.authenticationData || !authResponse.authenticationData.accessToken) {
@@ -78,17 +66,11 @@ const handleGoogleAuth = async (authResponseJson) => {
     // Store tokens
     localStorage.setItem('token', accessToken);
     localStorage.setItem('authData', JSON.stringify(authResponse));
+    localStorage.setItem('refreshToken', refreshToken);
     console.log('handleGoogleAuth: Tokens stored in localStorage');
-
-    if (refreshToken) {
-      localStorage.setItem('refreshToken', refreshToken);
-    }
-
     console.log('handleGoogleAuth: Extracting user data');
-    // Extract user data from payload
-    const userData = authResponse.payload?.user?.usersDto || 
-                     jwt_decode(accessToken);
 
+    const userData = authResponse.payload?.user?.usersDto;
     console.log('handleGoogleAuth: User data extracted', userData ? 'successfully' : 'failed');
     
     if (!userData) {
