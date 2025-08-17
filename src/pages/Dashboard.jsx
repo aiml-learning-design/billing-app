@@ -4,12 +4,12 @@ import {
   Box, Typography, Button, Grid, Card, CardContent,
   CircularProgress, Divider, Chip, Alert, List, ListItem,
   ListItemIcon, ListItemText, Paper, Avatar, FormControl, Select,
-  MenuItem, Pagination, Stack
+  MenuItem, Pagination, Stack, IconButton, Collapse
 } from '@mui/material';
 import {
   Receipt, Description, MonetizationOn,
   Business, ListAlt, Add, Store, Person,
-  Email, Phone, LocationOn
+  Email, Phone, LocationOn, ExpandMore, ExpandLess
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -29,6 +29,11 @@ const Dashboard = () => {
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  // State to track which business cards are expanded
+  const [expandedBusinesses, setExpandedBusinesses] = useState(new Set());
+  
+  // State to track if the Business Details section is expanded
+  const [businessSectionExpanded, setBusinessSectionExpanded] = useState(true);
   
   // Handle size change for pagination
   const handleSizeChange = (event) => {
@@ -239,6 +244,24 @@ const Dashboard = () => {
   const handlePageChange = (event, newPage) => {
     // MUI Pagination is 1-indexed, but our API is 0-indexed
     setPage(newPage - 1);
+  };
+  
+  // Toggle expansion state of a business card
+  const toggleBusinessExpansion = (businessId) => {
+    setExpandedBusinesses(prevExpanded => {
+      const newExpanded = new Set(prevExpanded);
+      if (newExpanded.has(businessId)) {
+        newExpanded.delete(businessId);
+      } else {
+        newExpanded.add(businessId);
+      }
+      return newExpanded;
+    });
+  };
+  
+  // Toggle expansion state of the Business Details section
+  const toggleBusinessSectionExpansion = () => {
+    setBusinessSectionExpanded(!businessSectionExpanded);
   };
 
   // Use menu items from config
@@ -614,90 +637,126 @@ const Dashboard = () => {
           </>
         ) : (
           <>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Business Details
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                Business Details
+              </Typography>
+              <IconButton 
+                onClick={toggleBusinessSectionExpansion}
+                aria-expanded={businessSectionExpanded}
+                aria-label="toggle business details"
+              >
+                {businessSectionExpanded ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+            </Box>
 
-            <Grid container spacing={3}>
-              {allBusinesses.map((business, index) => (
-                <Grid item xs={12} md={6} key={index}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardContent>
-                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                        {business.businessName}
-                      </Typography>
-                      
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                        {business.gstin && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
-                              GSTIN:
-                            </Typography>
-                            <Typography variant="body1">
-                              {business.gstin}
-                            </Typography>
-                          </Box>
-                        )}
+            <Collapse in={businessSectionExpanded} timeout="auto">
+              {allBusinesses.length === 0 ? (
+              <Card sx={{ mb: 3, p: 2 }}>
+                <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <Business sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    No Business Details Available
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 3 }}>
+                    You haven't added any business details yet. Add your business details to get started.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    startIcon={<Add />}
+                    onClick={() => navigate('/business-setup')}
+                  >
+                    Add Business Details
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              <Grid container spacing={3}>
+                {allBusinesses.map((business, index) => {
+                const businessId = business.businessId || business.business_id;
+                
+                return (
+                  <Grid item xs={12} md={6} key={index}>
+                    <Card sx={{ height: '100%' }}>
+                      <CardContent>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>
+                          {business.businessName}
+                        </Typography>
                         
-                        {business.pan && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
-                              PAN:
-                            </Typography>
-                            <Typography variant="body1">
-                              {business.pan}
-                            </Typography>
-                          </Box>
-                        )}
+                        {/* Always show all business details */}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {business.gstin && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                GSTIN:
+                              </Typography>
+                              <Typography variant="body1">
+                                {business.gstin}
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {business.pan && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                PAN:
+                              </Typography>
+                              <Typography variant="body1">
+                                {business.pan}
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {business.email && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                Email:
+                              </Typography>
+                              <Typography variant="body1">
+                                {business.email}
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {business.phone && (
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                Phone:
+                              </Typography>
+                              <Typography variant="body1">
+                                {business.phone}
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {business.officeAddress && (
+                            <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                                Address:
+                              </Typography>
+                              <Typography variant="body1">
+                                {business.officeAddress.addressLine}, 
+                                {business.officeAddress.city}, 
+                                {business.officeAddress.state} - 
+                                {business.officeAddress.pincode}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Box>
                         
-                        {business.email && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
-                              Email:
-                            </Typography>
-                            <Typography variant="body1">
-                              {business.email}
-                            </Typography>
-                          </Box>
-                        )}
-                        
-                        {business.phone && (
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
-                              Phone:
-                            </Typography>
-                            <Typography variant="body1">
-                              {business.phone}
-                            </Typography>
-                          </Box>
-                        )}
-                        
-                        {business.officeAddress && (
-                          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
-                              Address:
-                            </Typography>
-                            <Typography variant="body1">
-                              {business.officeAddress.addressLine}, 
-                              {business.officeAddress.city}, 
-                              {business.officeAddress.state} - 
-                              {business.officeAddress.pincode}
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                      
-                      <Button
-                        variant="contained"
-                        sx={{ mt: 2 }}
-                        onClick={() => navigate(`/business/edit/${business.businessId || business.business_id}`)}
-                      >
-                        Edit Business
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
+                        <Button
+                          variant="contained"
+                          sx={{ mt: 2 }}
+                          onClick={() => navigate(`/business/edit/${businessId}`)}
+                        >
+                          Edit Business
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                );
+              })}
               
               <Grid item xs={12} md={6}>
                 <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 3 }}>
@@ -718,9 +777,12 @@ const Dashboard = () => {
                 </Card>
               </Grid>
             </Grid>
+            )}
 
-            {/* Pagination controls */}
-            {totalElements > 0 && (
+            </Collapse>
+
+            {/* Pagination controls - only show when there are businesses */}
+            {allBusinesses.length > 0 && totalElements > 0 && businessSectionExpanded && (
               <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', my: 3 }}>
                 <Stack spacing={2} alignItems="center">
                   {totalPages > 1 && (
