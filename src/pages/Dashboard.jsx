@@ -438,7 +438,7 @@ const Dashboard = () => {
                 {getUserName()}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                {user?.userEmail || 'No email available'}
+                {user?.userEmail || user?.email || 'No email available'}
               </Typography>
               <Button 
                 variant="text" 
