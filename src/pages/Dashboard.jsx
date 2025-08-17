@@ -18,12 +18,11 @@ import { UI_CONFIG, API_CONFIG } from '../config/config';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [lastInvoice, setLastInvoice] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
+  const [allBusinesses, setAllBusinesses] = useState([]);
 
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
@@ -64,198 +63,28 @@ const Dashboard = () => {
       setLoading(true);
       setError(null);
       try {
-        if (!selectedBusiness) {
-          console.log('No selected business, skipping data fetch');
-          return;
-        }
+        console.log('Fetching business details from API');
         
-        console.log('Fetching data for business:', selectedBusiness);
-        console.log('Business ID:', selectedBusiness.business_id || selectedBusiness.businessId);
+        // Call the business details API
+        const businessResponse = await api.get(API_CONFIG.ENDPOINTS.BUSINESS.GET_ALL);
         
-        // Use the search endpoint instead of stats endpoint which doesn't exist in Swagger
-        const businessId = selectedBusiness.business_id || selectedBusiness.businessId;
+        console.log('Business details response:', businessResponse);
         
-        if (!businessId) {
-          console.error('Business ID is undefined or null');
-          throw new Error('Invalid business ID');
-        }
-        
-        // Use the search endpoint to get all invoices for this business
-        const searchRequest = {
-          businessId: businessId,
-          // No other filters needed to get all invoices
-        };
-        
-        // Use try-catch for each API call to handle errors individually
-        let invoicesSearchResponse, latestInvoiceResponse;
-        
-        try {
-          // First API call - search invoices
-          console.log('Making search request with params:', searchRequest);
+        // Check if the response is successful and contains data
+        if (businessResponse.success && businessResponse.data) {
+          const businesses = businessResponse.data;
+          console.log('Setting all businesses:', businesses);
+          setAllBusinesses(businesses);
           
-          // Try different approaches for passing search parameters
-          try {
-            // Approach 1: Using query parameter with JSON string
-            console.log('Trying search approach 1: Query parameter with JSON string');
-            invoicesSearchResponse = await api.get(
-              `${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?searchInvoiceRequest=${encodeURIComponent(JSON.stringify(searchRequest))}`
-            );
-            console.log('Search approach 1 successful');
-          } catch (approach1Error) {
-            console.error('Search approach 1 failed:', approach1Error);
-            
-            // Approach 2: Using query parameters directly
-            console.log('Trying search approach 2: Direct query parameters');
-            try {
-              invoicesSearchResponse = await api.get(
-                `${API_CONFIG.ENDPOINTS.INVOICE.SEARCH}?businessId=${businessId}`
-              );
-              console.log('Search approach 2 successful');
-            } catch (approach2Error) {
-              console.error('Search approach 2 failed:', approach2Error);
-              
-              // Approach 3: Using POST with request body
-              console.log('Trying search approach 3: POST with request body');
-              try {
-                invoicesSearchResponse = await api.post(
-                  API_CONFIG.ENDPOINTS.INVOICE.SEARCH,
-                  searchRequest
-                );
-                console.log('Search approach 3 successful');
-              } catch (approach3Error) {
-                console.error('Search approach 3 failed:', approach3Error);
-                // Re-throw the original error if all approaches fail
-                throw approach1Error;
-              }
-            }
-          }
-          
-          console.log('Search request successful with response:', invoicesSearchResponse);
-        } catch (searchError) {
-          console.error('Error in search request:', searchError);
-          // Set a default response to prevent errors in the next section
-          invoicesSearchResponse = { success: false, message: searchError.message || 'Failed to search invoices' };
-        }
-        
-        try {
-          // Second API call - get latest invoice
-          console.log('Making latest invoice request for businessId:', businessId);
-          
-          // Try different approaches for the latest invoice request
-          try {
-            // Approach 1: Using query parameters
-            console.log('Trying latest invoice approach 1: Query parameters');
-            latestInvoiceResponse = await api.get(
-              `${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}?businessId=${businessId}&limit=1&sort=desc`
-            );
-            console.log('Latest invoice approach 1 successful');
-          } catch (approach1Error) {
-            console.error('Latest invoice approach 1 failed:', approach1Error);
-            
-            // Approach 2: Using a different endpoint format
-            console.log('Trying latest invoice approach 2: Alternative endpoint');
-            try {
-              latestInvoiceResponse = await api.get(
-                `${API_CONFIG.ENDPOINTS.INVOICE.GET_ALL}/${businessId}?limit=1&sort=desc`
-              );
-              console.log('Latest invoice approach 2 successful');
-            } catch (approach2Error) {
-              console.error('Latest invoice approach 2 failed:', approach2Error);
-              
-              // Approach 3: Using POST with request body
-              console.log('Trying latest invoice approach 3: POST with request body');
-              try {
-                latestInvoiceResponse = await api.post(
-                  API_CONFIG.ENDPOINTS.INVOICE.GET_ALL,
-                  { businessId, limit: 1, sort: 'desc' }
-                );
-                console.log('Latest invoice approach 3 successful');
-              } catch (approach3Error) {
-                console.error('Latest invoice approach 3 failed:', approach3Error);
-                // Re-throw the original error if all approaches fail
-                throw approach1Error;
-              }
-            }
-          }
-          
-          console.log('Latest invoice request successful with response:', latestInvoiceResponse);
-        } catch (invoiceError) {
-          console.error('Error in latest invoice request:', invoiceError);
-          // Set a default response to prevent errors in the next section
-          latestInvoiceResponse = { success: false, message: invoiceError.message || 'Failed to get latest invoice' };
-        }
-        
-        console.log('Invoices search response:', invoicesSearchResponse);
-        console.log('Latest invoice response:', latestInvoiceResponse);
-
-        // Track if both API calls failed
-        let searchFailed = false;
-        let invoiceFailed = false;
-        let errorMessages = [];
-
-        // Check if the search response is successful and extract data
-        if (invoicesSearchResponse.success && invoicesSearchResponse.data) {
-          const invoicesPage = invoicesSearchResponse.data;
-          const invoices = invoicesPage.content || [];
-          
-          // Calculate stats from the invoices data
-          const calculatedStats = {
-            totalInvoices: invoices.length,
-            paidInvoices: invoices.filter(inv => inv.status === 'PAID').length,
-            pendingInvoices: invoices.filter(inv => inv.status === 'PENDING').length,
-            totalAmount: invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0)
-          };
-          
-          console.log('Calculated stats:', calculatedStats);
-          setStats(calculatedStats);
-        } else {
-          console.error('Invalid invoices search response format:', invoicesSearchResponse);
-          // Set default empty stats
-          setStats({
-            totalInvoices: 0,
-            paidInvoices: 0,
-            pendingInvoices: 0,
-            totalAmount: 0
-          });
-          
-          // Mark search as failed and collect error message
-          searchFailed = true;
-          if (invoicesSearchResponse.message) {
-            errorMessages.push(`Search failed: ${invoicesSearchResponse.message}`);
-          } else {
-            errorMessages.push('Failed to load invoice statistics');
-          }
-        }
-
-        // Check if latest invoice response is successful and contains data
-        if (latestInvoiceResponse.success && latestInvoiceResponse.data) {
-          const invoices = latestInvoiceResponse.data;
-          if (Array.isArray(invoices) && invoices.length > 0) {
-            console.log('Setting last invoice:', invoices[0]);
-            setLastInvoice(invoices[0]);
-          } else {
-            console.log('No invoices found in the response');
+          // If there are businesses, set the first one as selected
+          if (Array.isArray(businesses) && businesses.length > 0) {
+            console.log('Setting selected business to first business:', businesses[0]);
+            setSelectedBusiness(businesses[0]);
+            setBusinessDetails(businesses[0]);
           }
         } else {
-          console.error('Invalid latest invoice response format:', latestInvoiceResponse);
-          // Don't throw error for empty invoices, just log it
-          console.warn('No invoices found or invalid response format');
-          
-          // Mark invoice as failed and collect error message
-          invoiceFailed = true;
-          if (latestInvoiceResponse.message) {
-            errorMessages.push(`Latest invoice failed: ${latestInvoiceResponse.message}`);
-          } else {
-            errorMessages.push('Failed to load latest invoice');
-          }
-        }
-        
-        // Only set error if both API calls failed or if there's a specific error message
-        if (searchFailed && invoiceFailed) {
-          setError(`Failed to load dashboard data: ${errorMessages.join(', ')}`);
-        } else if (errorMessages.length > 0) {
-          // If only one API call failed, show a warning but don't block the dashboard
-          console.warn('Partial dashboard data loaded with errors:', errorMessages.join(', '));
+          console.error('Invalid business details response format:', businessResponse);
+          throw new Error('Failed to load business details');
         }
       } catch (err) {
         console.error('Dashboard data loading error:', err);
@@ -305,7 +134,7 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, [selectedBusiness]);
+  }, []);
 
   // Map icon strings from config to actual icon components
   const getIconComponent = (iconName) => {
@@ -331,25 +160,25 @@ const Dashboard = () => {
 
   const quickActions = [
     {
-      title: 'Create Invoice',
-      description: 'Generate a new invoice for your client',
-      icon: <Add fontSize="large" />,
-      action: () => navigate('/invoices/new-invoice'),
-      buttonText: 'Create'
+      title: 'Manage Business',
+      description: 'Update your business details and settings',
+      icon: <Business fontSize="large" />,
+      action: () => navigate('/profile'),
+      buttonText: 'Manage'
     },
     {
-      title: 'Create Quotation',
-      description: 'Create a quotation to send to potential clients',
-      icon: <Description fontSize="large" />,
-      action: () => navigate('/quotations/new'),
-      buttonText: 'Create'
+      title: 'User Profile',
+      description: 'Update your personal information and preferences',
+      icon: <Person fontSize="large" />,
+      action: () => navigate('/profile'),
+      buttonText: 'Edit Profile'
     },
     {
-      title: 'Record Expense',
-      description: 'Track your business expenses',
+      title: 'Bank Details',
+      description: 'Manage your bank accounts and payment methods',
       icon: <MonetizationOn fontSize="large" />,
-      action: () => navigate('/expenses/new'),
-      buttonText: 'Record'
+      action: () => navigate('/bank-details'),
+      buttonText: 'Manage'
     }
   ];
 
@@ -695,87 +524,106 @@ const Dashboard = () => {
         ) : (
           <>
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Getting Started
+              Business Details
             </Typography>
 
             <Grid container spacing={3}>
-              {/* Last Invoice Card */}
-              <Grid item xs={12} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Your Last Invoice
-                    </Typography>
-
-                    {lastInvoice ? (
-                      <>
-                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                          Invoice No. {lastInvoice.invoiceNumber}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                          Billed To
-                        </Typography>
-                        <Typography variant="body1" sx={{ mb: 2 }}>
-                          {lastInvoice.billedTo}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Amount
-                        </Typography>
-                        <Typography variant="h5" sx={{ mb: 2 }}>
-                          ₹{lastInvoice.amount.toFixed(2)}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Invoice Date {new Date(lastInvoice.invoiceDate).toLocaleDateString()}
-                        </Typography>
-                      </>
-                    ) : (
-                      <Typography variant="body1" color="text.secondary">
-                        No invoices found
+              {allBusinesses.map((business, index) => (
+                <Grid item xs={12} md={6} key={index}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                        {business.businessName}
                       </Typography>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Quotations Card */}
-              <Grid item xs={12} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Quotations
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      Seal the deal with customised quotations and win over potential clients.
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<Description />}
-                      onClick={() => navigate('/quotations/new')}
-                    >
-                      Create Quotation
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-
-              {/* Expenses Card */}
-              <Grid item xs={12} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent>
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Expenses
-                    </Typography>
-                    <Typography variant="body1" sx={{ mb: 2 }}>
-                      Stay on top of your expenses. Track and manage your finances with ease and accuracy.
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      startIcon={<MonetizationOn />}
-                      onClick={() => navigate('/expenses/new')}
-                    >
-                      Record Expense
-                    </Button>
-                  </CardContent>
+                      
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {business.gstin && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                              GSTIN:
+                            </Typography>
+                            <Typography variant="body1">
+                              {business.gstin}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {business.pan && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                              PAN:
+                            </Typography>
+                            <Typography variant="body1">
+                              {business.pan}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {business.email && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                              Email:
+                            </Typography>
+                            <Typography variant="body1">
+                              {business.email}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {business.phone && (
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                              Phone:
+                            </Typography>
+                            <Typography variant="body1">
+                              {business.phone}
+                            </Typography>
+                          </Box>
+                        )}
+                        
+                        {business.officeAddress && (
+                          <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
+                              Address:
+                            </Typography>
+                            <Typography variant="body1">
+                              {business.officeAddress.addressLine}, 
+                              {business.officeAddress.city}, 
+                              {business.officeAddress.state} - 
+                              {business.officeAddress.pincode}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                      
+                      <Button
+                        variant="contained"
+                        sx={{ mt: 2 }}
+                        onClick={() => navigate(`/business/edit/${business.businessId || business.business_id}`)}
+                      >
+                        Edit Business
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+              
+              <Grid item xs={12} md={6}>
+                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 3 }}>
+                  <Business sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                    Add New Business
+                  </Typography>
+                  <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
+                    Create a new business profile to manage your business details.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    onClick={() => navigate('/business-setup')}
+                  >
+                    Add Business
+                  </Button>
                 </Card>
               </Grid>
             </Grid>
@@ -787,94 +635,101 @@ const Dashboard = () => {
             </Typography>
 
             <Grid container spacing={3}>
-              {quickActions.map((action, index) => (
-                <Grid item xs={12} sm={6} md={4} key={index}>
-                  <Card sx={{ height: '100%' }}>
-                    <CardContent sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      textAlign: 'center'
-                    }}>
-                      <Box sx={{ color: 'primary.main', mb: 2 }}>
-                        {action.icon}
-                      </Box>
-                      <Typography variant="h6" gutterBottom>
-                        {action.title}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                      >
-                        {action.description}
-                      </Typography>
-                      <Button
-                        variant="contained"
-                        onClick={action.action}
-                        fullWidth
-                        sx={{ mt: 'auto' }}
-                      >
-                        {action.buttonText}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-
-            <Divider sx={{ my: 3 }} />
-
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Business Overview
-            </Typography>
-
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Total Invoices
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center'
+                  }}>
+                    <Box sx={{ color: 'primary.main', mb: 2 }}>
+                      <Business fontSize="large" />
+                    </Box>
+                    <Typography variant="h6" gutterBottom>
+                      Manage Business
                     </Typography>
-                    <Typography variant="h4">
-                      {stats?.totalInvoices || 0}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      Update your business details and settings
                     </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/profile')}
+                      fullWidth
+                      sx={{ mt: 'auto' }}
+                    >
+                      Manage
+                    </Button>
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Paid Invoices
+              
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center'
+                  }}>
+                    <Box sx={{ color: 'primary.main', mb: 2 }}>
+                      <Person fontSize="large" />
+                    </Box>
+                    <Typography variant="h6" gutterBottom>
+                      User Profile
                     </Typography>
-                    <Typography variant="h4" color="success.main">
-                      {stats?.paidInvoices || 0}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      Update your personal information and preferences
                     </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/profile')}
+                      fullWidth
+                      sx={{ mt: 'auto' }}
+                    >
+                      Edit Profile
+                    </Button>
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Pending Invoices
+              
+              <Grid item xs={12} sm={6} md={4}>
+                <Card sx={{ height: '100%' }}>
+                  <CardContent sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center'
+                  }}>
+                    <Box sx={{ color: 'primary.main', mb: 2 }}>
+                      <MonetizationOn fontSize="large" />
+                    </Box>
+                    <Typography variant="h6" gutterBottom>
+                      Bank Details
                     </Typography>
-                    <Typography variant="h4" color="warning.main">
-                      {stats?.pendingInvoices || 0}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ mb: 2 }}
+                    >
+                      Manage your bank accounts and payment methods
                     </Typography>
-                  </CardContent>
-                </Card>
-              </Grid>
-              <Grid item xs={12} sm={6} md={3}>
-                <Card>
-                  <CardContent>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      Total Revenue
-                    </Typography>
-                    <Typography variant="h4">
-                      ₹{stats?.totalAmount?.toFixed(2) || '0.00'}
-                    </Typography>
+                    <Button
+                      variant="contained"
+                      onClick={() => navigate('/bank-details')}
+                      fullWidth
+                      sx={{ mt: 'auto' }}
+                    >
+                      Manage
+                    </Button>
                   </CardContent>
                 </Card>
               </Grid>

@@ -30,7 +30,7 @@ export const API_CONFIG = {
     BUSINESS: {
       ADD: '/api/business/add',
       UPDATE: '/api/business/update',
-      GET_ALL: '/api/business',
+      GET_ALL: '/api/business/all',
       GET_BY_ID: (id) => `/api/business/${id}`,
     },
     
