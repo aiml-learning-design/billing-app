@@ -281,11 +281,11 @@ const Dashboard = () => {
       buttonText: 'Manage'
     },
     {
-      title: 'User Profile',
-      description: 'Update your personal information and preferences',
-      icon: <Person fontSize="large" />,
-      action: () => navigate('/profile'),
-      buttonText: 'Edit Profile'
+      title: 'Create Invoice',
+      description: 'Generate a new invoice for your client',
+      icon: <Receipt fontSize="large" />,
+      action: () => navigate('/invoices/new-invoice'),
+      buttonText: 'Create'
     },
     {
       title: 'Bank Details',
@@ -893,25 +893,25 @@ const Dashboard = () => {
                     textAlign: 'center'
                   }}>
                     <Box sx={{ color: 'primary.main', mb: 2 }}>
-                      <Person fontSize="large" />
+                      <Receipt fontSize="large" />
                     </Box>
                     <Typography variant="h6" gutterBottom>
-                      User Profile
+                      Create Invoice
                     </Typography>
                     <Typography
                       variant="body2"
                       color="text.secondary"
                       sx={{ mb: 2 }}
                     >
-                      Update your personal information and preferences
+                      Generate a new invoice for your client
                     </Typography>
                     <Button
                       variant="contained"
-                      onClick={() => navigate('/profile')}
+                      onClick={() => navigate('/invoices/new-invoice')}
                       fullWidth
                       sx={{ mt: 'auto' }}
                     >
-                      Edit Profile
+                      Create
                     </Button>
                   </CardContent>
                 </Card>
