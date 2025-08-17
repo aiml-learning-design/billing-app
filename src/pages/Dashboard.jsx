@@ -4,7 +4,7 @@ import {
   Box, Typography, Button, Grid, Card, CardContent,
   CircularProgress, Divider, Chip, Alert, List, ListItem,
   ListItemIcon, ListItemText, Paper, Avatar, FormControl, Select,
-  MenuItem
+  MenuItem, Pagination, Stack
 } from '@mui/material';
 import {
   Receipt, Description, MonetizationOn,
@@ -23,6 +23,19 @@ const Dashboard = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
+  
+  // Pagination states
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  
+  // Handle size change for pagination
+  const handleSizeChange = (event) => {
+    const newSize = parseInt(event.target.value, 10);
+    setSize(newSize);
+    setPage(0); // Reset to first page when changing page size
+  };
 
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
@@ -58,29 +71,101 @@ const Dashboard = () => {
     }
   }, [user]);
 
+  // Effect to ensure page is valid when totalPages changes
+  useEffect(() => {
+    // If current page is beyond the total pages, reset to the last page
+    if (totalPages > 0 && page >= totalPages) {
+      console.log('Current page is beyond total pages, resetting to last page');
+      setPage(totalPages - 1);
+    }
+  }, [totalPages, page]);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching business details from API');
+        console.log('Fetching business details from API with pagination', { page, size });
         
-        // Call the business details API
-        const businessResponse = await api.get(API_CONFIG.ENDPOINTS.BUSINESS.GET_ALL);
+        // Call the business details API with pagination parameters
+        const businessResponse = await api.get(`${API_CONFIG.ENDPOINTS.BUSINESS.GET_ALL}?page=${page}&size=${size}`);
         
         console.log('Business details response:', businessResponse);
         
         // Check if the response is successful and contains data
         if (businessResponse.success && businessResponse.data) {
-          const businesses = businessResponse.data;
-          console.log('Setting all businesses:', businesses);
-          setAllBusinesses(businesses);
-          
-          // If there are businesses, set the first one as selected
-          if (Array.isArray(businesses) && businesses.length > 0) {
-            console.log('Setting selected business to first business:', businesses[0]);
-            setSelectedBusiness(businesses[0]);
-            setBusinessDetails(businesses[0]);
+          try {
+            // Extract paginated data
+            const paginatedData = businessResponse.data;
+            console.log('Paginated data:', paginatedData);
+            
+            // Check if the response has the expected Page structure
+            if (paginatedData && typeof paginatedData === 'object') {
+              let businesses = [];
+              let totalPagesValue = 0;
+              let totalElementsValue = 0;
+              
+              // Case 1: Standard Spring Data Page object
+              if (Array.isArray(paginatedData.content)) {
+                console.log('Found standard Page structure with content array');
+                businesses = paginatedData.content;
+                totalPagesValue = paginatedData.totalPages || 0;
+                totalElementsValue = paginatedData.totalElements || 0;
+              } 
+              // Case 2: Direct array of businesses
+              else if (Array.isArray(paginatedData)) {
+                console.log('Found direct array of businesses');
+                businesses = paginatedData;
+                totalPagesValue = Math.ceil(paginatedData.length / size) || 1;
+                totalElementsValue = paginatedData.length;
+              }
+              // Case 3: Single business object
+              else if (paginatedData.businessId || paginatedData.businessName) {
+                console.log('Found single business object');
+                businesses = [paginatedData];
+                totalPagesValue = 1;
+                totalElementsValue = 1;
+              }
+              // Case 4: Custom pagination structure
+              else if (paginatedData.businesses && Array.isArray(paginatedData.businesses)) {
+                console.log('Found custom pagination structure with businesses array');
+                businesses = paginatedData.businesses;
+                totalPagesValue = paginatedData.pages || paginatedData.totalPages || Math.ceil(businesses.length / size) || 1;
+                totalElementsValue = paginatedData.total || paginatedData.totalElements || businesses.length;
+              }
+              // Case 5: Empty or unexpected response
+              else {
+                console.warn('Unexpected response format, defaulting to empty array');
+                businesses = [];
+                totalPagesValue = 0;
+                totalElementsValue = 0;
+              }
+              
+              console.log('Setting all businesses:', businesses);
+              console.log('Pagination metadata:', { totalPages: totalPagesValue, totalElements: totalElementsValue });
+              
+              setAllBusinesses(businesses);
+              setTotalPages(totalPagesValue);
+              setTotalElements(totalElementsValue);
+              
+              // If there are businesses, set the first one as selected
+              if (Array.isArray(businesses) && businesses.length > 0) {
+                console.log('Setting selected business to first business:', businesses[0]);
+                setSelectedBusiness(businesses[0]);
+                setBusinessDetails(businesses[0]);
+              } else {
+                console.log('No businesses found in response');
+              }
+            } else {
+              console.error('Invalid response data format:', paginatedData);
+              throw new Error('Invalid response data format');
+            }
+          } catch (parseError) {
+            console.error('Error parsing paginated data:', parseError);
+            setAllBusinesses([]);
+            setTotalPages(0);
+            setTotalElements(0);
+            throw new Error('Failed to parse business data: ' + parseError.message);
           }
         } else {
           console.error('Invalid business details response format:', businessResponse);
@@ -134,7 +219,7 @@ const Dashboard = () => {
       }
     };
     fetchData();
-  }, []);
+  }, [page, size]); // Re-fetch when page or size changes
 
   // Map icon strings from config to actual icon components
   const getIconComponent = (iconName) => {
@@ -148,6 +233,12 @@ const Dashboard = () => {
       case 'Business': return <Business />;
       default: return <Description />;
     }
+  };
+  
+  // Handle page change for pagination
+  const handlePageChange = (event, newPage) => {
+    // MUI Pagination is 1-indexed, but our API is 0-indexed
+    setPage(newPage - 1);
   };
 
   // Use menu items from config
@@ -627,6 +718,47 @@ const Dashboard = () => {
                 </Card>
               </Grid>
             </Grid>
+
+            {/* Pagination controls */}
+            {totalElements > 0 && (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', my: 3 }}>
+                <Stack spacing={2} alignItems="center">
+                  {totalPages > 1 && (
+                    <Pagination 
+                      count={totalPages || 1} 
+                      page={page + 1} // Convert from 0-indexed to 1-indexed
+                      onChange={handlePageChange}
+                      color="primary"
+                      showFirstButton
+                      showLastButton
+                      disabled={loading}
+                    />
+                  )}
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Rows per page:
+                    </Typography>
+                    <FormControl size="small">
+                      <Select
+                        value={size}
+                        onChange={handleSizeChange}
+                        disabled={loading}
+                      >
+                        <MenuItem value={5}>5</MenuItem>
+                        <MenuItem value={10}>10</MenuItem>
+                        <MenuItem value={25}>25</MenuItem>
+                        <MenuItem value={50}>50</MenuItem>
+                      </Select>
+                    </FormControl>
+                    
+                    <Typography variant="body2" color="text.secondary">
+                      Showing {Math.min(size * page + 1, totalElements)} - {Math.min(size * (page + 1), totalElements)} of {totalElements} businesses
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
 
             <Divider sx={{ my: 3 }} />
 
