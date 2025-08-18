@@ -454,7 +454,8 @@ const Dashboard = () => {
 
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Hello {getUserName()}!
+             {/* Hello {getUserName()}! */}
+            Hello! {user?.full_name}
           </Typography>
           
           {/* Prominent Invoice Creation Component */}
@@ -506,6 +507,7 @@ const Dashboard = () => {
         <Divider sx={{ my: 3 }} />
 
         {/* Business Info Card */}
+{/*
         {selectedBusiness && (
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -584,6 +586,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         )}
+ */}
 
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
