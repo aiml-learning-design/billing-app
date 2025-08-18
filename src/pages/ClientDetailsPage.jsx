@@ -15,7 +15,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { UI_CONFIG, API_CONFIG } from '../config/config';
 
-const BusinessDetails = () => {
+const ClientDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -65,7 +65,7 @@ const BusinessDetails = () => {
 
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
-    console.log('BusinessDetails: User data changed', user);
+    console.log('ClientDetails: User data changed', user);
     
     // First try to get business details from localStorage (for newly created businesses)
     const storedBusinessDetails = localStorage.getItem('businessDetails');
@@ -141,19 +141,16 @@ const BusinessDetails = () => {
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching business details from API with pagination', { 
-          page, 
-          size
-        });
+        console.log('Fetching client details from API with pagination', { page, size });
         
-        // Use the vendor/self API endpoint
-        const endpoint = API_CONFIG.ENDPOINTS.BUSINESS.GET_SELF_DETAILS;
+        // Use the client API endpoint
+        const endpoint = API_CONFIG.ENDPOINTS.BUSINESS.GET_CLIENT_DETAILS;
         
         console.log('Using endpoint:', endpoint);
         
         const businessResponse = await api.get(`${endpoint}?page=${page}&size=${size}`);
         
-        console.log('Business details response:', businessResponse);
+        console.log('Client details response:', businessResponse);
         
         // Check if the response is successful and contains data
         if (businessResponse.success && businessResponse.data) {
@@ -231,11 +228,11 @@ const BusinessDetails = () => {
             throw new Error('Failed to parse business data: ' + parseError.message);
           }
         } else {
-          console.error('Invalid business details response format:', businessResponse);
-          throw new Error('Failed to load business details');
+          console.error('Invalid client details response format:', businessResponse);
+          throw new Error('Failed to load client details');
         }
       } catch (err) {
-        console.error('Business details loading error:', err);
+        console.error('Client details loading error:', err);
         
         // Log more detailed error information
         console.error('Error details:', {
@@ -251,7 +248,7 @@ const BusinessDetails = () => {
         });
         
         // Set a more descriptive error message
-        let errorMessage = 'Failed to load business details';
+        let errorMessage = 'Failed to load client details';
         
         if (err.response) {
           // The request was made and the server responded with a status code
@@ -317,17 +314,17 @@ const BusinessDetails = () => {
     setBusinessSectionExpanded(!businessSectionExpanded);
   };
 
-  // Function to handle adding a new business
-  const handleAddBusiness = () => {
-    // Navigate to business setup page with self context
-    navigate('/business-setup');
+  // Function to handle adding a new client
+  const handleAddClient = () => {
+    // Navigate to business setup page with client context
+    navigate('/business-setup?context=client');
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          Business Details
+          Client Details
         </Typography>
         <Button 
           variant="outlined" 
@@ -350,12 +347,12 @@ const BusinessDetails = () => {
         <>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              Your Businesses
+              Your Clients
             </Typography>
             <IconButton 
               onClick={toggleBusinessSectionExpansion}
               aria-expanded={businessSectionExpanded}
-              aria-label="toggle business details"
+              aria-label="toggle client details"
               sx={{ 
                 color: '#000000', 
                 bgcolor: 'rgba(0, 0, 0, 0.08)',
@@ -376,20 +373,20 @@ const BusinessDetails = () => {
             {allBusinesses.length === 0 ? (
               <Card sx={{ mb: 3, p: 2 }}>
                 <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-                  <Business sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                  <Store sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
                   <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    No Business Details Available
+                    No Client Details Available
                   </Typography>
                   <Typography variant="body1" sx={{ mb: 3 }}>
-                    You haven't added any business details yet. Add your business details to get started.
+                    You haven't added any client details yet. Add your client details to get started.
                   </Typography>
                   <Button
                     variant="contained"
                     size="large"
                     startIcon={<Add />}
-                    onClick={() => navigate('/business-setup')}
+                    onClick={() => navigate('/business-setup?context=client')}
                   >
-                    Add Business Details
+                    Add Client Details
                   </Button>
                 </CardContent>
               </Card>
@@ -484,7 +481,7 @@ const BusinessDetails = () => {
                             sx={{ mt: 2 }}
                             onClick={() => navigate(`/business/edit/${businessId}`)}
                           >
-                            Edit Business
+                            Edit Client
                           </Button>
                         </CardContent>
                       </Card>
@@ -494,19 +491,19 @@ const BusinessDetails = () => {
                 
                 <Grid item xs={12} md={6}>
                   <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 3 }}>
-                    <Business sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+                    <Store sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Add New Business
+                      Add New Client
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                      Create a new business profile to manage your business details.
+                      Create a new client profile to manage your client details.
                     </Typography>
                     <Button
                       variant="contained"
                       startIcon={<Add />}
-                      onClick={handleAddBusiness}
+                      onClick={handleAddClient}
                     >
-                      Add Business
+                      Add Client
                     </Button>
                   </Card>
                 </Grid>
@@ -547,7 +544,7 @@ const BusinessDetails = () => {
                     </FormControl>
                     
                     <Typography variant="body2" color="text.secondary">
-                      Showing {Math.min(size * page + 1, totalElements)} - {Math.min(size * (page + 1), totalElements)} of {totalElements} businesses
+                      Showing {Math.min(size * page + 1, totalElements)} - {Math.min(size * (page + 1), totalElements)} of {totalElements} clients
                     </Typography>
                   </Box>
                 </Stack>
@@ -560,4 +557,4 @@ const BusinessDetails = () => {
   );
 };
 
-export default BusinessDetails;
+export default ClientDetails;
