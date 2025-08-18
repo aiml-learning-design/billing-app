@@ -8,6 +8,7 @@ import dayjs from 'dayjs';
 import {
   Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel
 } from '@mui/material';
+import { API_CONFIG } from '../config/config';
 
 // Import the components we created
 import InvoiceDetails from '../components/invoices/InvoiceDetails';
@@ -33,6 +34,7 @@ const NewInvoice = () => {
   
   // State for invoice details
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [allBusinesses, setAllBusinesses] = useState([]);
   const [invoiceNumber, setInvoiceNumber] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(dayjs());
   const [dueDate, setDueDate] = useState(dayjs().add(14, 'day'));
@@ -118,6 +120,56 @@ const NewInvoice = () => {
   ]);
   const [isRecurring, setIsRecurring] = useState(false);
 
+  // Function to fetch all businesses from the API
+  const fetchAllBusinesses = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching all businesses from API');
+      
+      // Use the same endpoint as BusinessDetailsPage
+      const endpoint = API_CONFIG.ENDPOINTS.BUSINESS.GET_SELF_DETAILS;
+      const response = await api.get(`${endpoint}?page=0&size=100`);
+      
+      console.log('Businesses response:', response);
+      
+      if (response.success && response.data) {
+        let businesses = [];
+        const paginatedData = response.data;
+        
+        // Handle different response formats, similar to BusinessDetailsPage
+        if (Array.isArray(paginatedData.content)) {
+          console.log('Found standard Page structure with content array');
+          businesses = paginatedData.content;
+        } else if (Array.isArray(paginatedData)) {
+          console.log('Found direct array of businesses');
+          businesses = paginatedData;
+        } else if (paginatedData.businessId || paginatedData.businessName) {
+          console.log('Found single business object');
+          businesses = [paginatedData];
+        } else if (paginatedData.businesses && Array.isArray(paginatedData.businesses)) {
+          console.log('Found custom pagination structure with businesses array');
+          businesses = paginatedData.businesses;
+        } else {
+          console.warn('Unexpected response format, defaulting to empty array');
+          businesses = [];
+        }
+        
+        console.log('Setting all businesses:', businesses);
+        setAllBusinesses(businesses);
+        
+        // If there are businesses and no selected business yet, select the first one
+        if (businesses.length > 0 && !selectedBusiness) {
+          setSelectedBusiness(businesses[0]);
+          await fetchBusinessData(businesses[0]);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch businesses:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Function to fetch data for a specific business
   const fetchBusinessData = async (business) => {
     try {
@@ -163,20 +215,38 @@ const NewInvoice = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        if (user?.businesses && user.businesses.length > 0) {
+        // Only fetch businesses from API if we don't already have them
+        // This prevents an infinite loop with the dependency on allBusinesses
+        if (allBusinesses.length === 0) {
+          // First fetch all businesses from the API
+          await fetchAllBusinesses();
+        }
+        
+        // If no businesses were found in the API or there was an error,
+        // fall back to using businesses from user object
+        if (allBusinesses.length === 0 && user?.businesses && user.businesses.length > 0) {
+          console.log('No businesses found in API, using businesses from user object');
           const business = user.businesses[0];
           setSelectedBusiness(business);
           await fetchBusinessData(business);
         }
       } catch (err) {
         console.error('Failed to initialize data', err);
+        
+        // If there was an error fetching from API, fall back to user object
+        if (user?.businesses && user.businesses.length > 0) {
+          console.log('Error fetching from API, using businesses from user object');
+          const business = user.businesses[0];
+          setSelectedBusiness(business);
+          await fetchBusinessData(business);
+        }
       } finally {
         setLoading(false);
       }
     };
 
     initializeData();
-  }, [user]);
+  }, [user, allBusinesses]);
 
   // Calculate item totals
   useEffect(() => {
@@ -388,7 +458,7 @@ const NewInvoice = () => {
 
                 <BusinessDetails
                   business={selectedBusiness}
-                  businesses={user?.businesses || []}
+                  businesses={allBusinesses.length > 0 ? allBusinesses : (user?.businesses || [])}
                   onBusinessChange={(business) => {
                     setSelectedBusiness(business);
                     // Fetch data for the selected business
@@ -398,6 +468,14 @@ const NewInvoice = () => {
                   onBusinessUpdate={(updatedBusiness) => {
                     // Update the selected business in state
                     setSelectedBusiness(updatedBusiness);
+                    
+                    // Update the business in allBusinesses if it exists
+                    if (allBusinesses.length > 0) {
+                      const updatedBusinesses = allBusinesses.map(b => 
+                        (b.business_id === updatedBusiness.business_id) ? updatedBusiness : b
+                      );
+                      setAllBusinesses(updatedBusinesses);
+                    }
                     
                     // Note: In a production environment, we would also update the user context
                     // to persist the changes across the application. However, for now, we'll
