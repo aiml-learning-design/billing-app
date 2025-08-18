@@ -274,18 +274,18 @@ const Dashboard = () => {
 
   const quickActions = [
     {
-      title: 'Manage Business',
-      description: 'Update your business details and settings',
-      icon: <Business fontSize="large" />,
-      action: () => navigate('/profile'),
-      buttonText: 'Manage'
-    },
-    {
       title: 'Create Invoice',
       description: 'Generate a new invoice for your client',
       icon: <Receipt fontSize="large" />,
       action: () => navigate('/invoices/new-invoice'),
       buttonText: 'Create'
+    },
+    {
+      title: 'Manage Business',
+      description: 'Update your business details and settings',
+      icon: <Business fontSize="large" />,
+      action: () => navigate('/profile'),
+      buttonText: 'Manage'
     },
     {
       title: 'Bank Details',
@@ -452,29 +452,55 @@ const Dashboard = () => {
           </Box>
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
-            Hello {getUserName()} Welcome to {businessDetails?.businessName || selectedBusiness?.businessName || "Dheeraj & Sons"}!
+            Hello {getUserName()}!
           </Typography>
-
-          {user?.businesses?.length > 1 && (
-            <FormControl sx={{ minWidth: 200 }}>
-              <Select
-                value={selectedBusiness?.business_id || ''}
-                onChange={(e) => {
-                  const selected = user.businesses.find(b => b.business_id === e.target.value);
-                  setSelectedBusiness(selected);
+          
+          {/* Prominent Invoice Creation Component */}
+          <Card 
+            sx={{ 
+              mb: 3, 
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+              color: 'white',
+              transition: 'transform 0.3s',
+              '&:hover': {
+                transform: 'scale(1.02)',
+                cursor: 'pointer'
+              }
+            }}
+            onClick={() => navigate('/invoices/new-invoice')}
+          >
+            <CardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Receipt sx={{ fontSize: 40, mr: 2 }} />
+                <Box>
+                  <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                    Create New Invoice
+                  </Typography>
+                  <Typography variant="body1">
+                    Generate a professional invoice for your clients
+                  </Typography>
+                </Box>
+              </Box>
+              <Button 
+                variant="contained" 
+                color="secondary" 
+                size="large"
+                sx={{ 
+                  bgcolor: 'white', 
+                  color: '#2196F3',
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    bgcolor: 'rgba(255, 255, 255, 0.9)',
+                  }
                 }}
-                displayEmpty
               >
-                {user.businesses.map((business) => (
-                  <MenuItem key={business.business_id} value={business.business_id}>
-                    {business.businessName}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          )}
+                Create Now
+              </Button>
+            </CardContent>
+          </Card>
         </Box>
 
         <Divider sx={{ my: 3 }} />
