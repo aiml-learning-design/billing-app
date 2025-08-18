@@ -102,18 +102,9 @@ const handleGoogleAuth = async (apiResponse) => {
     let userData;
     
     // First try from payload.user.usersDto (standard structure)
-    if (authResponse.payload?.user?.usersDto) {
+    if (authResponse.payload) {
       console.log('handleGoogleAuth: Extracting user data from payload.user.usersDto');
-      userData = authResponse.payload.user.usersDto;
-    }
-    // As a last resort, try to decode the token
-    else if (accessToken) {
-      console.log('handleGoogleAuth: Extracting user data from JWT token');
-      try {
-        userData = jwt_decode(accessToken);
-      } catch (decodeError) {
-        console.error('handleGoogleAuth: Error decoding token', decodeError);
-      }
+      userData = authResponse.payload;
     }
     
     console.log('handleGoogleAuth: User data extraction result:', userData ? 'successful' : 'failed');
