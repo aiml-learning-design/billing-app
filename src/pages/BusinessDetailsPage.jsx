@@ -121,10 +121,17 @@ const BusinessDetails = () => {
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching business details from API with pagination', { page, size });
+        console.log('Fetching business details from API with pagination', { page, size, isClientContext });
+        
+        // Determine which endpoint to use based on context
+        const endpoint = isClientContext 
+          ? API_CONFIG.ENDPOINTS.BUSINESS.GET_CLIENT_DETAILS 
+          : API_CONFIG.ENDPOINTS.BUSINESS.GET_SELF_DETAILS;
+        
+        console.log('Using endpoint:', endpoint);
         
         // Call the business details API with pagination parameters
-        const businessResponse = await api.get(`${API_CONFIG.ENDPOINTS.BUSINESS.GET_ALL}?page=${page}&size=${size}`);
+        const businessResponse = await api.get(`${endpoint}?page=${page}&size=${size}`);
         
         console.log('Business details response:', businessResponse);
         
@@ -255,7 +262,7 @@ const BusinessDetails = () => {
       }
     };
     fetchData();
-  }, [page, size]); // Re-fetch when page or size changes
+  }, [page, size, isClientContext]); // Re-fetch when page, size, or context changes
   
   // Handle page change for pagination
   const handlePageChange = (event, newPage) => {

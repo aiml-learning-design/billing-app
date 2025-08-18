@@ -34,6 +34,9 @@ export const API_CONFIG = {
       GET_BY_ID: (id) => `/api/business/${id}`,
       ADD_SELF: '/api/self-business-details',
       ADD_CLIENT: '/api/client-details',
+      // New endpoints for client and self business details
+      GET_CLIENT_DETAILS: '/api/client/business/all',
+      GET_SELF_DETAILS: '/api/vendor/business/all',
     },
     
     // Invoices
