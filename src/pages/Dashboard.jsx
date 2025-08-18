@@ -464,7 +464,7 @@ const Dashboard = () => {
           </>
         ) : (
           <>
-            {/* Business Details section has been moved to BusinessDetails page */}
+            {/* Business Details section */}
             <Card sx={{ mb: 3, p: 2 }}>
               <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                 <Business sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
@@ -481,6 +481,27 @@ const Dashboard = () => {
                   onClick={() => navigate('/business-details')}
                 >
                   View Business Details
+                </Button>
+              </CardContent>
+            </Card>
+            
+            {/* Client Details section */}
+            <Card sx={{ mb: 3, p: 2 }}>
+              <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <Store sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
+                  Client Details
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 3 }}>
+                  View and manage all your client profiles in one place.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<Store />}
+                  onClick={() => navigate('/business-details?context=client')}
+                >
+                  Add Client Details
                 </Button>
               </CardContent>
             </Card>

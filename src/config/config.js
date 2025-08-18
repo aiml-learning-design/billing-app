@@ -32,6 +32,8 @@ export const API_CONFIG = {
       UPDATE: '/api/business/update',
       GET_ALL: '/api/business/all',
       GET_BY_ID: (id) => `/api/business/${id}`,
+      ADD_SELF: '/api/self-business-details',
+      ADD_CLIENT: '/api/client-details',
     },
     
     // Invoices

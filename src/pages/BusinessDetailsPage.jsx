@@ -10,7 +10,7 @@ import {
   Business, ListAlt, Add, Store, Person,
   Email, Phone, LocationOn, ExpandMore, ExpandLess
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { UI_CONFIG, API_CONFIG } from '../config/config';
@@ -18,11 +18,15 @@ import { UI_CONFIG, API_CONFIG } from '../config/config';
 const BusinessDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
+  
+  // Context state to differentiate between Client Details and Self Business Details
+  const [isClientContext, setIsClientContext] = useState(false);
   
   // Pagination states
   const [page, setPage] = useState(0);
@@ -35,6 +39,14 @@ const BusinessDetails = () => {
   
   // State to track if the Business Details section is expanded
   const [businessSectionExpanded, setBusinessSectionExpanded] = useState(false);
+  
+  // Determine context from URL parameters
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const context = searchParams.get('context');
+    setIsClientContext(context === 'client');
+    console.log('Context:', context === 'client' ? 'Client Details' : 'Self Business Details');
+  }, [location]);
   
   // Helper function to get businesses from user data
   const getBusinessesFromUser = (userData) => {
@@ -276,11 +288,29 @@ const BusinessDetails = () => {
     setBusinessSectionExpanded(!businessSectionExpanded);
   };
 
+  // Function to handle adding a new business based on context
+  const handleAddBusiness = () => {
+    if (isClientContext) {
+      // Navigate to business setup page with client context
+      navigate('/business-setup?context=client');
+    } else {
+      // Navigate to business setup page with self context
+      navigate('/business-setup');
+    }
+  };
+  
+  // Function to get the appropriate API endpoint based on context
+  const getApiEndpoint = () => {
+    return isClientContext 
+      ? API_CONFIG.ENDPOINTS.BUSINESS.ADD_CLIENT 
+      : API_CONFIG.ENDPOINTS.BUSINESS.ADD_SELF;
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          Business Details
+          {isClientContext ? 'Client Details' : 'Business Details'}
         </Typography>
         <Button 
           variant="outlined" 
@@ -303,7 +333,7 @@ const BusinessDetails = () => {
         <>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              Your Businesses
+              {isClientContext ? 'Your Clients' : 'Your Businesses'}
             </Typography>
             <IconButton 
               onClick={toggleBusinessSectionExpansion}
@@ -449,17 +479,19 @@ const BusinessDetails = () => {
                   <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 3 }}>
                     <Business sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      Add New Business
+                      {isClientContext ? 'Add New Client' : 'Add New Business'}
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                      Create a new business profile to manage your business details.
+                      {isClientContext 
+                        ? 'Create a new client profile to manage your client details.'
+                        : 'Create a new business profile to manage your business details.'}
                     </Typography>
                     <Button
                       variant="contained"
                       startIcon={<Add />}
-                      onClick={() => navigate('/business-setup')}
+                      onClick={handleAddBusiness}
                     >
-                      Add Business
+                      {isClientContext ? 'Add Client' : 'Add Business'}
                     </Button>
                   </Card>
                 </Grid>
