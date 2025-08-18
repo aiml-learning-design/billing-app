@@ -18,6 +18,21 @@ import { UI_CONFIG, API_CONFIG } from '../config/config';
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  
+  // Log the user object to verify it has all the required properties
+  console.log('Dashboard: User object:', user);
+  console.log('Dashboard: User properties:', {
+    id: user?.id,
+    username: user?.username,
+    email: user?.email,
+    firstName: user?.firstName,
+    middleName: user?.middleName,
+    lastName: user?.lastName,
+    full_name: user?.full_name,
+    phone: user?.phone,
+    pictureUrl: user?.pictureUrl,
+    businesses: user?.businesses
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);

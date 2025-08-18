@@ -14,6 +14,88 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   
+  // Normalize user data to ensure consistent structure
+  const normalizeUserData = (userData, authResponseData = null) => {
+    if (!userData) return null;
+    
+    console.log('Normalizing user data:', userData);
+    console.log('Auth response data:', authResponseData);
+    
+    // Create a base normalized object with all possible properties
+    const normalized = {
+      // Basic user info
+      id: userData.id || userData.user_id || userData.userId || null,
+      username: userData.username || userData.userName || userData.user_name || null,
+      email: userData.email || userData.userEmail || userData.user_email || 
+             userData.usersDto?.email || userData.usersDto?.userEmail || 
+             userData.user?.usersDto?.email || userData.user?.usersDto?.userEmail || null,
+      
+      // Name components
+      firstName: userData.firstName || userData.first_name || 
+                userData.usersDto?.firstName || userData.usersDto?.first_name ||
+                userData.user?.usersDto?.firstName || userData.user?.usersDto?.first_name || null,
+      middleName: userData.middleName || userData.middle_name || 
+                 userData.usersDto?.middleName || userData.usersDto?.middle_name ||
+                 userData.user?.usersDto?.middleName || userData.user?.usersDto?.middle_name || null,
+      lastName: userData.lastName || userData.last_name || 
+               userData.usersDto?.lastName || userData.usersDto?.last_name ||
+               userData.user?.usersDto?.lastName || userData.user?.usersDto?.last_name || null,
+      
+      // Full name (constructed or from data)
+      full_name: userData.full_name || userData.fullName || userData.name || 
+                userData.usersDto?.full_name || userData.usersDto?.fullName || userData.usersDto?.name ||
+                userData.user?.usersDto?.full_name || userData.user?.usersDto?.fullName || userData.user?.usersDto?.name || null,
+      
+      // Contact info
+      phone: userData.phone || userData.phoneNumber || 
+            userData.usersDto?.phone || userData.usersDto?.phoneNumber ||
+            userData.user?.usersDto?.phone || userData.user?.usersDto?.phoneNumber || null,
+      
+      // Profile image
+      pictureUrl: userData.pictureUrl || userData.picture_url || userData.image || userData.picture || userData.avatar ||
+                 userData.usersDto?.pictureUrl || userData.usersDto?.picture_url || userData.usersDto?.image ||
+                 userData.user?.usersDto?.pictureUrl || userData.user?.usersDto?.picture_url || userData.user?.usersDto?.image || null,
+      
+      // Business details
+      businesses: userData.businesses || 
+                 userData.usersDto?.businesses || 
+                 userData.user?.usersDto?.businesses || [],
+      
+      // Keep original data structure for compatibility
+      ...userData
+    };
+    
+    // If we have a full name but not individual components, try to extract them
+    if (normalized.full_name && (!normalized.firstName && !normalized.lastName)) {
+      const nameParts = normalized.full_name.split(' ');
+      if (nameParts.length >= 1) normalized.firstName = nameParts[0];
+      if (nameParts.length >= 2) normalized.lastName = nameParts[nameParts.length - 1];
+      if (nameParts.length >= 3) normalized.middleName = nameParts.slice(1, nameParts.length - 1).join(' ');
+    }
+    
+    // If we have individual name components but no full name, construct it
+    if (!normalized.full_name && (normalized.firstName || normalized.lastName)) {
+      normalized.full_name = [normalized.firstName, normalized.middleName, normalized.lastName]
+        .filter(Boolean)
+        .join(' ');
+    }
+    
+    // If we have auth response data, extract additional info
+    if (authResponseData) {
+      // Extract any additional user data from auth response
+      if (authResponseData.payload?.user?.usersDto) {
+        const usersDto = authResponseData.payload.user.usersDto;
+        Object.assign(normalized, {
+          ...usersDto,
+          businesses: normalized.businesses || usersDto.businesses || []
+        });
+      }
+    }
+    
+    console.log('Normalized user data:', normalized);
+    return normalized;
+  };
+  
   const hasBusinessDetails = (userData) => {
     // Check if user has businesses in their profile
     // Handle different user data structures:
@@ -116,8 +198,10 @@ const handleGoogleAuth = async (apiResponse) => {
       throw new Error('Failed to extract user data from authentication response');
     }
     
+    console.log('handleGoogleAuth: Normalizing user data');
+    const normalizedUserData = normalizeUserData(userData, authResponse);
     console.log('handleGoogleAuth: Setting user state');
-    setUser(userData);
+    setUser(normalizedUserData);
     console.log('handleGoogleAuth: Setting auth data state');
     setAuthData(authResponse);
     
@@ -251,14 +335,13 @@ const handleGoogleAuth = async (apiResponse) => {
     try {
       // Decode the token to get user data
       const decoded = jwt_decode(token);
-      setUser(decoded);
       
+      let authResponse = null;
       if (storedAuthData) {
         // Parse the stored auth data
         const parsedAuthData = JSON.parse(storedAuthData);
         
         // Check if this is an ApiResponse wrapper or direct AuthResponse
-        let authResponse;
         if (parsedAuthData.data && parsedAuthData.success) {
           // This is an ApiResponse wrapper
           authResponse = parsedAuthData.data;
@@ -269,6 +352,11 @@ const handleGoogleAuth = async (apiResponse) => {
         
         setAuthData(authResponse);
       }
+      
+      // Normalize user data before setting it
+      console.log('updateAuthState: Normalizing user data from token');
+      const normalizedUserData = normalizeUserData(decoded, authResponse);
+      setUser(normalizedUserData);
     } catch (error) {
       console.error('Token decoding error:', error);
       logout();
@@ -290,23 +378,30 @@ const handleGoogleAuth = async (apiResponse) => {
     // Extract user data from token and set in state
     try {
       // First try to get user data from payload
-      let userData = authResponse.payload;
-      
+      let userData;
+      if(authResponse?.payload?.user?.usersDto) {
+          userData = authResponse.payload.user.usersDto;
+      }
+
       // If payload doesn't have user data in expected format, decode from token
-      if (!userData?.user?.usersDto?.businesses) {
+      if (!authResponse?.payload?.user?.usersDto) {
         userData = jwt_decode(accessToken);
         console.log('User data extracted from token:', userData);
       } else {
         console.log('User data extracted from payload:', userData);
       }
       
-      // Set user data in state
-      setUser(userData);
+      // Normalize user data before setting it
+      console.log('handleAuthResponse: Normalizing user data');
+      const normalizedUserData = normalizeUserData(userData, authResponse);
       
-      console.log('User data set in state:', userData);
+      // Set user data in state
+      setUser(normalizedUserData);
+      
+      console.log('User data set in state:', normalizedUserData);
       
       // Check if user has business details
-      const hasBusinesses = hasBusinessDetails(userData);
+      const hasBusinesses = hasBusinessDetails(normalizedUserData);
       console.log('Has business details:', hasBusinesses);
       
       if (!hasBusinesses) {
