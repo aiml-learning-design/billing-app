@@ -913,39 +913,7 @@ const Dashboard = () => {
                 </Card>
               </Grid>
               
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{ color: 'primary.main', mb: 2 }}>
-                      <Receipt fontSize="large" />
-                    </Box>
-                    <Typography variant="h6" gutterBottom>
-                      Create Invoice
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      Generate a new invoice for your client
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate('/invoices/new-invoice')}
-                      fullWidth
-                      sx={{ mt: 'auto' }}
-                    >
-                      Create
-                    </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
+
               <Grid item xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent sx={{

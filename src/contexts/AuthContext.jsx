@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import api from '../services/api';
 import jwt_decode from 'jwt-decode';
+import { API_CONFIG } from '../config/config';
 
 const AuthContext = createContext();
 
@@ -141,6 +143,25 @@ const handleGoogleAuth = async (apiResponse) => {
   }
 };
 
+  // Function to check if backend is available
+  const checkBackendAvailability = async () => {
+    try {
+      // Make a simple request to check if backend is available
+      // Using the user profile endpoint which should be lightweight
+      // We don't care about the response, just that the server responds
+      await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USER.PROFILE}`, { 
+        timeout: 3000, // 3 second timeout
+        validateStatus: () => true // Accept any status code as success
+      });
+      return true;
+    } catch (error) {
+      console.error('Backend availability check failed:', error.message);
+      // If we get here, it's likely a network error (ECONNREFUSED, timeout, etc.)
+      // which means the backend is unavailable
+      return false;
+    }
+  };
+
   // Refresh token function
   const refreshToken = async () => {
     try {
@@ -182,22 +203,44 @@ const handleGoogleAuth = async (apiResponse) => {
   // Initialize authentication state
   useEffect(() => {
     const initAuth = async () => {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const storedAuthData = localStorage.getItem('authData');
       
-      if (token) {
-        try {
-          if (isTokenExpired(token)) {
-            const newToken = await refreshToken();
-            updateAuthState(newToken, storedAuthData);
-          } else {
-            updateAuthState(token, storedAuthData);
-          }
-        } catch (error) {
-          console.error('Authentication initialization error:', error);
+      try {
+        // First check if backend is available
+        const isBackendAvailable = await checkBackendAvailability();
+        
+        if (!isBackendAvailable) {
+          console.error('Backend is unavailable during initialization');
+          // Clear authentication state since backend is unavailable
+          logout();
+          setError('Backend server is unavailable. Please try again later.');
+          setLoading(false);
+          return;
         }
+        
+        if (token) {
+          try {
+            if (isTokenExpired(token)) {
+              const newToken = await refreshToken();
+              updateAuthState(newToken, storedAuthData);
+            } else {
+              updateAuthState(token, storedAuthData);
+            }
+          } catch (error) {
+            console.error('Authentication initialization error:', error);
+            // Clear authentication state on error
+            logout();
+          }
+        }
+      } catch (error) {
+        console.error('Authentication initialization failed:', error);
+        // Clear authentication state on any error
+        logout();
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     
     initAuth();

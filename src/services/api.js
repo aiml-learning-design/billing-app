@@ -102,6 +102,15 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     
+    // Handle network errors (backend unavailable)
+    if (!error.response) {
+      console.error('Network error detected - backend may be unavailable:', error.message);
+      // Clear authentication tokens and redirect to login
+      authUtils.clearTokens();
+      authUtils.redirectToLogin();
+      return Promise.reject(new Error('Backend server is unavailable. Please try again later.'));
+    }
+    
     // If 401 error and not already retrying
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
