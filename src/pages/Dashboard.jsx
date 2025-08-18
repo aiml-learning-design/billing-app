@@ -499,9 +499,9 @@ const Dashboard = () => {
                   variant="contained"
                   size="large"
                   startIcon={<Store />}
-                  onClick={() => navigate('/business-details?context=client')}
+                  onClick={() => navigate('/client-details')}
                 >
-                  Add Client Details
+                  View Client Details
                 </Button>
               </CardContent>
             </Card>

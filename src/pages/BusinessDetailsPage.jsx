@@ -10,7 +10,7 @@ import {
   Business, ListAlt, Add, Store, Person,
   Email, Phone, LocationOn, ExpandMore, ExpandLess
 } from '@mui/icons-material';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { UI_CONFIG, API_CONFIG } from '../config/config';
@@ -18,15 +18,11 @@ import { UI_CONFIG, API_CONFIG } from '../config/config';
 const BusinessDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
-  
-  // Context state to differentiate between Client Details and Self Business Details
-  const [isClientContext, setIsClientContext] = useState(false);
   
   // Pagination states
   const [page, setPage] = useState(0);
@@ -39,14 +35,6 @@ const BusinessDetails = () => {
   
   // State to track if the Business Details section is expanded
   const [businessSectionExpanded, setBusinessSectionExpanded] = useState(false);
-  
-  // Determine context from URL parameters
-  useEffect(() => {
-    const searchParams = new URLSearchParams(location.search);
-    const context = searchParams.get('context');
-    setIsClientContext(context === 'client');
-    console.log('Context:', context === 'client' ? 'Client Details' : 'Self Business Details');
-  }, [location]);
   
   // Helper function to get businesses from user data
   const getBusinessesFromUser = (userData) => {
@@ -121,16 +109,16 @@ const BusinessDetails = () => {
       setLoading(true);
       setError(null);
       try {
-        console.log('Fetching business details from API with pagination', { page, size, isClientContext });
+        console.log('Fetching business details from API with pagination', { 
+          page, 
+          size
+        });
         
-        // Determine which endpoint to use based on context
-        const endpoint = isClientContext 
-          ? API_CONFIG.ENDPOINTS.BUSINESS.GET_CLIENT_DETAILS 
-          : API_CONFIG.ENDPOINTS.BUSINESS.GET_SELF_DETAILS;
+        // Use the vendor/self API endpoint
+        const endpoint = API_CONFIG.ENDPOINTS.BUSINESS.GET_SELF_DETAILS;
         
         console.log('Using endpoint:', endpoint);
         
-        // Call the business details API with pagination parameters
         const businessResponse = await api.get(`${endpoint}?page=${page}&size=${size}`);
         
         console.log('Business details response:', businessResponse);
@@ -262,7 +250,7 @@ const BusinessDetails = () => {
       }
     };
     fetchData();
-  }, [page, size, isClientContext]); // Re-fetch when page, size, or context changes
+  }, [page, size]); // Re-fetch when page or size changes
   
   // Handle page change for pagination
   const handlePageChange = (event, newPage) => {
@@ -295,29 +283,17 @@ const BusinessDetails = () => {
     setBusinessSectionExpanded(!businessSectionExpanded);
   };
 
-  // Function to handle adding a new business based on context
+  // Function to handle adding a new business
   const handleAddBusiness = () => {
-    if (isClientContext) {
-      // Navigate to business setup page with client context
-      navigate('/business-setup?context=client');
-    } else {
-      // Navigate to business setup page with self context
-      navigate('/business-setup');
-    }
-  };
-  
-  // Function to get the appropriate API endpoint based on context
-  const getApiEndpoint = () => {
-    return isClientContext 
-      ? API_CONFIG.ENDPOINTS.BUSINESS.ADD_CLIENT 
-      : API_CONFIG.ENDPOINTS.BUSINESS.ADD_SELF;
+    // Navigate to business setup page with self context
+    navigate('/business-setup');
   };
 
   return (
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-          {isClientContext ? 'Client Details' : 'Business Details'}
+          Business Details
         </Typography>
         <Button 
           variant="outlined" 
@@ -340,7 +316,7 @@ const BusinessDetails = () => {
         <>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-              {isClientContext ? 'Your Clients' : 'Your Businesses'}
+              Your Businesses
             </Typography>
             <IconButton 
               onClick={toggleBusinessSectionExpansion}
@@ -486,19 +462,17 @@ const BusinessDetails = () => {
                   <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', p: 3 }}>
                     <Business sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                      {isClientContext ? 'Add New Client' : 'Add New Business'}
+                      Add New Business
                     </Typography>
                     <Typography variant="body1" sx={{ mb: 2, textAlign: 'center' }}>
-                      {isClientContext 
-                        ? 'Create a new client profile to manage your client details.'
-                        : 'Create a new business profile to manage your business details.'}
+                      Create a new business profile to manage your business details.
                     </Typography>
                     <Button
                       variant="contained"
                       startIcon={<Add />}
                       onClick={handleAddBusiness}
                     >
-                      {isClientContext ? 'Add Client' : 'Add Business'}
+                      Add Business
                     </Button>
                   </Card>
                 </Grid>
