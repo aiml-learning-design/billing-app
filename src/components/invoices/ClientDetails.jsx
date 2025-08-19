@@ -437,8 +437,15 @@ const ClientDetails = ({
           state: newClientData.state,
           pincode: newClientData.pincode,
           country: newClientData.country
-        }
+        },
+        // Only include additionalDetails if there are any
+        additionalDetails: newClientData.additionalDetails.length > 0 
+          ? newClientData.additionalDetails 
+          : undefined
       };
+      
+      // Log the payload to verify additionalDetails are included
+      console.log('Creating client with data:', clientData);
       
       // Call API to create new client
       const response = await api.post('/api/clients', clientData);
@@ -659,15 +666,62 @@ const ClientDetails = ({
               />
             </Grid>
             <Grid item xs={12} sm={4}>
-              <TextField
-                label="State"
-                name="state"
-                value={newClientData.state}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Country</InputLabel>
+                <Select
+                  name="country"
+                  value={newClientData.country}
+                  onChange={handleNewClientInputChange}
+                  label="Country"
+                  disabled={geoLocationLoading}
+                >
+                  {countries.map((country) => (
+                    <MenuItem key={country.code} value={country.name}>
+                      {country.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {geoLocationLoading && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                    <Typography variant="caption" color="text.secondary">
+                      Detecting your location...
+                    </Typography>
+                  </Box>
+                )}
+              </FormControl>
             </Grid>
+            {/* State - Only shown if country has states */}
+            {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
+              <Grid item xs={12} sm={4}>
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>State</InputLabel>
+                  <Select
+                    name="state"
+                    value={newClientData.state}
+                    onChange={handleNewClientInputChange}
+                    label="State"
+                  >
+                    {countryStates[newClientData.country]?.states?.map((state) => (
+                      <MenuItem key={state} value={state}>
+                        {state}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+            ) : (
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  label="State"
+                  name="state"
+                  value={newClientData.state}
+                  onChange={handleNewClientInputChange}
+                  fullWidth
+                  margin="normal"
+                />
+              </Grid>
+            )}
             <Grid item xs={12} sm={4}>
               <TextField
                 label="Pincode"
@@ -676,7 +730,139 @@ const ClientDetails = ({
                 onChange={handleNewClientInputChange}
                 fullWidth
                 margin="normal"
+                InputProps={{
+                  endAdornment: pincodeLoading ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ) : pincodeSuccess ? (
+                    <InputAdornment position="end">
+                      <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.2rem' }}>✓</span>
+                      </Box>
+                    </InputAdornment>
+                  ) : null
+                }}
+                error={Boolean(pincodeError)}
+                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter pincode to auto-fill city, state, and country")}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    '& fieldset': {
+                      borderColor: pincodeSuccess ? 'success.main' : undefined,
+                    },
+                  },
+                  '& .MuiFormHelperText-root': {
+                    color: pincodeSuccess ? 'success.main' : undefined,
+                  }
+                }}
               />
+            </Grid>
+            
+            {/* Additional Details Section */}
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                Additional Details
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Add any custom information about your client as key-value pairs
+              </Typography>
+              
+              <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                {/* Display existing key-value pairs */}
+                {newClientData.additionalDetails.length > 0 ? (
+                  <Box sx={{ mb: 2 }}>
+                    {newClientData.additionalDetails.map((detail, index) => (
+                      <Box 
+                        key={index} 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          mb: 2,
+                          p: 1,
+                          borderRadius: 1,
+                          bgcolor: 'rgba(0, 0, 0, 0.03)'
+                        }}
+                      >
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={5}>
+                            <TextField
+                              fullWidth
+                              label="Key"
+                              name={`additionalDetails[${index}].key`}
+                              value={detail.key}
+                              onChange={(e) => {
+                                const newDetails = [...newClientData.additionalDetails];
+                                newDetails[index].key = e.target.value;
+                                setNewClientData(prev => ({
+                                  ...prev,
+                                  additionalDetails: newDetails
+                                }));
+                              }}
+                              size="small"
+                            />
+                          </Grid>
+                          <Grid item xs={5}>
+                            <TextField
+                              fullWidth
+                              label="Value"
+                              name={`additionalDetails[${index}].value`}
+                              value={detail.value}
+                              onChange={(e) => {
+                                const newDetails = [...newClientData.additionalDetails];
+                                newDetails[index].value = e.target.value;
+                                setNewClientData(prev => ({
+                                  ...prev,
+                                  additionalDetails: newDetails
+                                }));
+                              }}
+                              size="small"
+                            />
+                          </Grid>
+                          <Grid item xs={2}>
+                            <IconButton 
+                              color="error"
+                              onClick={() => {
+                                const newDetails = [...newClientData.additionalDetails];
+                                newDetails.splice(index, 1);
+                                setNewClientData(prev => ({
+                                  ...prev,
+                                  additionalDetails: newDetails
+                                }));
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    ))}
+                  </Box>
+                ) : (
+                  <Box sx={{ textAlign: 'center', py: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      No additional details added yet
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* Button to add new key-value pair */}
+                <Button
+                  variant="outlined"
+                  startIcon={<Add />}
+                  onClick={() => {
+                    setNewClientData(prev => ({
+                      ...prev,
+                      additionalDetails: [
+                        ...prev.additionalDetails,
+                        { key: '', value: '' }
+                      ]
+                    }));
+                  }}
+                  fullWidth
+                >
+                  Add Custom Field
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </DialogContent>
