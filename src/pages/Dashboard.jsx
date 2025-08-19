@@ -205,50 +205,7 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <Box sx={{ flex: 1, p: 3 }}>
-        {/* User Profile Section in Top Right */}
-        <Box sx={{ 
-          position: 'absolute', 
-          top: 10, 
-          right: 20, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'flex-end',
-          zIndex: 1000
-        }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            mb: 1, 
-            p: 1, 
-            borderRadius: 1,
-            bgcolor: 'background.paper',
-            boxShadow: 1
-          }}>
-            <Avatar 
-              src={user?.pictureUrl} 
-              alt={getUserName()}
-              sx={{ width: 40, height: 40, mr: 1 }}
-            >
-              {!user?.pictureUrl && <Person />}
-            </Avatar>
-            <Box sx={{ ml: 1 }}>
-              <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-                {getUserName()}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {user?.userEmail || user?.email || 'No email available'}
-              </Typography>
-              <Button 
-                variant="text" 
-                size="small" 
-                onClick={() => navigate('/profile')}
-                sx={{ p: 0, minWidth: 'auto', textTransform: 'none', display: 'block' }}
-              >
-                View Profile
-              </Button>
-            </Box>
-          </Box>
-        </Box>
+        {/* User Profile Section removed as it was hiding business and invoice buttons */}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
