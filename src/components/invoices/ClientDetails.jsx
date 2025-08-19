@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent,
   FormControl, InputLabel, Select, MenuItem,
@@ -12,12 +12,13 @@ import api from '../../services/api';
 import axios from 'axios';
 import countries from '../../utils/countries';
 import countryStates from '../../utils/countryStates';
+import { debounce } from 'lodash';
 
 /**
  * ClientDetails component for handling the "Billed To" section of the invoice
  * 
  * @param {Object} props - Component props
- * @param {Array} props.clients - Array of client objects
+ * @param {Array} props.clients - Array of client objects (used as initial data)
  * @param {string} props.selectedClient - ID of the selected client
  * @param {Function} props.setSelectedClient - Function to update selected client
  * @param {Function} props.onAddNewClient - Function to handle add new client button click
@@ -55,8 +56,82 @@ const ClientDetails = ({
   const [pincodeError, setPincodeError] = useState(null);
   const [pincodeSuccess, setPincodeSuccess] = useState(false);
   
+  // Autocomplete states
+  const [clientOptions, setClientOptions] = useState(clients);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  
   // Get the selected client data
-  const selectedClientData = clients.find(c => c.client_id === selectedClient);
+  const selectedClientData = clientOptions.find(c => c.client_id === selectedClient);
+  
+  // Function to fetch clients based on search term
+  const fetchClients = async (searchTerm) => {
+    try {
+      setLoading(true);
+      console.log('Fetching clients with search term:', searchTerm);
+      
+      // Call the API with the search term
+      const response = await api.get(`/api/client/business/all?search=${encodeURIComponent(searchTerm || '')}`);
+      
+      console.log('Client search response:', response);
+      
+      if (response.success && response.data) {
+        let clients = [];
+        const responseData = response.data;
+        
+        // Handle different response formats
+        if (Array.isArray(responseData.content)) {
+          console.log('Found standard Page structure with content array');
+          clients = responseData.content;
+        } else if (Array.isArray(responseData)) {
+          console.log('Found direct array of clients');
+          clients = responseData;
+        } else if (responseData.client_id || responseData.businessName) {
+          console.log('Found single client object');
+          clients = [responseData];
+        } else if (responseData.clients && Array.isArray(responseData.clients)) {
+          console.log('Found custom structure with clients array');
+          clients = responseData.clients;
+        } else {
+          console.warn('Unexpected response format, defaulting to empty array');
+          clients = [];
+        }
+        
+        console.log('Setting client options:', clients);
+        setClientOptions(clients);
+      } else {
+        console.warn('No clients found or invalid response');
+        setClientOptions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+      setClientOptions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Create a debounced version of fetchClients to avoid excessive API calls
+  const debouncedFetchClients = useCallback(
+    debounce((searchTerm) => {
+      fetchClients(searchTerm);
+    }, 500),
+    []
+  );
+  
+  // Effect to fetch clients when input value changes
+  useEffect(() => {
+    if (open) {
+      debouncedFetchClients(inputValue);
+    }
+  }, [inputValue, open, debouncedFetchClients]);
+  
+  // Effect to initialize client options with provided clients
+  useEffect(() => {
+    if (clients.length > 0) {
+      setClientOptions(clients);
+    }
+  }, [clients]);
   
   // Fetch user's location and set country defaults
   const fetchLocationData = async () => {
@@ -510,13 +585,40 @@ const ClientDetails = ({
             onInputChange={(event, newInputValue) => {
               setInputValue(newInputValue);
             }}
-            options={clients}
+            open={open}
+            onOpen={() => {
+              setOpen(true);
+              // Fetch initial data when dropdown is opened
+              if (inputValue) {
+                debouncedFetchClients(inputValue);
+              } else {
+                fetchClients('');
+              }
+            }}
+            onClose={() => setOpen(false)}
+            options={clientOptions}
+            loading={loading}
             getOptionLabel={(option) => option.clientName || option.businessName || ''}
             isOptionEqualToValue={(option, value) => option.client_id === value.client_id}
             renderInput={(params) => (
-              <TextField {...params} label="Client Name" variant="outlined" fullWidth />
+              <TextField 
+                {...params} 
+                label="Client Name" 
+                variant="outlined" 
+                fullWidth
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+                helperText="Start typing to search for clients"
+              />
             )}
-            freeSolo
+            noOptionsText="No clients found. Try a different search term or add a new client."
             fullWidth
           />
           
