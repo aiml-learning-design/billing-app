@@ -41,7 +41,7 @@ const TermsOfServicePage = () => {
         <Divider sx={{ my: 3 }} />
         
         <Typography variant="body1" paragraph>
-          Please read these Terms of Service ("Terms") carefully before using the Billing App service operated by Billing App Inc. ("us", "we", or "our").
+          Please read these Terms of Service ("Terms") carefully before using the Billing Application service operated by Billing Application Inc. ("us", "we", or "our").
         </Typography>
         
         <Typography variant="body1" paragraph>
@@ -95,11 +95,11 @@ const TermsOfServicePage = () => {
         </Typography>
         
         <Typography variant="body1" paragraph>
-          The service and its original content, features, and functionality are and will remain the exclusive property of Billing App Inc. and its licensors. The service is protected by copyright, trademark, and other laws of both the United States and foreign countries.
+          The service and its original content, features, and functionality are and will remain the exclusive property of Billing Application Inc. and its licensors. The service is protected by copyright, trademark, and other laws of both the United States and foreign countries.
         </Typography>
         
         <Typography variant="body1" paragraph>
-          Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Billing App Inc.
+          Our trademarks and trade dress may not be used in connection with any product or service without the prior written consent of Billing Application Inc.
         </Typography>
         
         <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>
@@ -130,7 +130,7 @@ const TermsOfServicePage = () => {
         </Typography>
         
         <Typography variant="body1" paragraph>
-          At the end of each billing period, your subscription will automatically renew under the same conditions unless you cancel it or Billing App Inc. cancels it. You may cancel your subscription renewal either through your online account management page or by contacting our customer support team.
+          At the end of each billing period, your subscription will automatically renew under the same conditions unless you cancel it or Billing Application Inc. cancels it. You may cancel your subscription renewal either through your online account management page or by contacting our customer support team.
         </Typography>
         
         <Typography variant="body1" paragraph>
@@ -154,7 +154,7 @@ const TermsOfServicePage = () => {
         </Typography>
         
         <Typography variant="body1" paragraph>
-          In no event shall Billing App Inc., nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:
+          In no event shall Billing Application Inc., nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from:
         </Typography>
         
         <Typography component="div" variant="body1" sx={{ pl: 3 }}>

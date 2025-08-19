@@ -41,7 +41,7 @@ const PrivacyPolicyPage = () => {
         <Divider sx={{ my: 3 }} />
         
         <Typography variant="body1" paragraph>
-          At Billing App, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our billing and invoice management service.
+          At Billing Application, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our billing and invoice management service.
         </Typography>
         
         <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>

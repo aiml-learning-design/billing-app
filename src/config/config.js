@@ -79,15 +79,13 @@ export const AUTH_CONFIG = {
 export const UI_CONFIG = {
   // Dashboard Menu Items
   MENU_ITEMS: [
-    { text: 'Sales', icon: 'Receipt', new: true },
-    { text: 'Purchases', icon: 'Description', new: true },
-    { text: 'Accounting', icon: 'MonetizationOn', new: true },
-    { text: 'Sales CRM', icon: 'Person', new: true },
-    { text: 'Inventory', icon: 'Store', new: true },
-    { text: 'Accounting Reports', icon: 'Description', new: true },
-    { text: 'GST Reports', icon: 'Receipt', new: true },
-    { text: 'Workflows', icon: 'ListAlt' },
-    { text: 'Bank & Payments', icon: 'MonetizationOn' },
+    { text: 'Dashboard', icon: 'Business', route: '/dashboard' },
+    { text: 'Invoices', icon: 'Receipt', route: '/invoices', new: true },
+    { text: 'New Invoice', icon: 'Description', route: '/invoices/new-invoice', new: true },
+    { text: 'Business Details', icon: 'Business', route: '/business-details' },
+    { text: 'Client Details', icon: 'Store', route: '/client-details' },
+    { text: 'Item Details', icon: 'ListAlt', route: '/item-details' },
+    { text: 'Shipping Details', icon: 'Description', route: '/shipping-details' },
     { text: 'Profile', icon: 'Person', route: '/profile' },
   ],
   

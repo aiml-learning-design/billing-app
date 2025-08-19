@@ -37,10 +37,13 @@ const Navbar = () => {
   if (!user) return null;
 
   return (
-    <AppBar position="static" elevation={0}>
+    <AppBar position="static" elevation={0} sx={{ 
+      background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+      boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
+    }}>
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Billing App
+          Billing Application
         </Typography>
 
         <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1 }}>
