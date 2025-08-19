@@ -448,7 +448,7 @@ const ClientDetails = ({
       console.log('Creating client with data:', clientData);
       
       // Call API to create new client
-      const response = await api.post('/api/clients/business/add', clientData);
+      const response = await api.post('/api/client/business/add', clientData);
       
       // Add the new client to the list and select it
       const newClient = response.data;
