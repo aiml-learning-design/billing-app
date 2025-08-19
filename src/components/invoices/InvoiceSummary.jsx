@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   Box, Typography, Card, CardContent,
-  Button, Divider
+  Button, Divider, Grid
 } from '@mui/material';
 import { Save } from '@mui/icons-material';
 import dayjs from 'dayjs';
@@ -54,104 +54,165 @@ const InvoiceSummary = ({
     : 'Not set';
 
   return (
-    <Card sx={{ position: 'sticky', top: 20 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
+    <Card sx={{ 
+      width: '100%', 
+      maxWidth: 'none',
+      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12)',
+      borderRadius: 1,
+      mb: 3,
+      border: '1px solid #e0e0e0'
+    }}>
+      <CardContent sx={{ padding: 2 }}>
+        <Typography variant="h5" gutterBottom fontWeight="bold" sx={{ mb: 2 }}>
           Invoice Summary
         </Typography>
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Invoice No
-          </Typography>
-          <Typography variant="body1">{invoiceNumber || 'Not set'}</Typography>
-        </Box>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Invoice No
+              </Typography>
+              <Typography variant="body2" fontWeight="medium">{invoiceNumber || 'Not set'}</Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Invoice Date
+              </Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {formattedInvoiceDate}
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Due Date
+              </Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {formattedDueDate}
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} sm={6}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Billed To
+              </Typography>
+              <Typography variant="body2" fontWeight="medium">
+                {selectedClient ? (selectedClient.clientName || selectedClient.businessName) : 'Not selected'}
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Invoice Date
-          </Typography>
-          <Typography variant="body1">
-            {formattedInvoiceDate}
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 3 }} />
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Due Date
-          </Typography>
-          <Typography variant="body1">
-            {formattedDueDate}
-          </Typography>
-        </Box>
+        <Grid container spacing={2} sx={{ mb: 3 }}>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Items
+              </Typography>
+              <Typography variant="body1" fontWeight="medium" color="primary.main">{items.length}</Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Subtotal
+              </Typography>
+              <Typography variant="body1" fontWeight="medium" color="primary.main">
+                {formatCurrency(subtotal)}
+              </Typography>
+            </Box>
+          </Grid>
+          
+          <Grid item xs={12} md={4}>
+            <Box sx={{ p: 1, bgcolor: '#f9f9f9', borderRadius: 1, height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                Tax
+              </Typography>
+              <Typography variant="body1" fontWeight="medium" color="primary.main">
+                {formatCurrency(tax)}
+              </Typography>
+            </Box>
+          </Grid>
+        </Grid>
 
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Billed To
-          </Typography>
-          <Typography variant="body1">
-            {selectedClient ? (selectedClient.clientName || selectedClient.businessName) : 'Not selected'}
-          </Typography>
-        </Box>
+        <Divider sx={{ my: 3 }} />
 
-        <Divider sx={{ my: 2 }} />
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Items
+        <Box 
+          sx={{ 
+            mb: 3, 
+            p: 2, 
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            borderRadius: 2,
+            color: 'white',
+            boxShadow: '0 3px 6px rgba(33, 150, 243, 0.25)',
+            textAlign: 'center'
+          }}
+        >
+          <Typography variant="subtitle1" fontWeight="bold" sx={{ mb: 0.5 }}>
+            Total Amount in Rupees
           </Typography>
-          <Typography variant="body1">{items.length}</Typography>
-        </Box>
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Subtotal
-          </Typography>
-          <Typography variant="body1">
-            {formatCurrency(subtotal)}
-          </Typography>
-        </Box>
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle2" color="text.secondary">
-            Tax
-          </Typography>
-          <Typography variant="body1">
-            {formatCurrency(tax)}
-          </Typography>
-        </Box>
-
-        <Divider sx={{ my: 2 }} />
-
-        <Box sx={{ mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight="bold">
-            Total Amount
-          </Typography>
-          <Typography variant="h5" fontWeight="bold">
+          <Typography variant="h6" fontWeight="bold" sx={{ my: 1 }}>
             {formatCurrency(total)}
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            startIcon={<Save />}
-            onClick={onSaveAndContinue}
-          >
-            Save & Continue
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            fullWidth
-            startIcon={<Save />}
-            onClick={onSaveDraft}
-          >
-            Save As Draft
-          </Button>
-        </Box>
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              color="primary"
+              fullWidth
+              size="large"
+              startIcon={<Save />}
+              onClick={onSaveAndContinue}
+              sx={{ 
+                py: 2, 
+                fontWeight: 'bold',
+                fontSize: '1.1rem',
+                boxShadow: '0 4px 10px rgba(0, 0, 0, 0.2)',
+                background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                '&:hover': {
+                  boxShadow: '0 6px 12px rgba(0, 0, 0, 0.25)',
+                  background: 'linear-gradient(45deg, #1e88e5 30%, #1cb5e0 90%)',
+                }
+              }}
+            >
+              Save & Continue
+            </Button>
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="outlined"
+              color="primary"
+              fullWidth
+              size="large"
+              startIcon={<Save />}
+              onClick={onSaveDraft}
+              sx={{ 
+                py: 2,
+                fontSize: '1.1rem',
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2,
+                  backgroundColor: 'rgba(33, 150, 243, 0.05)'
+                }
+              }}
+            >
+              Save As Draft
+            </Button>
+          </Grid>
+        </Grid>
       </CardContent>
     </Card>
   );

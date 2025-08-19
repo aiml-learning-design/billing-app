@@ -444,7 +444,7 @@ const NewInvoice = () => {
 
         <Grid container spacing={3}>
           {/* Left Column - Invoice Details */}
-          <Grid item xs={12} md={8}>
+          <Grid item xs={12} md={12}>
             {activeStep === 0 ? (
               <>
                 <InvoiceDetails
@@ -572,7 +572,7 @@ const NewInvoice = () => {
           </Grid>
 
           {/* Right Column - Summary */}
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={12}>
             <InvoiceSummary
               invoiceNumber={invoiceNumber}
               invoiceDate={invoiceDate}
