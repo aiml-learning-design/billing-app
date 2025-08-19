@@ -205,7 +205,6 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <Box sx={{ flex: 1, p: 3 }}>
-        {/* User Profile Section removed as it was hiding business and invoice buttons */}
 
         <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>

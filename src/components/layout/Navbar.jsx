@@ -13,7 +13,7 @@ import {
   MenuItem,
   Divider
 } from '@mui/material';
-import { Dashboard, Business, ListAlt, AccountCircle, ExitToApp } from '@mui/icons-material';
+import { Dashboard, Business, ListAlt, AccountCircle, ExitToApp, Edit } from '@mui/icons-material';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -80,8 +80,11 @@ const Navbar = () => {
           color="inherit"
           sx={{ ml: 2 }}
         >
-          <Avatar sx={{ width: 32, height: 32 }}>
-            {user.userEmail ? user.userEmail.charAt(0).toUpperCase() : 'U'}
+          <Avatar 
+            src={user.pictureUrl} 
+            sx={{ width: 32, height: 32 }}
+          >
+            {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
           </Avatar>
         </IconButton>
         <Menu
@@ -100,11 +103,18 @@ const Navbar = () => {
           onClose={handleClose}
         >
           <Box sx={{ p: 2 }}>
-            <Typography variant="subtitle1">{user.email || 'User'}</Typography>
+            <Typography variant="subtitle1" fontWeight="bold">{user.full_name || 'User'}</Typography>
           </Box>
           <Divider />
-          <MenuItem onClick={() => { handleClose(); navigate('/dashboard'); }}>
-            <AccountCircle sx={{ mr: 1 }} /> Profile
+          <MenuItem onClick={() => { handleClose(); navigate('/profile'); }}>
+            <AccountCircle sx={{ mr: 1 }} /> 
+            <Box>
+              <Typography variant="body2">Profile</Typography>
+              <Typography variant="caption" color="text.secondary">{user.email}</Typography>
+            </Box>
+          </MenuItem>
+          <MenuItem onClick={() => { handleClose(); navigate('/profile?edit=true'); }}>
+            <Edit sx={{ mr: 1 }} /> Edit Profile
           </MenuItem>
           <MenuItem onClick={handleLogout}>
             <ExitToApp sx={{ mr: 1 }} /> Logout
