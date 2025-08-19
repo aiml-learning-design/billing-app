@@ -395,8 +395,12 @@ const NewInvoice = () => {
   };
 
   // Handle adding a new client
+  // Instead of navigating away from the invoice creation flow,
+  // we'll let the ClientDetails component handle this with its built-in dialog
   const handleAddNewClient = () => {
-    navigate('/business-details');
+    // The ClientDetails component will open its own dialog
+    // when onAddNewClient is null or undefined
+    return;
   };
 
   if (loading) {
@@ -487,7 +491,8 @@ const NewInvoice = () => {
                   clients={clients}
                   selectedClient={selectedClient}
                   setSelectedClient={setSelectedClient}
-                  onAddNewClient={handleAddNewClient}
+                  // Removed onAddNewClient prop to use the component's built-in dialog
+                  // This keeps users in the invoice creation flow when adding a new client
                 />
 
                 <ShippingDetails
