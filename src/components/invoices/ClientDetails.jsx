@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent,
   FormControl, InputLabel, Select, MenuItem,
   Button, Avatar, Divider, Autocomplete, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Snackbar, Alert
+  CircularProgress, Snackbar, Alert, IconButton, InputAdornment
 } from '@mui/material';
-import { Add, Person, LocationOn, Email, Phone, Save } from '@mui/icons-material';
+import { Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
+import axios from 'axios';
+import countries from '../../utils/countries';
+import countryStates from '../../utils/countryStates';
 
 /**
  * ClientDetails component for handling the "Billed To" section of the invoice
@@ -37,15 +40,109 @@ const ClientDetails = ({
     city: '',
     state: '',
     pincode: '',
-    country: 'India'
+    country: 'India',
+    additionalDetails: []
   });
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [inputValue, setInputValue] = useState('');
   
+  // Country detection states
+  const [countryCode, setCountryCode] = useState('in');
+  const [selectedCountry, setSelectedCountry] = useState('India');
+  const [geoLocationLoading, setGeoLocationLoading] = useState(false);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeError, setPincodeError] = useState(null);
+  const [pincodeSuccess, setPincodeSuccess] = useState(false);
+  
   // Get the selected client data
   const selectedClientData = clients.find(c => c.client_id === selectedClient);
   
+  // Fetch user's location and set country defaults
+  const fetchLocationData = async () => {
+    try {
+      setGeoLocationLoading(true);
+      const response = await axios.get('https://ipapi.co/json/');
+      const userData = response.data;
+      console.log("Location data from ipapi.co:", userData);
+
+      // Set UAE as default for testing (or use any other default as needed)
+      if (userData?.country_code === 'AE' || userData?.country_name === 'United Arab Emirates') {
+        console.log("UAE detected, setting as default country");
+        const uaeCountry = countries.find(c => c.code === 'AE');
+        if (uaeCountry) {
+          setSelectedCountry(uaeCountry.name);
+          setCountryCode('ae');
+          setNewClientData(prev => ({
+            ...prev,
+            country: uaeCountry.name
+          }));
+          return;
+        }
+      }
+
+      const countryNames = countries.map(c => c.name);
+
+      if (userData?.country_name && countryNames.includes(userData.country_name)) {
+        console.log(`Setting country to ${userData.country_name}`);
+        setSelectedCountry(userData.country_name);
+        const detectedCountryCode = userData.country_code.toLowerCase();
+        setCountryCode(detectedCountryCode);
+
+        // Update country with the detected country
+        setNewClientData(prev => ({
+          ...prev,
+          country: userData.country_name
+        }));
+      } else if (userData?.country_code) {
+        // Try to find country by code if name doesn't match
+        const countryByCode = countries.find(c => c.code === userData.country_code.toUpperCase());
+        if (countryByCode) {
+          console.log(`Found country by code: ${countryByCode.name}`);
+          setSelectedCountry(countryByCode.name);
+          setCountryCode(userData.country_code.toLowerCase());
+          setNewClientData(prev => ({
+            ...prev,
+            country: countryByCode.name
+          }));
+        } else {
+          // Default to India if no match found
+          const defaultCountry = countries.find(c => c.code === 'IN') || countries.find(c => c.name === 'India');
+          console.log(`No matching country found, defaulting to ${defaultCountry.name}`);
+          setSelectedCountry(defaultCountry.name);
+          setCountryCode(defaultCountry.code.toLowerCase());
+          setNewClientData(prev => ({
+            ...prev,
+            country: defaultCountry.name
+          }));
+        }
+      } else {
+        // Default to India if no country data
+        const defaultCountry = countries.find(c => c.code === 'IN') || countries.find(c => c.name === 'India');
+        console.log(`No country data, defaulting to ${defaultCountry.name}`);
+        setSelectedCountry(defaultCountry.name);
+        setCountryCode(defaultCountry.code.toLowerCase());
+        setNewClientData(prev => ({
+          ...prev,
+          country: defaultCountry.name
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to fetch location data", error);
+      // Default to India if error
+      const defaultCountry = countries.find(c => c.code === 'IN') || countries.find(c => c.name === 'India');
+      console.log(`Error fetching location, defaulting to ${defaultCountry.name}`);
+      setSelectedCountry(defaultCountry.name);
+      setCountryCode(defaultCountry.code.toLowerCase());
+      setNewClientData(prev => ({
+        ...prev,
+        country: defaultCountry.name
+      }));
+    } finally {
+      setGeoLocationLoading(false);
+    }
+  };
+
   // Handle opening the new client dialog
   const handleOpenNewDialog = () => {
     setNewClientData({
@@ -58,9 +155,13 @@ const ClientDetails = ({
       city: '',
       state: '',
       pincode: '',
-      country: 'India'
+      country: 'India',
+      additionalDetails: []
     });
     setOpenNewDialog(true);
+    
+    // Fetch location data when dialog opens
+    fetchLocationData();
   };
   
   // Handle closing the new client dialog
@@ -75,6 +176,247 @@ const ClientDetails = ({
       ...prev,
       [name]: value
     }));
+    
+    // If country changes, update the country code
+    if (name === 'country') {
+      const country = countries.find(c => c.name === value);
+      if (country) {
+        setCountryCode(country.code.toLowerCase());
+        
+        // Reset state if country changes
+        if (prev.country !== value) {
+          setNewClientData(prev => ({
+            ...prev,
+            state: ''
+          }));
+        }
+      }
+    }
+    
+    // If pincode changes and is of sufficient length, trigger lookup
+    if (name === 'pincode' && value.length >= 5) {
+      handlePincodeLookup(value);
+    }
+  };
+  
+  // Handle pincode lookup
+  const handlePincodeLookup = async (pincode) => {
+    // Validate pincode format based on country
+    if (!pincode) return;
+
+    // Reset success state
+    setPincodeSuccess(false);
+
+    console.log(`Looking up pincode: ${pincode} for country code: ${countryCode}`);
+
+    // Different countries have different pincode formats
+    // For simplicity, we'll just check minimum length
+    const minLength = countryCode === 'us' ? 5 :
+                      countryCode === 'ca' ? 6 :
+                      countryCode === 'gb' ? 5 :
+                      countryCode === 'au' ? 4 :
+                      countryCode === 'ae' ? 5 : 5;
+
+    if (pincode.length < minLength) return;
+
+    try {
+      setPincodeLoading(true);
+      setPincodeError(null);
+
+      // Use the country code to determine which API endpoint to use
+      // Default to 'in' (India) if no country code is set
+      const countryCodeForApi = countryCode || 'in';
+
+      console.log(`Using country code for API: ${countryCodeForApi}`);
+
+      // Format the pincode based on country requirements
+      let formattedPincode = pincode;
+
+      // Special handling for certain countries
+      if (countryCodeForApi === 'ca') {
+        // Canadian postal codes are in format A1A 1A1, but API needs them without spaces
+        formattedPincode = pincode.replace(/\s/g, '');
+      } else if (countryCodeForApi === 'gb') {
+        // UK postcodes may need special handling
+        formattedPincode = pincode.replace(/\s/g, '');
+      } else if (countryCodeForApi === 'ae') {
+        // UAE postcodes are typically 5 digits
+        formattedPincode = pincode.replace(/\s/g, '');
+
+        // Special handling for UAE postcodes
+        // If zippopotam.us doesn't support UAE, we can use a hardcoded mapping for common UAE postcodes
+        const uaePostcodes = {
+          '00000': { city: 'Abu Dhabi', state: '' },
+          '11111': { city: 'Dubai', state: '' },
+          '22222': { city: 'Sharjah', state: '' },
+          '33333': { city: 'Ajman', state: '' },
+          '44444': { city: 'Umm Al Quwain', state: '' },
+          '55555': { city: 'Ras Al Khaimah', state: '' },
+          '66666': { city: 'Fujairah', state: '' },
+          // Add more UAE postcodes as needed
+        };
+
+        // Check if we have a hardcoded mapping for this UAE postcode
+        if (uaePostcodes[formattedPincode]) {
+          console.log(`Found hardcoded mapping for UAE postcode: ${formattedPincode}`);
+          const uaePlace = uaePostcodes[formattedPincode];
+
+          // Update city
+          setNewClientData(prev => ({
+            ...prev,
+            city: uaePlace.city
+          }));
+
+          // Update country to UAE
+          const uaeCountry = countries.find(c => c.code === 'AE');
+          if (uaeCountry) {
+            setNewClientData(prev => ({
+              ...prev,
+              country: uaeCountry.name
+            }));
+            setSelectedCountry(uaeCountry.name);
+            setCountryCode('ae');
+          }
+
+          // Set success state
+          setPincodeSuccess(true);
+          setTimeout(() => {
+            setPincodeSuccess(false);
+          }, 3000);
+
+          setPincodeLoading(false);
+          return;
+        }
+      }
+
+      // Call the zippopotam.us API to get location data based on pincode
+      console.log(`Calling API: https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
+      const response = await axios.get(`https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
+
+      console.log('API response:', response.data);
+
+      if (response.data && response.data.places && response.data.places.length > 0) {
+        const place = response.data.places[0];
+        let fieldsUpdated = false;
+
+        // Update city
+        if (place['place name']) {
+          console.log(`Setting city to: ${place['place name']}`);
+          setNewClientData(prev => ({
+            ...prev,
+            city: place['place name']
+          }));
+          fieldsUpdated = true;
+        }
+
+        // Get the country name from the response or use the current one
+        let countryName = response.data.country;
+        console.log(`Country from API: ${countryName}`);
+
+        // If the API returned a country name that doesn't match our data structure,
+        // try to find a matching country in our list
+        if (countryName && !countryStates[countryName]) {
+          console.log(`Country name doesn't match our data structure: ${countryName}`);
+          // Try to find a matching country by name similarity
+          const matchingCountry = Object.keys(countryStates).find(c =>
+            c.toLowerCase() === countryName.toLowerCase() ||
+            c.toLowerCase().includes(countryName.toLowerCase()) ||
+            countryName.toLowerCase().includes(c.toLowerCase())
+          );
+
+          if (matchingCountry) {
+            console.log(`Found matching country: ${matchingCountry}`);
+            countryName = matchingCountry;
+          }
+        }
+
+        // If we have a valid country name, update the form
+        if (countryName && countryStates[countryName]) {
+          // Update country
+          console.log(`Setting country to: ${countryName}`);
+          setNewClientData(prev => ({
+            ...prev,
+            country: countryName
+          }));
+          setSelectedCountry(countryName);
+          fieldsUpdated = true;
+
+          // Find the matching country in our countries list to get the code
+          const countryObj = countries.find(c => c.name === countryName);
+          if (countryObj) {
+            console.log(`Setting country code to: ${countryObj.code.toLowerCase()}`);
+            setCountryCode(countryObj.code.toLowerCase());
+          }
+
+          // Update state if the country has states
+          if (countryStates[countryName] && countryStates[countryName].hasStates) {
+            // Try to find the state in our list
+            const stateName = place['state'] || place['state abbreviation'];
+            if (stateName) {
+              console.log(`State from API: ${stateName}`);
+              const statesList = countryStates[countryName].states;
+
+              // Find the closest matching state name
+              const matchingState = statesList.find(s =>
+                s.toLowerCase() === stateName.toLowerCase() ||
+                s.toLowerCase().includes(stateName.toLowerCase()) ||
+                stateName.toLowerCase().includes(s.toLowerCase())
+              );
+
+              if (matchingState) {
+                console.log(`Setting state to: ${matchingState}`);
+                setNewClientData(prev => ({
+                  ...prev,
+                  state: matchingState
+                }));
+                fieldsUpdated = true;
+              }
+            }
+          }
+        }
+
+        // Set success state if any fields were updated
+        if (fieldsUpdated) {
+          console.log('Fields updated successfully');
+          setPincodeSuccess(true);
+          // Auto-hide success message after 3 seconds
+          setTimeout(() => {
+            setPincodeSuccess(false);
+          }, 3000);
+        } else {
+          console.log('Found location but could not update fields');
+          // Providing a helpful message instead of an error
+          setPincodeError('Location found but details could not be auto-filled. You can enter them manually.');
+        }
+      } else {
+        console.log('No location found for this pincode/zipcode');
+        // Not showing error for not found pincodes as pincode is optional
+      }
+    } catch (error) {
+      console.error('Error looking up pincode:', error);
+
+      // Provide more specific error messages based on the error
+      if (error.response) {
+        if (error.response.status === 404) {
+          console.log('Pincode/zipcode not found');
+          // Not showing error for not found pincodes as pincode is optional
+        } else {
+          console.log(`API error: ${error.response.status}`);
+          // Providing a helpful message instead of an error
+          setPincodeError(`Unable to lookup pincode (API error). You can enter address details manually.`);
+        }
+      } else if (error.request) {
+        console.log('Network error');
+        // Providing a helpful message instead of an error
+        setPincodeError('Network issue while looking up pincode. You can enter address details manually.');
+      } else {
+        console.log('Failed to lookup pincode');
+        // Providing a helpful message instead of an error
+        setPincodeError('Unable to lookup pincode. You can enter address details manually.');
+      }
+    } finally {
+      setPincodeLoading(false);
+    }
   };
   
   // Handle creating a new client

@@ -19,7 +19,10 @@ import {
   Container,
   IconButton,
   CircularProgress,
-  Snackbar
+  Snackbar,
+  Divider,
+  Card,
+  CardContent
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import api from '../services/api';
@@ -46,6 +49,13 @@ const validationSchema = Yup.object().shape({
   }),
   pincode: Yup.string(), // Optional field
   country: Yup.string().required('Country is required'),
+  // Additional details validation
+  additionalDetails: Yup.array().of(
+    Yup.object().shape({
+      key: Yup.string().required('Key is required'),
+      value: Yup.string().required('Value is required')
+    })
+  )
 });
 
 const BusinessSetupPage = () => {
@@ -83,7 +93,8 @@ const BusinessSetupPage = () => {
       city: '',
       state: '',
       pincode: '',
-      country: 'India'
+      country: 'India',
+      additionalDetails: []
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -114,12 +125,14 @@ const BusinessSetupPage = () => {
           pan: values.pan,
           email: values.primaryEmail,
           phone: values.phone,
-          officeAddress: officeAddress
+          officeAddress: officeAddress,
+          additionalDetails: values.additionalDetails.length > 0 ? values.additionalDetails : undefined
         };
         
         // Log the payload to verify state is only included for countries with states
         console.log('Country:', values.country);
         console.log('Country has states:', values.country && countryStates[values.country] && countryStates[values.country].hasStates);
+        console.log('Additional Details:', values.additionalDetails);
         console.log('Payload:', payload);
 
         // Make API call with the API service
@@ -751,6 +764,109 @@ const BusinessSetupPage = () => {
                   </Box>
                 </Grid>
               )}
+
+              {/* Additional Details Section */}
+              <Grid item xs={12}>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Additional Details
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  Add any custom information about your business as key-value pairs
+                </Typography>
+                
+                <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                  {/* Display existing key-value pairs */}
+                  {formik.values.additionalDetails.length > 0 ? (
+                    <Box sx={{ mb: 2 }}>
+                      {formik.values.additionalDetails.map((detail, index) => (
+                        <Box 
+                          key={index} 
+                          sx={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            mb: 2,
+                            p: 1,
+                            borderRadius: 1,
+                            bgcolor: 'rgba(0, 0, 0, 0.03)'
+                          }}
+                        >
+                          <Grid container spacing={2} alignItems="center">
+                            <Grid item xs={5}>
+                              <TextField
+                                fullWidth
+                                label="Key"
+                                name={`additionalDetails[${index}].key`}
+                                value={detail.key}
+                                onChange={formik.handleChange}
+                                error={
+                                  formik.touched.additionalDetails?.[index]?.key && 
+                                  Boolean(formik.errors.additionalDetails?.[index]?.key)
+                                }
+                                helperText={
+                                  formik.touched.additionalDetails?.[index]?.key && 
+                                  formik.errors.additionalDetails?.[index]?.key
+                                }
+                                size="small"
+                              />
+                            </Grid>
+                            <Grid item xs={5}>
+                              <TextField
+                                fullWidth
+                                label="Value"
+                                name={`additionalDetails[${index}].value`}
+                                value={detail.value}
+                                onChange={formik.handleChange}
+                                error={
+                                  formik.touched.additionalDetails?.[index]?.value && 
+                                  Boolean(formik.errors.additionalDetails?.[index]?.value)
+                                }
+                                helperText={
+                                  formik.touched.additionalDetails?.[index]?.value && 
+                                  formik.errors.additionalDetails?.[index]?.value
+                                }
+                                size="small"
+                              />
+                            </Grid>
+                            <Grid item xs={2}>
+                              <IconButton 
+                                color="error"
+                                onClick={() => {
+                                  const newDetails = [...formik.values.additionalDetails];
+                                  newDetails.splice(index, 1);
+                                  formik.setFieldValue('additionalDetails', newDetails);
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Grid>
+                          </Grid>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={{ textAlign: 'center', py: 2 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        No additional details added yet
+                      </Typography>
+                    </Box>
+                  )}
+                  
+                  {/* Button to add new key-value pair */}
+                  <Button
+                    variant="outlined"
+                    startIcon={<AddIcon />}
+                    onClick={() => {
+                      formik.setFieldValue('additionalDetails', [
+                        ...formik.values.additionalDetails,
+                        { key: '', value: '' }
+                      ]);
+                    }}
+                    fullWidth
+                  >
+                    Add Custom Field
+                  </Button>
+                </Box>
+              </Grid>
 
               {/* Submit Button */}
               <Grid item xs={12}>
