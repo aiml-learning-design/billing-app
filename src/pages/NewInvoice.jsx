@@ -36,6 +36,9 @@ const NewInvoice = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [invoicePrefix, setInvoicePrefix] = useState('');
+  const [invoiceDelimiter, setInvoiceDelimiter] = useState('-');
+  const [useCustomPrefix, setUseCustomPrefix] = useState(false);
   const [invoiceDate, setInvoiceDate] = useState(dayjs());
   const [dueDate, setDueDate] = useState(dayjs().add(14, 'day'));
   const [currency, setCurrency] = useState('INR');
@@ -187,11 +190,27 @@ const NewInvoice = () => {
         setLastInvoiceNumber(lastNumber);
         setLastInvoiceDate(lastDate);
         
+        // Extract numeric part from the last invoice number
         const prefix = lastNumber.replace(/\d+$/, '');
         const num = parseInt(lastNumber.match(/\d+$/)[0], 10);
-        setInvoiceNumber(`${prefix}${num + 1}`);
+        
+        // Set default prefix based on last invoice if custom prefix is not being used
+        if (!useCustomPrefix) {
+          setInvoiceNumber(`${prefix}${num + 1}`);
+        } else {
+          // Use custom prefix and delimiter if specified
+          const customPrefix = invoicePrefix || business.businessName.substring(0, 3).toUpperCase();
+          setInvoiceNumber(`${customPrefix}${invoiceDelimiter}${num + 1}`);
+        }
       } else {
-        setInvoiceNumber(`${business.businessName.substring(0, 3).toUpperCase()}1000`);
+        // No previous invoice, create a default one
+        if (!useCustomPrefix) {
+          setInvoiceNumber(`${business.businessName.substring(0, 3).toUpperCase()}1000`);
+        } else {
+          // Use custom prefix and delimiter if specified
+          const customPrefix = invoicePrefix || business.businessName.substring(0, 3).toUpperCase();
+          setInvoiceNumber(`${customPrefix}${invoiceDelimiter}1000`);
+        }
       }
 
       // Fetch clients, warehouses, transporters
@@ -450,6 +469,12 @@ const NewInvoice = () => {
                 <InvoiceDetails
                   invoiceNumber={invoiceNumber}
                   setInvoiceNumber={setInvoiceNumber}
+                  invoicePrefix={invoicePrefix}
+                  setInvoicePrefix={setInvoicePrefix}
+                  invoiceDelimiter={invoiceDelimiter}
+                  setInvoiceDelimiter={setInvoiceDelimiter}
+                  useCustomPrefix={useCustomPrefix}
+                  setUseCustomPrefix={setUseCustomPrefix}
                   invoiceDate={invoiceDate}
                   setInvoiceDate={setInvoiceDate}
                   dueDate={dueDate}
