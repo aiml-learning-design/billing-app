@@ -9,6 +9,7 @@ const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [userBusinessDetails, setBusinessDetails] = useState(null);
   const [authData, setAuthData] = useState(null); // Stores complete auth response
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -202,6 +203,7 @@ const handleGoogleAuth = async (apiResponse) => {
     const normalizedUserData = normalizeUserData(userData, authResponse);
     console.log('handleGoogleAuth: Setting user state');
     setUser(normalizedUserData);
+    setBusinessDetails(normalizedUserData.businesses)
     console.log('handleGoogleAuth: Setting auth data state');
     setAuthData(authResponse);
     
@@ -357,6 +359,7 @@ const handleGoogleAuth = async (apiResponse) => {
       console.log('updateAuthState: Normalizing user data from token');
       const normalizedUserData = normalizeUserData(decoded, authResponse);
       setUser(normalizedUserData);
+      setBusinessDetails(normalizedUserData.businesses)
     } catch (error) {
       console.error('Token decoding error:', error);
       logout();
@@ -397,7 +400,7 @@ const handleGoogleAuth = async (apiResponse) => {
       
       // Set user data in state
       setUser(normalizedUserData);
-      
+      setBusinessDetails(normalizedUserData.businesses)
       console.log('User data set in state:', normalizedUserData);
       
       // Check if user has business details
@@ -493,12 +496,14 @@ const login = async (email, password) => {
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('authData');
     setUser(null);
+    setBusinessDetails(null)
     setAuthData(null);
     navigate('/login');
   };
 
   const value = {
     user,
+    userBusinessDetails, // Add userBusinessDetails to the context value
     authData, // Provides complete auth response to components
     loading,
     error,
