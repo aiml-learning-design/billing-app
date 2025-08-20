@@ -384,13 +384,13 @@ const handleGoogleAuth = async (apiResponse) => {
       }
 
       // If payload doesn't have user data in expected format, decode from token
-      if (!authResponse?.payload?.user?.usersDto) {
+/*       if (!authResponse?.payload?.user?.usersDto) {
         userData = jwt_decode(accessToken);
         console.log('User data extracted from token:', userData);
       } else {
         console.log('User data extracted from payload:', userData);
       }
-      
+       */
       // Normalize user data before setting it
       console.log('handleAuthResponse: Normalizing user data');
       const normalizedUserData = normalizeUserData(userData, authResponse);
