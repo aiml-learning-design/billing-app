@@ -401,7 +401,7 @@ const NewInvoice = () => {
         isRecurring
       };
 
-      const response = await api.post('/api/invoices', invoiceData);
+      const response = await api.post('/api/invoices/create', invoiceData);
       navigate(`/invoices/${response.data.invoiceId}/payment`);
     } catch (err) {
       console.error('Failed to save invoice', err);
