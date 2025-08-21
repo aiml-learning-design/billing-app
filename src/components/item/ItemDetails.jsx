@@ -2,7 +2,7 @@ import React from 'react';
 import {
   Box, Typography, Card, CardContent, Button,
   IconButton, TextField, InputAdornment,
-  FormControlLabel, Checkbox
+  FormControlLabel, Checkbox, FormControl, InputLabel, Select, MenuItem
 } from '@mui/material';
 import { Add, Delete, CloudUpload } from '@mui/icons-material';
 
@@ -15,13 +15,17 @@ import { Add, Delete, CloudUpload } from '@mui/icons-material';
  * @param {Function} props.onAddItem - Function to add a new item
  * @param {Function} props.onRemoveItem - Function to remove an item
  * @param {Function} props.onItemChange - Function to update a specific item field
+ * @param {string} props.invoiceFor - Selected invoice type (PRODUCT, SERVICE, ONE_TIME)
+ * @param {Function} props.setInvoiceFor - Function to update invoice type
  */
 const ItemDetails = ({
   items = [],
   setItems,
   onAddItem,
   onRemoveItem,
-  onItemChange
+  onItemChange,
+  invoiceFor = 'ONE_TIME',
+  setInvoiceFor = () => {}
 }) => {
   // Default handlers if not provided
   const handleAddItem = onAddItem || (() => {
@@ -31,9 +35,9 @@ const ItemDetails = ({
         id: items.length + 1,
         name: '',
         hsn: '',
-        gstRate: 0,
-        quantity: 1,
-        rate: 0,
+        gstRate: '',
+        quantity: '',
+        rate: '',
         amount: 0,
         cgst: 0,
         sgst: 0,
@@ -164,6 +168,21 @@ const ItemDetails = ({
           >
             Add Item
           </Button>
+          
+          {/* Invoice For Dropdown */}
+          <FormControl size="small" sx={{ minWidth: 150, mr: 2 }}>
+            <InputLabel>Invoice For</InputLabel>
+            <Select
+              value={invoiceFor}
+              onChange={(e) => setInvoiceFor(e.target.value)}
+              label="Invoice For"
+            >
+              <MenuItem value="PRODUCT">Product</MenuItem>
+              <MenuItem value="SERVICE">Service</MenuItem>
+              <MenuItem value="ONE_TIME">One Time</MenuItem>
+            </Select>
+          </FormControl>
+          
           <FormControlLabel
             control={<Checkbox />}
             label="Add Description"

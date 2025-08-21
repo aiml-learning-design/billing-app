@@ -87,9 +87,9 @@ const NewInvoice = () => {
       id: 1,
       name: '',
       hsn: '',
-      gstRate: 0,
-      quantity: 1,
-      rate: 0,
+      gstRate: '',
+      quantity: '',
+      rate: '',
       amount: 0,
       cgst: 0,
       sgst: 0,
@@ -399,9 +399,9 @@ const NewInvoice = () => {
         id: items.length + 1,
         name: '',
         hsn: '',
-        gstRate: 0,
-        quantity: 1,
-        rate: 0,
+        gstRate: '',
+        quantity: '',
+        rate: '',
         amount: 0,
         cgst: 0,
         sgst: 0,
@@ -885,6 +885,8 @@ const NewInvoice = () => {
                   onAddItem={handleAddItem}
                   onRemoveItem={handleRemoveItem}
                   onItemChange={handleItemChange}
+                  invoiceFor={invoiceFor}
+                  setInvoiceFor={setInvoiceFor}
                 />
 
                 <CostSummary
