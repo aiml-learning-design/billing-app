@@ -2,13 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import axios from 'axios';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
+import { API_CONFIG, AUTH_CONFIG } from '../config/config';
 import {
   Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel
 } from '@mui/material';
-import { API_CONFIG } from '../config/config';
 
 // Import the components we created
 import InvoiceDetails from '../components/invoices/InvoiceDetails';
@@ -400,14 +401,15 @@ const NewInvoice = () => {
       purchasedOrderRequest: {
         itemDetailsRequest: items.map(item => ({
           itemName: item.name,
-          gstRate: item.gstRate,
-          sgst: item.sgst,
-          cgst: item.cgst,
+          // Convert numeric values to numbers to ensure correct type
+          gstRate: Number(item.gstRate),
+          sgst: Number(item.sgst),
+          cgst: Number(item.cgst),
           igst: 0, // Default to 0 if not provided
-          quantity: item.quantity,
-          price: item.rate,
-          amount: item.amount,
-          total: item.total,
+          quantity: Number(item.quantity),
+          price: Number(item.rate),
+          amount: Number(item.amount),
+          total: Number(item.total),
           itemDescription: item.description || ""
         }))
       },
@@ -515,10 +517,79 @@ const NewInvoice = () => {
       // Use the helper function to create the invoice payload
       const invoiceData = createInvoicePayload('DRAFT');
       
-      await api.post('/api/invoices', invoiceData);
+      // Log the payload to see what's being sent to the API
+      console.log('Draft invoice payload being sent to API:', JSON.stringify(invoiceData, null, 2));
+      
+      // Verify that purchasedOrderRequest and itemDetailsRequest are present and correctly structured
+      if (invoiceData.purchasedOrderRequest && Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest)) {
+        console.log('purchasedOrderRequest.itemDetailsRequest is present and is an array with', 
+          invoiceData.purchasedOrderRequest.itemDetailsRequest.length, 'items');
+      } else {
+        console.error('purchasedOrderRequest.itemDetailsRequest is missing or not an array!');
+        console.log('purchasedOrderRequest:', invoiceData.purchasedOrderRequest);
+      }
+
+      // Try both approaches: using the api service and using axios directly
+      
+      // 1. First try using the api service with explicit content type
+      console.log('Making API call using api service to /api/invoices');
+      try {
+        const apiResponse = await api.post('/api/invoices', invoiceData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Log the response
+        console.log('API service response for draft:', apiResponse);
+        
+        // If successful, navigate to the invoices page
+        navigate('/invoices');
+        return; // Exit the function if successful
+      } catch (apiError) {
+        console.error('Failed to save draft using api service:', apiError);
+        // Continue to try the direct axios approach
+      }
+      
+      // 2. If api service fails, try using axios directly
+      console.log('Making API call using axios directly to /api/invoices');
+      
+      // Get the base URL and token
+      const baseUrl = API_CONFIG.BASE_URL || 'http://localhost:8087/invokta';
+      const token = localStorage.getItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
+      
+      // Make the API call with axios
+      const axiosResponse = await axios.post(
+        `${baseUrl}/api/invoices`, 
+        invoiceData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        }
+      );
+      
+      // Log the response
+      console.log('Axios direct response status for draft:', axiosResponse.status);
+      console.log('Axios direct response data for draft:', JSON.stringify(axiosResponse.data, null, 2));
+      
+      // Navigate to the invoices page
       navigate('/invoices');
     } catch (err) {
       console.error('Failed to save draft', err);
+      console.error('Error details:', err.response ? err.response.data : err.message);
+      
+      // Log more details about the error
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response headers:', err.response.headers);
+        console.error('Response data:', JSON.stringify(err.response.data, null, 2));
+      } else if (err.request) {
+        console.error('No response received. Request details:', err.request);
+      } else {
+        console.error('Error setting up request:', err.message);
+      }
     }
   };
 
@@ -527,11 +598,94 @@ const NewInvoice = () => {
     try {
       // Use the helper function to create the invoice payload
       const invoiceData = createInvoicePayload('PENDING');
+      
+      // Log the payload to see what's being sent to the API
+      console.log('Invoice payload being sent to API:', JSON.stringify(invoiceData, null, 2));
+      
+      // Verify that purchasedOrderRequest and itemDetailsRequest are present and correctly structured
+      if (invoiceData.purchasedOrderRequest && Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest)) {
+        console.log('purchasedOrderRequest.itemDetailsRequest is present and is an array with', 
+          invoiceData.purchasedOrderRequest.itemDetailsRequest.length, 'items');
+        
+        // Log the first item in the array for debugging
+        if (invoiceData.purchasedOrderRequest.itemDetailsRequest.length > 0) {
+          console.log('First item in itemDetailsRequest:', 
+            JSON.stringify(invoiceData.purchasedOrderRequest.itemDetailsRequest[0], null, 2));
+        }
+      } else {
+        console.error('purchasedOrderRequest.itemDetailsRequest is missing or not an array!');
+        console.log('purchasedOrderRequest:', invoiceData.purchasedOrderRequest);
+      }
 
-      const response = await api.post('/api/invoices/create', invoiceData);
-      navigate(`/invoices/${response.data.invoiceId}/payment`);
+      // Try both approaches: using the api service and using axios directly
+      
+      // 1. First try using the api service with explicit content type
+      console.log('Making API call using api service to /api/invoices/create');
+      try {
+        const apiResponse = await api.post('/api/invoices/create', invoiceData, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // Log the response
+        console.log('API service response:', apiResponse);
+        
+        // If successful, navigate to the payment page
+        navigate(`/invoices/${apiResponse.invoiceId}/payment`);
+        return; // Exit the function if successful
+      } catch (apiError) {
+        console.error('Failed to save invoice using api service:', apiError);
+        // Continue to try the direct axios approach
+      }
+      
+      // 2. If api service fails, try using axios directly
+      console.log('Making API call using axios directly to /api/invoices/create');
+      
+      // Get the base URL and token
+      const baseUrl = API_CONFIG.BASE_URL || 'http://localhost:8087/invokta';
+      const token = localStorage.getItem(AUTH_CONFIG.STORAGE_KEYS.TOKEN);
+      
+      // Make the API call with axios
+      const axiosResponse = await axios.post(
+        `${baseUrl}/api/invoices/create`, 
+        invoiceData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        }
+      );
+      
+      // Log the response
+      console.log('Axios direct response status:', axiosResponse.status);
+      console.log('Axios direct response data:', JSON.stringify(axiosResponse.data, null, 2));
+      
+      // Navigate to the payment page
+      if (axiosResponse.data && axiosResponse.data.data && axiosResponse.data.data.invoiceId) {
+        navigate(`/invoices/${axiosResponse.data.data.invoiceId}/payment`);
+      } else if (axiosResponse.data && axiosResponse.data.invoiceId) {
+        navigate(`/invoices/${axiosResponse.data.invoiceId}/payment`);
+      } else {
+        console.error('Invoice ID not found in response');
+        // Navigate to invoices list as fallback
+        navigate('/invoices');
+      }
     } catch (err) {
       console.error('Failed to save invoice', err);
+      console.error('Error details:', err.response ? err.response.data : err.message);
+      
+      // Log more details about the error
+      if (err.response) {
+        console.error('Response status:', err.response.status);
+        console.error('Response headers:', err.response.headers);
+        console.error('Response data:', JSON.stringify(err.response.data, null, 2));
+      } else if (err.request) {
+        console.error('No response received. Request details:', err.request);
+      } else {
+        console.error('Error setting up request:', err.message);
+      }
     }
   };
 
