@@ -68,10 +68,10 @@ const BusinessDetailsForm = () => {
         let response;
         if (businessId) {
           // Update existing business
-          response = await api.put(`/api/business/update/${businessId}`, values);
+          response = await api.put(`/api/vendor/business/update/${businessId}`, values);
         } else {
           // Create new business
-          response = await api.post('/api/business/add', values);
+          response = await api.post('/api/vendor/business/add', values);
         }
         
         setBusinessId(response.business_id);

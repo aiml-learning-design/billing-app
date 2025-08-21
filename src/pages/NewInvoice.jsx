@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -13,7 +13,7 @@ import { API_CONFIG } from '../config/config';
 // Import the components we created
 import InvoiceDetails from '../components/invoices/InvoiceDetails';
 import BusinessDetails from '../components/business/BusinessDetails';
-import ClientDetails from '../components/invoices/ClientDetails';
+import ClientDetailsNoApi from '../components/invoices/ClientDetailsNoApi';
 import ShippingDetails from '../components/shipping/ShippingDetails';
 import TransportDetails from '../components/shipping/TransportDetails';
 import ItemDetails from '../components/item/ItemDetails';
@@ -31,6 +31,7 @@ const NewInvoice = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(0);
+  const initialFetchDone = useRef(false);
   
   // State for invoice details
   const [selectedBusiness, setSelectedBusiness] = useState(null);
@@ -163,7 +164,7 @@ const NewInvoice = () => {
         // If there are businesses and no selected business yet, select the first one
         if (businesses.length > 0 && !selectedBusiness) {
           setSelectedBusiness(businesses[0]);
-          await fetchBusinessData(businesses[0]);
+          // Don't call fetchBusinessData here, it will be called in the useEffect
         }
       }
     } catch (err) {
@@ -213,14 +214,41 @@ const NewInvoice = () => {
         }
       }
 
-      // Fetch clients, warehouses, transporters
-      const [clientsRes, warehousesRes, transportersRes] = await Promise.all([
-        api.get(`/api/clients?businessId=${business.business_id}`),
+      // Fetch all clients using the same endpoint as ClientDetails component
+      // This ensures we only fetch client data once and use it throughout the component
+      const clientsRes = await api.get(`/api/client/business/all`);
+      
+      // Process client data
+      let clientsData = [];
+      if (clientsRes.success && clientsRes.data) {
+        const responseData = clientsRes.data;
+        
+        // Handle different response formats
+        if (Array.isArray(responseData.content)) {
+          console.log('Found standard Page structure with content array');
+          clientsData = responseData.content;
+        } else if (Array.isArray(responseData)) {
+          console.log('Found direct array of clients');
+          clientsData = responseData;
+        } else if (responseData.client_id || responseData.businessName) {
+          console.log('Found single client object');
+          clientsData = [responseData];
+        } else if (responseData.clients && Array.isArray(responseData.clients)) {
+          console.log('Found custom structure with clients array');
+          clientsData = responseData.clients;
+        } else {
+          console.warn('Unexpected response format, defaulting to empty array');
+          clientsData = [];
+        }
+      }
+      
+      // Fetch warehouses and transporters
+      const [warehousesRes, transportersRes] = await Promise.all([
         api.get(`/api/warehouses?businessId=${business.business_id}`),
         api.get(`/api/transporters?businessId=${business.business_id}`)
       ]);
 
-      setClients(clientsRes.data);
+      setClients(clientsData);
       setWarehouses(warehousesRes.data);
       setTransporters(transportersRes.data);
     } catch (err) {
@@ -234,26 +262,33 @@ const NewInvoice = () => {
   useEffect(() => {
     const initializeData = async () => {
       try {
-        // Only fetch businesses from API if we don't already have them
-        // This prevents an infinite loop with the dependency on allBusinesses
-        if (allBusinesses.length === 0) {
+        // Only fetch businesses from API if we haven't done the initial fetch yet
+        // This prevents the API from being called twice
+        if (!initialFetchDone.current) {
+          initialFetchDone.current = true;
           // First fetch all businesses from the API
           await fetchAllBusinesses();
-        }
-        
-        // If no businesses were found in the API or there was an error,
-        // fall back to using businesses from user object
-        if (allBusinesses.length === 0 && user?.businesses && user.businesses.length > 0) {
-          console.log('No businesses found in API, using businesses from user object');
-          const business = user.businesses[0];
-          setSelectedBusiness(business);
-          await fetchBusinessData(business);
+          
+          // After fetching businesses, check if we have a selected business
+          // If not, and we have businesses in allBusinesses, select the first one and fetch its data
+          if (!selectedBusiness && allBusinesses.length > 0) {
+            const business = allBusinesses[0];
+            setSelectedBusiness(business);
+            await fetchBusinessData(business);
+          }
+          // If no businesses were found in the API, fall back to using businesses from user object
+          else if (!selectedBusiness && user?.businesses && user.businesses.length > 0) {
+            console.log('No businesses found in API, using businesses from user object');
+            const business = user.businesses[0];
+            setSelectedBusiness(business);
+            await fetchBusinessData(business);
+          }
         }
       } catch (err) {
         console.error('Failed to initialize data', err);
         
         // If there was an error fetching from API, fall back to user object
-        if (user?.businesses && user.businesses.length > 0) {
+        if (!selectedBusiness && user?.businesses && user.businesses.length > 0) {
           console.log('Error fetching from API, using businesses from user object');
           const business = user.businesses[0];
           setSelectedBusiness(business);
@@ -265,7 +300,7 @@ const NewInvoice = () => {
     };
 
     initializeData();
-  }, [user, allBusinesses]);
+  }, [user]);
 
   // Calculate item totals
   useEffect(() => {
@@ -338,7 +373,16 @@ const NewInvoice = () => {
           email: selectedBusiness.officeAddresses?.[0]?.email,
           phone: selectedBusiness.officeAddresses?.[0]?.phone
         },
-        billedTo: clients.find(c => c.client_id === selectedClient),
+        billedTo: {
+          clientId: selectedClient,
+          clientName: clients.find(c => c.client_id === selectedClient)?.clientName,
+          businessName: clients.find(c => c.client_id === selectedClient)?.businessName,
+          gstin: clients.find(c => c.client_id === selectedClient)?.gstin,
+          email: clients.find(c => c.client_id === selectedClient)?.email,
+          phone: clients.find(c => c.client_id === selectedClient)?.phone,
+          address: clients.find(c => c.client_id === selectedClient)?.address,
+          additionalDetails: clients.find(c => c.client_id === selectedClient)?.additionalDetails
+        },
         currency,
         items,
         shipping: showShipping ? {
@@ -381,7 +425,16 @@ const NewInvoice = () => {
           email: selectedBusiness.officeAddresses?.[0]?.email,
           phone: selectedBusiness.officeAddresses?.[0]?.phone
         },
-        billedTo: clients.find(c => c.client_id === selectedClient),
+        billedTo: {
+          clientId: selectedClient,
+          clientName: clients.find(c => c.client_id === selectedClient)?.clientName,
+          businessName: clients.find(c => c.client_id === selectedClient)?.businessName,
+          gstin: clients.find(c => c.client_id === selectedClient)?.gstin,
+          email: clients.find(c => c.client_id === selectedClient)?.email,
+          phone: clients.find(c => c.client_id === selectedClient)?.phone,
+          address: clients.find(c => c.client_id === selectedClient)?.address,
+          additionalDetails: clients.find(c => c.client_id === selectedClient)?.additionalDetails
+        },
         currency,
         items,
         shipping: showShipping ? {
@@ -512,7 +565,7 @@ const NewInvoice = () => {
                   }}
                 />
 
-                <ClientDetails
+                <ClientDetailsNoApi
                   clients={clients}
                   selectedClient={selectedClient}
                   setSelectedClient={setSelectedClient}

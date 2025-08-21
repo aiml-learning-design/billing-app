@@ -136,7 +136,7 @@ const BusinessSetupPage = () => {
         console.log('Payload:', payload);
 
         // Make API call with the API service
-        const response = await api.post('/api/business/add', payload);
+        const response = await api.post('/api/vendor/business/add', payload);
         if(!response.success) {
             setError('Error creating business');
         }

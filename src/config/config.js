@@ -28,7 +28,7 @@ export const API_CONFIG = {
     
     // Business
     BUSINESS: {
-      ADD: '/api/business/add',
+      ADD: '/api/vendor/business/add',
       UPDATE: '/api/business/update',
       GET_ALL: '/api/business/all',
       GET_BY_ID: (id) => `/api/business/${id}`,
