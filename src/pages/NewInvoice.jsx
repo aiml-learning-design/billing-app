@@ -21,7 +21,7 @@ import ItemDetails from '../components/item/ItemDetails';
 import CostSummary from '../components/invoices/CostSummary';
 import SignatureSection from '../components/invoices/SignatureSection';
 import AdditionalInfo from '../components/invoices/AdditionalInfo';
-import TermsAndConditions from '../components/invoices/TermsAndConditions';
+import TermsAndConditionsWithCheckboxes from '../components/invoices/TermsAndConditionsWithCheckboxes';
 import InvoiceSummary from '../components/invoices/InvoiceSummary';
 
 /**
@@ -119,10 +119,16 @@ const NewInvoice = () => {
   const [showContactDetails, setShowContactDetails] = useState(false);
   
   // State for terms and conditions
+  const [apiTerms, setApiTerms] = useState([]);
+  const [selectedTerms, setSelectedTerms] = useState([]);
+  const [termsLoading, setTermsLoading] = useState(false);
   const [terms, setTerms] = useState([
     'Please quote invoice number when remitting funds.',
     'Please pay within 15 days from the date of invoice, overdue interest @ 14% will be charged on delayed payments.'
   ]);
+  
+  // State for invoice type (PRODUCT, SERVICE, ONE_TIME)
+  const [invoiceFor, setInvoiceFor] = useState('ONE_TIME');
   const [isRecurring, setIsRecurring] = useState(false);
 
   // Function to fetch all businesses from the API
@@ -263,6 +269,51 @@ const NewInvoice = () => {
     }
   };
 
+  // Function to fetch terms and conditions from the API
+  const fetchTermsAndConditions = async () => {
+    try {
+      setTermsLoading(true);
+      console.log('Fetching terms and conditions from API');
+      
+      const response = await api.get('/api/invoice/terms');
+      console.log('Terms and conditions response:', response);
+      
+      if (response.success && response.data) {
+        let termsData = [];
+        
+        // Handle different response formats
+        if (Array.isArray(response.data)) {
+          console.log('Found array of terms');
+          termsData = response.data;
+        } else if (response.data.terms && Array.isArray(response.data.terms)) {
+          console.log('Found terms array in response data');
+          termsData = response.data.terms;
+        } else {
+          console.warn('Unexpected response format, defaulting to empty array');
+          termsData = [];
+        }
+        
+        console.log('Setting API terms:', termsData);
+        setApiTerms(termsData);
+        
+        // Initialize selected terms with default selections if available
+        if (termsData.length > 0) {
+          // Select the first two terms by default (or all if less than two)
+          const defaultSelected = termsData.slice(0, Math.min(2, termsData.length));
+          setSelectedTerms(defaultSelected.map(term => term.id || term._id));
+          
+          // Update terms state with the text of selected terms
+          setTerms(defaultSelected.map(term => term.text || term.content || term.description || ''));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch terms and conditions:', err);
+      // If API fails, keep using the default terms
+    } finally {
+      setTermsLoading(false);
+    }
+  };
+
   // Fetch initial data
   useEffect(() => {
     const initializeData = async () => {
@@ -273,6 +324,9 @@ const NewInvoice = () => {
           initialFetchDone.current = true;
           // First fetch all businesses from the API
           await fetchAllBusinesses();
+          
+          // Fetch terms and conditions
+          await fetchTermsAndConditions();
           
           // After fetching businesses, check if we have a selected business
           // If not, and we have businesses in allBusinesses, select the first one and fetch its data
@@ -374,28 +428,31 @@ const NewInvoice = () => {
 
   // Helper function to create invoice payload with optional fields
   const createInvoicePayload = (status) => {
+    // Get the selected client data
+    const selectedClientData = clients.find(c => c.client_id === selectedClient);
+    
     // Create the base invoice data object
     const invoiceData = {
       invoiceNumber,
       invoiceDate: invoiceDate.toISOString(),
       dueDate: dueDate.toISOString(),
       billedBy: {
-        businessId: selectedBusiness.business_id,
-        businessName: selectedBusiness.businessName,
-        gstin: selectedBusiness.gstin,
-        pan: selectedBusiness.pan,
-        email: selectedBusiness.officeAddresses?.[0]?.email,
-        phone: selectedBusiness.officeAddresses?.[0]?.phone,
-        officeAddress: selectedBusiness.officeAddresses?.[0]
+        businessId: selectedBusiness?.business_id || selectedBusiness?.businessId,
+        businessName: selectedBusiness?.businessName,
+        gstin: selectedBusiness?.gstin,
+        pan: selectedBusiness?.pan,
+        email: selectedBusiness?.officeAddresses?.[0]?.email,
+        phone: selectedBusiness?.officeAddresses?.[0]?.phone,
+        officeAddress: selectedBusiness?.officeAddresses?.[0]
       },
       billedTo: {
-        businessId: selectedClient,
-        businessName: clients.find(c => c.client_id === selectedClient)?.businessName,
-        gstin: clients.find(c => c.client_id === selectedClient)?.gstin,
-        pan: clients.find(c => c.client_id === selectedClient)?.pan,
-        email: clients.find(c => c.client_id === selectedClient)?.email,
-        phone: clients.find(c => c.client_id === selectedClient)?.phone,
-        officeAddress: clients.find(c => c.client_id === selectedClient)?.address
+        businessId: selectedClientData?.client_id || selectedClientData?.businessId,
+        businessName: selectedClientData?.businessName,
+        gstin: selectedClientData?.gstin,
+        pan: selectedClientData?.pan || null, // Explicitly set to null if not available
+        email: selectedClientData?.email,
+        phone: selectedClientData?.phone,
+        officeAddress: selectedClientData?.address
       },
       currency,
       purchasedOrderRequest: {
@@ -417,7 +474,7 @@ const NewInvoice = () => {
     };
 
     // Add optional fields only if they have values
-    if (selectedBusiness.businessName) {
+    if (selectedBusiness?.businessName) {
       invoiceData.companyName = selectedBusiness.businessName;
     }
 
@@ -426,11 +483,9 @@ const NewInvoice = () => {
       invoiceData.invoiceId = `${selectedClient}-${invoiceNumber}`;
     }
 
-    // Add invoiceFor if isRecurring is set
-    if (isRecurring) {
-      invoiceData.invoiceFor = "RECURRING";
-    } else {
-      invoiceData.invoiceFor = "ONE_TIME";
+    // Add invoiceFor based on the selected option (optional field)
+    if (invoiceFor) {
+      invoiceData.invoiceFor = invoiceFor;
     }
 
     // Add shipping information if enabled
@@ -448,15 +503,21 @@ const NewInvoice = () => {
       // Format terms as key-value pairs as shown in the example payload
       const termsObj = {};
       terms.forEach((term, index) => {
-        termsObj[`key_${index}`] = [term, ""];
+        if (term && term.trim() !== '') {
+          termsObj[`key_${index}`] = [term, ""];
+        }
       });
-      invoiceData.termsConditions = termsObj;
+      
+      // Only add termsConditions if there are actual terms
+      if (Object.keys(termsObj).length > 0) {
+        invoiceData.termsConditions = termsObj;
+      } else {
+        // If no terms, add an empty object
+        invoiceData.termsConditions = {};
+      }
     } else {
-      // Add empty object as per the payload format
-      invoiceData.termsConditions = {
-        key_0: ["", ""],
-        key_1: ["", ""]
-      };
+      // If no terms, add an empty object
+      invoiceData.termsConditions = {};
     }
 
     // Add item description as optional field
@@ -470,28 +531,26 @@ const NewInvoice = () => {
     }
 
     // Add additional details if available
-    const additionalDetails = clients.find(c => c.client_id === selectedClient)?.additionalDetails;
+    const additionalDetails = selectedClientData?.additionalDetails;
     if (additionalDetails && additionalDetails.length > 0) {
-      const detailsObj = {};
-      additionalDetails.forEach((detail, index) => {
-        // Create an object with the key-value pair from the client's additional details
-        if (detail.key && detail.value) {
+      // Filter out empty details
+      const validDetails = additionalDetails.filter(detail => detail.key && detail.value);
+      
+      if (validDetails.length > 0) {
+        const detailsObj = {};
+        validDetails.forEach((detail, index) => {
           detailsObj[`key_${index}`] = {
             [detail.key]: detail.value
           };
-        } else {
-          detailsObj[`key_${index}`] = {};
-        }
-      });
-      invoiceData.AdditionalDetails = detailsObj;
+        });
+        invoiceData.AdditionalDetails = detailsObj;
+      } else {
+        // If no valid details, add an empty object
+        invoiceData.AdditionalDetails = {};
+      }
     } else {
-      // Add empty object as per the payload format
-      invoiceData.AdditionalDetails = {
-        key_0: {},
-        key_1: {},
-        key_2: {},
-        key_3: {}
-      };
+      // If no additional details, add an empty object
+      invoiceData.AdditionalDetails = {};
     }
 
     // Add signature if available
@@ -867,9 +926,15 @@ const NewInvoice = () => {
                   setShowContactDetails={setShowContactDetails}
                 />
 
-                <TermsAndConditions
+                <TermsAndConditionsWithCheckboxes
                   terms={terms}
                   setTerms={setTerms}
+                  apiTerms={apiTerms}
+                  selectedTerms={selectedTerms}
+                  setSelectedTerms={setSelectedTerms}
+                  termsLoading={termsLoading}
+                  invoiceFor={invoiceFor}
+                  setInvoiceFor={setInvoiceFor}
                   isRecurring={isRecurring}
                   setIsRecurring={setIsRecurring}
                 />
