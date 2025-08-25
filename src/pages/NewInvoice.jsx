@@ -14,7 +14,7 @@ import {
 // Import the components we created
 import InvoiceDetails from '../components/invoices/InvoiceDetails';
 import BusinessDetails from '../components/business/BusinessDetails';
-import ClientDetailsNoApi from '../components/invoices/ClientDetailsNoApi';
+import ClientDetails from '../components/invoices/ClientDetails';
 import ShippingDetails from '../components/shipping/ShippingDetails';
 import TransportDetails from '../components/shipping/TransportDetails';
 import ItemDetails from '../components/item/ItemDetails';
@@ -852,10 +852,11 @@ const NewInvoice = () => {
                   }}
                 />
 
-                <ClientDetailsNoApi
+                <ClientDetails
                   clients={clients}
                   selectedClient={selectedClient}
                   setSelectedClient={setSelectedClient}
+                  useApiForClientData={false} // Use no-API mode to avoid redundant API calls
                   // Removed onAddNewClient prop to use the component's built-in dialog
                   // This keeps users in the invoice creation flow when adding a new client
                 />
