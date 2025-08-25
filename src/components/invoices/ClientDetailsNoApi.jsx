@@ -1,18 +1,57 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent,
   FormControl, InputLabel, Select, MenuItem,
   Button, Avatar, Divider, Autocomplete, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Snackbar, Alert, IconButton, InputAdornment
+  CircularProgress, Snackbar, Alert, IconButton, InputAdornment,
+  Paper, Tooltip, Switch, FormControlLabel, FormHelperText
 } from '@mui/material';
-import { Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon } from '@mui/icons-material';
+import { 
+  Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon,
+  CloudUpload, ExpandMore, ExpandLess, Business, Category, Edit
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import axios from 'axios';
 import countries from '../../utils/countries';
 import countryStates from '../../utils/countryStates';
 import { debounce } from 'lodash';
+
+// Common industry options
+const industryOptions = [
+  'Accounting & Finance',
+  'Advertising & Marketing',
+  'Agriculture & Farming',
+  'Apparel & Fashion',
+  'Architecture & Design',
+  'Automotive',
+  'Banking & Financial Services',
+  'Biotechnology',
+  'Construction',
+  'Consulting',
+  'Consumer Goods',
+  'Education & E-learning',
+  'Electronics',
+  'Energy & Utilities',
+  'Entertainment & Media',
+  'Food & Beverages',
+  'Government & Public Sector',
+  'Healthcare & Medical',
+  'Hospitality & Tourism',
+  'Information Technology',
+  'Insurance',
+  'Legal Services',
+  'Manufacturing',
+  'Mining & Metals',
+  'Non-profit & NGO',
+  'Pharmaceuticals',
+  'Real Estate',
+  'Retail',
+  'Telecommunications',
+  'Transportation & Logistics',
+  'Other'
+];
 
 /**
  * ClientDetailsNoApi component for handling the "Billed To" section of the invoice
@@ -35,15 +74,40 @@ const ClientDetailsNoApi = ({
   const [newClientData, setNewClientData] = useState({
     clientName: '',
     businessName: '',
+    industry: '',
     gstin: '',
+    panNumber: '',
     email: '',
     phone: '',
+    showEmailInInvoice: false,
+    showPhoneInInvoice: false,
+    businessAlias: '',
+    uniqueKey: '',
+    // Address fields
     addressLine: '',
     city: '',
+    district: '',
     state: '',
     pincode: '',
     country: 'India',
+    buildingNumber: '',
+    streetAddress: '',
+    // Logo
+    logo: null,
     additionalDetails: []
+  });
+  
+  // States for collapsible sections
+  const [taxInfoExpanded, setTaxInfoExpanded] = useState(true);
+  const [addressExpanded, setAddressExpanded] = useState(true);
+  const [additionalDetailsExpanded, setAdditionalDetailsExpanded] = useState(true);
+  
+  // State for custom field dialog
+  const [openCustomFieldDialog, setOpenCustomFieldDialog] = useState(false);
+  const [customField, setCustomField] = useState({
+    name: '',
+    type: 'singleLineText',
+    options: ['Option 1']
   });
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
@@ -219,34 +283,111 @@ const ClientDetailsNoApi = ({
     setOpenNewDialog(false);
   };
   
+  // File input reference
+  const fileInputRef = useRef(null);
+  
+  // Handle logo file selection
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setAlert({
+        open: true,
+        message: 'Please upload a JPEG or PNG file',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setAlert({
+        open: true,
+        message: 'File size must be less than 10MB',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Validate image dimensions
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      
+      // Check if dimensions are too large
+      if (img.width > 1080 || img.height > 1080) {
+        setAlert({
+          open: true,
+          message: 'Image dimensions should not exceed 1080x1080px',
+          severity: 'warning'
+        });
+        // Still allow the image but with a warning
+      }
+      
+      // Update state with the file
+      setNewClientData(prev => ({
+        ...prev,
+        logo: file
+      }));
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      setAlert({
+        open: true,
+        message: 'Invalid image file',
+        severity: 'error'
+      });
+    };
+    
+    img.src = URL.createObjectURL(file);
+  };
+  
   // Handle input changes in the new client form
   const handleNewClientInputChange = (e) => {
     const { name, value } = e.target;
-    setNewClientData(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
-    // If country changes, update the country code
+    // If country changes, update the country code and reset state if needed
     if (name === 'country') {
       const country = countries.find(c => c.name === value);
       if (country) {
         setCountryCode(country.code.toLowerCase());
         
         // Reset state if country changes
-        if (prev.country !== value) {
+        if (newClientData.country !== value) {
           setNewClientData(prev => ({
             ...prev,
+            [name]: value,
             state: ''
           }));
+          return; // Return early since we've already updated the state
         }
       }
     }
+    
+    // For all other fields or if country didn't need state reset
+    setNewClientData(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     // If pincode changes and is of sufficient length, trigger lookup
     if (name === 'pincode' && value.length >= 5) {
       handlePincodeLookup(value);
     }
+  };
+  
+  // Handle checkbox changes
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setNewClientData(prev => ({
+      ...prev,
+      [name]: checked
+    }));
   };
   
   // Handle pincode lookup
@@ -476,13 +617,23 @@ const ClientDetailsNoApi = ({
       
       // Prepare data for API
       const clientData = {
-        clientName: newClientData.clientName || newClientData.businessName,
+        // Use businessName as the clientName
+        clientName: newClientData.businessName,
         businessName: newClientData.businessName,
+        industry: newClientData.industry,
         gstin: newClientData.gstin,
+        panNumber: newClientData.panNumber,
         email: newClientData.email,
         phone: newClientData.phone,
+        showEmailInInvoice: newClientData.showEmailInInvoice,
+        showPhoneInInvoice: newClientData.showPhoneInInvoice,
+        businessAlias: newClientData.businessAlias,
+        uniqueKey: newClientData.uniqueKey,
         address: {
           addressLine: newClientData.addressLine,
+          streetAddress: newClientData.streetAddress,
+          buildingNumber: newClientData.buildingNumber,
+          district: newClientData.district,
           city: newClientData.city,
           state: newClientData.state,
           pincode: newClientData.pincode,
@@ -493,6 +644,30 @@ const ClientDetailsNoApi = ({
           ? newClientData.additionalDetails 
           : undefined
       };
+      
+      // Handle logo upload if a logo was selected
+      if (newClientData.logo) {
+        // Create a FormData object for file upload
+        const formData = new FormData();
+        formData.append('logo', newClientData.logo);
+        
+        try {
+          // Upload the logo first
+          const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          // If logo upload was successful, add the logo URL to the client data
+          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+            clientData.logoUrl = logoResponse.data.logoUrl;
+          }
+        } catch (logoError) {
+          console.error('Error uploading logo:', logoError);
+          // Continue with client creation even if logo upload fails
+        }
+      }
       
       // Log the payload to verify additionalDetails are included
       console.log('Creating client with data:', clientData);
@@ -675,190 +850,1077 @@ const ClientDetailsNoApi = ({
       
       {/* New Client Dialog */}
       <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Add New Client</DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              borderBottom: '2px solid',
+              borderColor: 'primary.main', 
+              paddingBottom: 1,
+              display: 'inline-block',
+              fontWeight: 'bold'
+            }}
+          >
+            Add New Client
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Enter your client details below. These details will be used in the "Billed To" section of your invoices.
+          <Typography 
+            variant="subtitle1" 
+            fontWeight="medium" 
+            sx={{ 
+              mt: 1, 
+              mb: 2,
+              color: 'text.secondary',
+              borderLeft: '4px solid',
+              borderColor: 'primary.light',
+              pl: 1
+            }}
+          >
+            Basic Client Details
           </Typography>
           <Grid container spacing={3} sx={{ mt: 0 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Client Name"
-                name="clientName"
-                value={newClientData.clientName}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Business Name"
-                name="businessName"
-                value={newClientData.businessName}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="GSTIN"
-                name="gstin"
-                value={newClientData.gstin}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Email"
-                name="email"
-                value={newClientData.email}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone"
-                name="phone"
-                value={newClientData.phone}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
+            {/* First row - Logo upload */}
             <Grid item xs={12}>
-              <TextField
-                label="Address Line"
-                name="addressLine"
-                value={newClientData.addressLine}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="City"
-                name="city"
-                value={newClientData.city}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Country</InputLabel>
-                <Select
-                  name="country"
-                  value={newClientData.country}
-                  onChange={handleNewClientInputChange}
-                  label="Country"
-                  disabled={geoLocationLoading}
+              <Box sx={{ mb: 3 }}>
+                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1, color: 'text.secondary' }}>
+                  Upload Logo
+                </Typography>
+                <input
+                  accept="image/jpeg,image/png"
+                  style={{ display: 'none' }}
+                  id="logo-upload"
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoChange}
+                />
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 160,
+                    cursor: 'pointer',
+                    borderStyle: 'dashed',
+                    borderColor: newClientData.logo ? 'primary.main' : 'divider',
+                    borderWidth: '2px',
+                    borderRadius: '8px',
+                    bgcolor: newClientData.logo ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'rgba(0, 0, 0, 0.02)'
+                    }
+                  }}
+                  onClick={() => fileInputRef.current.click()}
                 >
-                  {countries.map((country) => (
-                    <MenuItem key={country.code} value={country.name}>
-                      {country.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {geoLocationLoading && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                    <CircularProgress size={16} sx={{ mr: 1 }} />
-                    <Typography variant="caption" color="text.secondary">
-                      Detecting your location...
-                    </Typography>
-                  </Box>
-                )}
-              </FormControl>
+                  {newClientData.logo ? (
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Avatar
+                        src={URL.createObjectURL(newClientData.logo)}
+                        alt="Client Logo"
+                        sx={{ width: 100, height: 100, mb: 2 }}
+                      />
+                      <Typography variant="body2" color="textSecondary">
+                        {newClientData.logo.name}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {(newClientData.logo.size / (1024 * 1024)).toFixed(2)} MB
+                      </Typography>
+                      <Button 
+                        size="small" 
+                        variant="outlined"
+                        sx={{ mt: 1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewClientData(prev => ({ ...prev, logo: null }));
+                        }}
+                      >
+                        Change
+                      </Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <CloudUpload color="primary" sx={{ fontSize: 48, mb: 2 }} />
+                      <Typography variant="body1" align="center" fontWeight="medium" gutterBottom>
+                        Upload Logo
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" align="center" sx={{ mt: 1 }}>
+                        JPEG, PNG format • Max 10MB • 1080×1080px
+                      </Typography>
+                    </>
+                  )}
+                </Paper>
+              </Box>
             </Grid>
-            {/* State - Only shown if country has states */}
-            {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
-              <Grid item xs={12} sm={4}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>State</InputLabel>
+            
+            {/* Second row - Business Name and Industry */}
+            <Grid container item spacing={3} sx={{ mt: 1, mb: 1 }}>
+              <Grid item xs={12}>
+                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1, color: 'text.secondary' }}>
+                  Business Details
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  label="Business Name"
+                  name="businessName"
+                  value={newClientData.businessName}
+                  onChange={handleNewClientInputChange}
+                  fullWidth
+                  required
+                  variant="outlined"
+                  placeholder="Enter business name"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Business fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    }
+                  }}
+                />
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel>Client Industry</InputLabel>
                   <Select
-                    name="state"
-                    value={newClientData.state}
+                    name="industry"
+                    value={newClientData.industry}
                     onChange={handleNewClientInputChange}
-                    label="State"
+                    label="Client Industry"
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <Category fontSize="small" color="primary" />
+                      </InputAdornment>
+                    }
+                    sx={{
+                      borderRadius: '8px',
+                    }}
                   >
-                    {countryStates[newClientData.country]?.states?.map((state) => (
-                      <MenuItem key={state} value={state}>
-                        {state}
+                    {industryOptions.map((industry) => (
+                      <MenuItem key={industry} value={industry}>
+                        {industry}
                       </MenuItem>
                     ))}
                   </Select>
+                  <FormHelperText>Select the primary industry of your client</FormHelperText>
                 </FormControl>
               </Grid>
-            ) : (
-              <Grid item xs={12} sm={4}>
+            </Grid>
+            
+            {/* Third row - Country and City */}
+            <Grid container item spacing={3} sx={{ mt: 1, mb: 1 }}>
+              <Grid item xs={12}>
+                <Typography variant="body2" fontWeight="medium" sx={{ mb: 1, color: 'text.secondary' }}>
+                  Location Details
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <FormControl fullWidth variant="outlined">
+                  <InputLabel>Country</InputLabel>
+                  <Select
+                    name="country"
+                    value={newClientData.country}
+                    onChange={handleNewClientInputChange}
+                    label="Country"
+                    disabled={geoLocationLoading}
+                    startAdornment={
+                      <InputAdornment position="start">
+                        <LocationOn fontSize="small" color="primary" />
+                      </InputAdornment>
+                    }
+                    sx={{
+                      borderRadius: '8px',
+                    }}
+                  >
+                    {countries.map((country) => (
+                      <MenuItem key={country.code} value={country.name}>
+                        {country.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  {geoLocationLoading && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <CircularProgress size={16} sx={{ mr: 1 }} />
+                      <Typography variant="caption" color="text.secondary">
+                        Detecting your location...
+                      </Typography>
+                    </Box>
+                  )}
+                  <FormHelperText>Default selection based on your location</FormHelperText>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={6}>
                 <TextField
-                  label="State"
-                  name="state"
-                  value={newClientData.state}
+                  label="City/Town"
+                  name="city"
+                  value={newClientData.city}
                   onChange={handleNewClientInputChange}
                   fullWidth
-                  margin="normal"
+                  variant="outlined"
+                  placeholder="Enter city or town"
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOn fontSize="small" color="primary" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: '8px',
+                    }
+                  }}
                 />
               </Grid>
-            )}
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Pincode"
-                name="pincode"
-                value={newClientData.pincode}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-                InputProps={{
-                  endAdornment: pincodeLoading ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={20} />
-                    </InputAdornment>
-                  ) : pincodeSuccess ? (
-                    <InputAdornment position="end">
-                      <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.2rem' }}>✓</span>
-                      </Box>
-                    </InputAdornment>
-                  ) : null
+            </Grid>
+            
+            {/* Tax Information Section (Collapsible) */}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  borderColor: taxInfoExpanded ? 'primary.light' : 'divider'
                 }}
-                error={Boolean(pincodeError)}
-                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter pincode to auto-fill city, state, and country")}
+              >
+                <Box 
+                  sx={{ 
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    bgcolor: taxInfoExpanded ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
+                  }}
+                  onClick={() => setTaxInfoExpanded(!taxInfoExpanded)}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Save color="primary" sx={{ mr: 1.5, fontSize: 20 }} />
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      Tax Information <Typography component="span" variant="caption" color="text.secondary">(Optional)</Typography>
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" color="primary">
+                    {taxInfoExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                </Box>
+                
+                {taxInfoExpanded && (
+                  <Box sx={{ p: 2, pt: 0 }}>
+                    <Divider sx={{ mb: 2 }} />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Business GSTIN"
+                          name="gstin"
+                          value={newClientData.gstin}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="e.g., 22AAAAA0000A1Z5"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Save fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="PAN Number"
+                          name="panNumber"
+                          value={newClientData.panNumber}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="e.g., AAAAA0000A"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Save fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+            
+            {/* Address Section (Collapsible) */}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  borderColor: addressExpanded ? 'primary.light' : 'divider'
+                }}
+              >
+                <Box 
+                  sx={{ 
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    bgcolor: addressExpanded ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
+                  }}
+                  onClick={() => setAddressExpanded(!addressExpanded)}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <LocationOn color="primary" sx={{ mr: 1.5, fontSize: 20 }} />
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      Address
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" color="primary">
+                    {addressExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                </Box>
+                
+                {addressExpanded && (
+                  <Box sx={{ p: 2, pt: 0 }}>
+                    <Divider sx={{ mb: 2 }} />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <FormControl fullWidth variant="outlined">
+                          <InputLabel>Country</InputLabel>
+                          <Select
+                            name="country"
+                            value={newClientData.country}
+                            onChange={handleNewClientInputChange}
+                            label="Country"
+                            disabled={geoLocationLoading}
+                            startAdornment={
+                              <InputAdornment position="start">
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            }
+                            sx={{
+                              borderRadius: '8px',
+                            }}
+                          >
+                            {countries.map((country) => (
+                              <MenuItem key={country.code} value={country.name}>
+                                {country.name}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      
+                      {/* State/Province - Only shown if country has states */}
+                      {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
+                        <Grid item xs={12} md={6}>
+                          <FormControl fullWidth variant="outlined">
+                            <InputLabel>State/Province</InputLabel>
+                            <Select
+                              name="state"
+                              value={newClientData.state}
+                              onChange={handleNewClientInputChange}
+                              label="State/Province"
+                              startAdornment={
+                                <InputAdornment position="start">
+                                  <LocationOn fontSize="small" color="primary" />
+                                </InputAdornment>
+                              }
+                              sx={{
+                                borderRadius: '8px',
+                              }}
+                            >
+                              {countryStates[newClientData.country]?.states?.map((state) => (
+                                <MenuItem key={state} value={state}>
+                                  {state}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      ) : (
+                        <Grid item xs={12} md={6}>
+                          <TextField
+                            label="State/Province"
+                            name="state"
+                            value={newClientData.state}
+                            onChange={handleNewClientInputChange}
+                            fullWidth
+                            variant="outlined"
+                            placeholder="Enter state or province"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <LocationOn fontSize="small" color="primary" />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '8px',
+                              }
+                            }}
+                          />
+                        </Grid>
+                      )}
+                      
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="District"
+                          name="district"
+                          value={newClientData.district}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="Enter district"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="City/Town"
+                          name="city"
+                          value={newClientData.city}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="Enter city or town"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Building Number/House Number"
+                          name="buildingNumber"
+                          value={newClientData.buildingNumber}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="Enter building or house number"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Postal/Zip Code"
+                          name="pincode"
+                          value={newClientData.pincode}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="Enter postal or zip code"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                            endAdornment: pincodeLoading ? (
+                              <InputAdornment position="end">
+                                <CircularProgress size={20} />
+                              </InputAdornment>
+                            ) : pincodeSuccess ? (
+                              <InputAdornment position="end">
+                                <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '1.2rem' }}>✓</span>
+                                </Box>
+                              </InputAdornment>
+                            ) : null
+                          }}
+                          error={Boolean(pincodeError)}
+                          helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter postal code to auto-fill location details")}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                              borderColor: pincodeSuccess ? 'success.main' : undefined,
+                            },
+                            '& .MuiFormHelperText-root': {
+                              color: pincodeSuccess ? 'success.main' : undefined,
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12}>
+                        <TextField
+                          label="Street Address"
+                          name="streetAddress"
+                          value={newClientData.streetAddress}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="Enter street address"
+                          multiline
+                          rows={2}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
+                                <LocationOn fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+            
+            {/* Additional Details Section (Collapsible) */}
+            <Grid item xs={12} sx={{ mt: 2 }}>
+              <Paper 
+                variant="outlined" 
+                sx={{ 
+                  borderRadius: '8px',
+                  overflow: 'hidden',
+                  borderColor: additionalDetailsExpanded ? 'primary.light' : 'divider'
+                }}
+              >
+                <Box 
+                  sx={{ 
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    cursor: 'pointer',
+                    bgcolor: additionalDetailsExpanded ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
+                  }}
+                  onClick={() => setAdditionalDetailsExpanded(!additionalDetailsExpanded)}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Business color="primary" sx={{ mr: 1.5, fontSize: 20 }} />
+                    <Typography variant="subtitle1" fontWeight="medium">
+                      Additional Details <Typography component="span" variant="caption" color="text.secondary">(Optional)</Typography>
+                    </Typography>
+                  </Box>
+                  <IconButton size="small" color="primary">
+                    {additionalDetailsExpanded ? <ExpandLess /> : <ExpandMore />}
+                  </IconButton>
+                </Box>
+                
+                {additionalDetailsExpanded && (
+                  <Box sx={{ p: 2, pt: 0 }}>
+                    <Divider sx={{ mb: 2 }} />
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Business Alias (Nick Name)"
+                          name="businessAlias"
+                          value={newClientData.businessAlias}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="e.g., ABC Corp"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Business fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Unique Key"
+                          name="uniqueKey"
+                          value={newClientData.uniqueKey}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          variant="outlined"
+                          placeholder="e.g., CLIENT001"
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Business fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <Box>
+                          <TextField
+                            label="Email"
+                            name="email"
+                            value={newClientData.email}
+                            onChange={handleNewClientInputChange}
+                            fullWidth
+                            variant="outlined"
+                            placeholder="e.g., contact@example.com"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Email fontSize="small" color="primary" />
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '8px',
+                              },
+                              mb: 1
+                            }}
+                            helperText={
+                              <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                                Add to directly email documents from Invokta
+                              </Typography>
+                            }
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={newClientData.showEmailInInvoice}
+                                onChange={handleCheckboxChange}
+                                name="showEmailInInvoice"
+                                color="primary"
+                                size="small"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                Show Email in Invoice
+                              </Typography>
+                            }
+                          />
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} md={6}>
+                        <Box>
+                          <TextField
+                            label="Phone Number"
+                            name="phone"
+                            value={newClientData.phone}
+                            onChange={handleNewClientInputChange}
+                            fullWidth
+                            variant="outlined"
+                            placeholder="e.g., 9876543210"
+                            InputProps={{
+                              startAdornment: (
+                                <InputAdornment position="start">
+                                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                    <Phone fontSize="small" color="primary" sx={{ mr: 0.5 }} />
+                                    <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
+                                      +{countryCode === 'in' ? '91' : 
+                                         countryCode === 'ae' ? '971' : 
+                                         countryCode === 'us' ? '1' : 
+                                         countryCode === 'gb' ? '44' : '00'}
+                                    </Typography>
+                                  </Box>
+                                </InputAdornment>
+                              ),
+                            }}
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: '8px',
+                              },
+                              mb: 1
+                            }}
+                            helperText={
+                              <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                                Add to directly WhatsApp documents from Invokta
+                              </Typography>
+                            }
+                          />
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={newClientData.showPhoneInInvoice}
+                                onChange={handleCheckboxChange}
+                                name="showPhoneInInvoice"
+                                color="primary"
+                                size="small"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2">
+                                Show Phone in Invoice
+                              </Typography>
+                            }
+                          />
+                        </Box>
+                      </Grid>
+                      
+                      {/* Custom Fields Section */}
+                      <Grid item xs={12}>
+                        <Box sx={{ mt: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                            <Add color="primary" fontSize="small" sx={{ mr: 1 }} />
+                            <Typography variant="subtitle2" fontWeight="medium">
+                              Custom Fields
+                            </Typography>
+                          </Box>
+                          
+                          <Paper 
+                            variant="outlined" 
+                            sx={{ 
+                              mb: 3, 
+                              p: 2, 
+                              borderRadius: '8px',
+                              borderColor: 'divider',
+                              bgcolor: 'rgba(0, 0, 0, 0.01)'
+                            }}
+                          >
+                            {/* Display existing key-value pairs */}
+                            {newClientData.additionalDetails.length > 0 ? (
+                              <Box sx={{ mb: 2 }}>
+                                {newClientData.additionalDetails.map((detail, index) => (
+                                  <Box 
+                                    key={index} 
+                                    sx={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      mb: 2,
+                                      p: 1.5,
+                                      borderRadius: '8px',
+                                      bgcolor: 'background.paper',
+                                      border: '1px solid',
+                                      borderColor: 'divider'
+                                    }}
+                                  >
+                                    <Grid container spacing={2} alignItems="center">
+                                      <Grid item xs={12} md={5}>
+                                        <TextField
+                                          fullWidth
+                                          label="Key"
+                                          name={`additionalDetails[${index}].key`}
+                                          value={detail.key}
+                                          onChange={(e) => {
+                                            const newDetails = [...newClientData.additionalDetails];
+                                            newDetails[index].key = e.target.value;
+                                            setNewClientData(prev => ({
+                                              ...prev,
+                                              additionalDetails: newDetails
+                                            }));
+                                          }}
+                                          size="small"
+                                          variant="outlined"
+                                          InputProps={{
+                                            startAdornment: (
+                                              <InputAdornment position="start">
+                                                <Business fontSize="small" color="primary" />
+                                              </InputAdornment>
+                                            ),
+                                          }}
+                                          sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                              borderRadius: '8px',
+                                            }
+                                          }}
+                                        />
+                                      </Grid>
+                                      <Grid item xs={12} md={5}>
+                                        <TextField
+                                          fullWidth
+                                          label="Value"
+                                          name={`additionalDetails[${index}].value`}
+                                          value={detail.value}
+                                          onChange={(e) => {
+                                            const newDetails = [...newClientData.additionalDetails];
+                                            newDetails[index].value = e.target.value;
+                                            setNewClientData(prev => ({
+                                              ...prev,
+                                              additionalDetails: newDetails
+                                            }));
+                                          }}
+                                          size="small"
+                                          variant="outlined"
+                                          InputProps={{
+                                            startAdornment: (
+                                              <InputAdornment position="start">
+                                                <Business fontSize="small" color="primary" />
+                                              </InputAdornment>
+                                            ),
+                                          }}
+                                          sx={{
+                                            '& .MuiOutlinedInput-root': {
+                                              borderRadius: '8px',
+                                            }
+                                          }}
+                                        />
+                                      </Grid>
+                                      <Grid item xs={12} md={2} sx={{ display: 'flex', justifyContent: 'center' }}>
+                                        <IconButton 
+                                          color="error"
+                                          onClick={() => {
+                                            const newDetails = [...newClientData.additionalDetails];
+                                            newDetails.splice(index, 1);
+                                            setNewClientData(prev => ({
+                                              ...prev,
+                                              additionalDetails: newDetails
+                                            }));
+                                          }}
+                                          size="small"
+                                        >
+                                          <DeleteIcon fontSize="small" />
+                                        </IconButton>
+                                      </Grid>
+                                    </Grid>
+                                  </Box>
+                                ))}
+                              </Box>
+                            ) : (
+                              <Box sx={{ textAlign: 'center', py: 2 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  No custom fields added yet
+                                </Typography>
+                              </Box>
+                            )}
+                            
+                            {/* Button to add new custom field */}
+                            <Button
+                              variant="outlined"
+                              startIcon={<Add />}
+                              onClick={() => setOpenCustomFieldDialog(true)}
+                              fullWidth
+                              sx={{ 
+                                borderRadius: '8px',
+                                py: 1
+                              }}
+                            >
+                              Add Custom Field
+                            </Button>
+                          </Paper>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </Paper>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2 }}>
+          <Button 
+            onClick={handleCloseNewDialog}
+            variant="outlined"
+            sx={{ 
+              borderRadius: '8px',
+              px: 3
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleCreateClient} 
+            variant="contained" 
+            color="primary"
+            disabled={saving || !newClientData.businessName}
+            startIcon={saving ? <CircularProgress size={20} /> : <Add />}
+            sx={{ 
+              borderRadius: '8px',
+              px: 3
+            }}
+          >
+            {saving ? 'Creating...' : 'Create Client'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Custom Field Dialog */}
+      <Dialog 
+        open={openCustomFieldDialog} 
+        onClose={() => setOpenCustomFieldDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.light', 
+          color: 'white',
+          py: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Add sx={{ mr: 1.5, fontSize: 24 }} />
+            <Typography variant="h6" fontWeight="medium">
+              Add Custom Field
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                label="Field Name"
+                value={customField.name}
+                onChange={(e) => setCustomField(prev => ({ ...prev, name: e.target.value }))}
+                fullWidth
+                required
+                variant="outlined"
+                placeholder="Enter field name"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Business fontSize="small" color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
                 sx={{
                   '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: pincodeSuccess ? 'success.main' : undefined,
-                    },
+                    borderRadius: '8px',
                   },
-                  '& .MuiFormHelperText-root': {
-                    color: pincodeSuccess ? 'success.main' : undefined,
-                  }
+                  mt: 1
                 }}
               />
             </Grid>
-            
-            {/* Additional Details Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                Additional Details
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Add any custom information about your client as key-value pairs
-              </Typography>
-              
-              <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                {/* Display existing key-value pairs */}
-                {newClientData.additionalDetails.length > 0 ? (
-                  <Box sx={{ mb: 2 }}>
-                    {newClientData.additionalDetails.map((detail, index) => (
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>Field Type</InputLabel>
+                <Select
+                  value={customField.type}
+                  onChange={(e) => setCustomField(prev => ({ ...prev, type: e.target.value }))}
+                  label="Field Type"
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Category fontSize="small" color="primary" />
+                    </InputAdornment>
+                  }
+                  sx={{
+                    borderRadius: '8px',
+                  }}
+                >
+                  <MenuItem value="singleLineText">Single Line Text</MenuItem>
+                  <MenuItem value="multiLineText">Multi Line Text</MenuItem>
+                  <MenuItem value="email">Email</MenuItem>
+                  <MenuItem value="phone">Phone</MenuItem>
+                  <MenuItem value="url">URL</MenuItem>
+                  <MenuItem value="currency">Currency</MenuItem>
+                  <MenuItem value="checkbox">Multiple Select: Checkbox</MenuItem>
+                  <MenuItem value="multiDropdown">Multiple Select: Dropdown</MenuItem>
+                </Select>
+                <FormHelperText>Select the type of field you want to add</FormHelperText>
+              </FormControl>
+            </Grid>
+            
+            {/* Options for checkbox and multiDropdown types */}
+            {(customField.type === 'checkbox' || customField.type === 'multiDropdown') && (
+              <Grid item xs={12}>
+                <Paper 
+                  variant="outlined" 
+                  sx={{ 
+                    p: 2, 
+                    mt: 1,
+                    borderRadius: '8px',
+                    bgcolor: 'rgba(0, 0, 0, 0.01)'
+                  }}
+                >
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    mb: 2 
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Add color="primary" fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="subtitle2" fontWeight="medium">
+                        Customize Options
+                      </Typography>
+                    </Box>
+                    <Button 
+                      variant="outlined"
+                      startIcon={<Add />} 
+                      size="small"
+                      onClick={() => {
+                        setCustomField(prev => ({
+                          ...prev,
+                          options: [...prev.options, `Option ${prev.options.length + 1}`]
+                        }));
+                      }}
+                      sx={{ 
+                        borderRadius: '8px',
+                      }}
+                    >
+                      Add new option
+                    </Button>
+                  </Box>
+                  
+                  <Box sx={{ maxHeight: '200px', overflowY: 'auto', pr: 1 }}>
+                    {customField.options.map((option, index) => (
                       <Box 
                         key={index} 
                         sx={{ 
@@ -866,103 +1928,133 @@ const ClientDetailsNoApi = ({
                           alignItems: 'center', 
                           mb: 2,
                           p: 1,
-                          borderRadius: 1,
-                          bgcolor: 'rgba(0, 0, 0, 0.03)'
+                          borderRadius: '8px',
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider'
                         }}
                       >
-                        <Grid container spacing={2} alignItems="center">
-                          <Grid item xs={5}>
-                            <TextField
-                              fullWidth
-                              label="Key"
-                              name={`additionalDetails[${index}].key`}
-                              value={detail.key}
-                              onChange={(e) => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails[index].key = e.target.value;
-                                setNewClientData(prev => ({
-                                  ...prev,
-                                  additionalDetails: newDetails
-                                }));
-                              }}
-                              size="small"
-                            />
-                          </Grid>
-                          <Grid item xs={5}>
-                            <TextField
-                              fullWidth
-                              label="Value"
-                              name={`additionalDetails[${index}].value`}
-                              value={detail.value}
-                              onChange={(e) => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails[index].value = e.target.value;
-                                setNewClientData(prev => ({
-                                  ...prev,
-                                  additionalDetails: newDetails
-                                }));
-                              }}
-                              size="small"
-                            />
-                          </Grid>
-                          <Grid item xs={2}>
+                        <TextField
+                          value={option}
+                          onChange={(e) => {
+                            const newOptions = [...customField.options];
+                            newOptions[index] = e.target.value;
+                            setCustomField(prev => ({
+                              ...prev,
+                              options: newOptions
+                            }));
+                          }}
+                          fullWidth
+                          size="small"
+                          variant="outlined"
+                          placeholder={`Option ${index + 1}`}
+                          InputProps={{
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <Business fontSize="small" color="primary" />
+                              </InputAdornment>
+                            ),
+                          }}
+                          sx={{
+                            mr: 1,
+                            '& .MuiOutlinedInput-root': {
+                              borderRadius: '8px',
+                            }
+                          }}
+                        />
+                        <Box sx={{ display: 'flex' }}>
+                          <Tooltip title="Edit Option">
                             <IconButton 
+                              size="small" 
+                              color="primary"
+                              sx={{ mr: 0.5 }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete Option">
+                            <IconButton 
+                              size="small" 
                               color="error"
                               onClick={() => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails.splice(index, 1);
-                                setNewClientData(prev => ({
+                                const newOptions = [...customField.options];
+                                newOptions.splice(index, 1);
+                                setCustomField(prev => ({
                                   ...prev,
-                                  additionalDetails: newDetails
+                                  options: newOptions
                                 }));
                               }}
                             >
-                              <DeleteIcon />
+                              <DeleteIcon fontSize="small" />
                             </IconButton>
-                          </Grid>
-                        </Grid>
+                          </Tooltip>
+                        </Box>
                       </Box>
                     ))}
                   </Box>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No additional details added yet
-                    </Typography>
-                  </Box>
-                )}
-                
-                {/* Button to add new key-value pair */}
-                <Button
-                  variant="outlined"
-                  startIcon={<Add />}
-                  onClick={() => {
-                    setNewClientData(prev => ({
-                      ...prev,
-                      additionalDetails: [
-                        ...prev.additionalDetails,
-                        { key: '', value: '' }
-                      ]
-                    }));
-                  }}
-                  fullWidth
-                >
-                  Add Custom Field
-                </Button>
-              </Box>
-            </Grid>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseNewDialog}>Cancel</Button>
+        <DialogActions sx={{ px: 3, py: 2, bgcolor: 'background.paper' }}>
           <Button 
-            onClick={handleCreateClient} 
+            onClick={() => setOpenCustomFieldDialog(false)}
+            variant="outlined"
+            sx={{ 
+              borderRadius: '8px',
+              px: 3
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
             variant="contained" 
             color="primary"
-            disabled={saving || !newClientData.businessName}
-            startIcon={saving ? <CircularProgress size={20} /> : <Add />}
+            startIcon={<Add />}
+            sx={{ 
+              borderRadius: '8px',
+              px: 3
+            }}
+            onClick={() => {
+              if (!customField.name) {
+                setAlert({
+                  open: true,
+                  message: 'Please enter a field name',
+                  severity: 'error'
+                });
+                return;
+              }
+              
+              // Create the new custom field
+              const newCustomField = {
+                key: customField.name,
+                value: '',
+                type: customField.type,
+                options: customField.type === 'checkbox' || customField.type === 'multiDropdown' 
+                  ? customField.options 
+                  : []
+              };
+              
+              // Add to additionalDetails
+              setNewClientData(prev => ({
+                ...prev,
+                additionalDetails: [
+                  ...prev.additionalDetails,
+                  newCustomField
+                ]
+              }));
+              
+              // Reset and close dialog
+              setCustomField({
+                name: '',
+                type: 'singleLineText',
+                options: ['Option 1']
+              });
+              setOpenCustomFieldDialog(false);
+            }}
           >
-            {saving ? 'Creating...' : 'Create Client'}
+            Add Field
           </Button>
         </DialogActions>
       </Dialog>

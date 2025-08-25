@@ -1,18 +1,57 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Box, Typography, Grid, Card, CardContent,
   FormControl, InputLabel, Select, MenuItem,
   Button, Avatar, Divider, Autocomplete, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions,
-  CircularProgress, Snackbar, Alert, IconButton, InputAdornment
+  CircularProgress, Snackbar, Alert, IconButton, InputAdornment,
+  Paper, Tooltip, Switch, FormControlLabel, FormHelperText
 } from '@mui/material';
-import { Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon } from '@mui/icons-material';
+import { 
+  Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon,
+  CloudUpload, ExpandMore, ExpandLess, Business, Category
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import axios from 'axios';
 import countries from '../../utils/countries';
 import countryStates from '../../utils/countryStates';
 import { debounce } from 'lodash';
+
+// Common industry options
+const industryOptions = [
+  'Accounting & Finance',
+  'Advertising & Marketing',
+  'Agriculture & Farming',
+  'Apparel & Fashion',
+  'Architecture & Design',
+  'Automotive',
+  'Banking & Financial Services',
+  'Biotechnology',
+  'Construction',
+  'Consulting',
+  'Consumer Goods',
+  'Education & E-learning',
+  'Electronics',
+  'Energy & Utilities',
+  'Entertainment & Media',
+  'Food & Beverages',
+  'Government & Public Sector',
+  'Healthcare & Medical',
+  'Hospitality & Tourism',
+  'Information Technology',
+  'Insurance',
+  'Legal Services',
+  'Manufacturing',
+  'Mining & Metals',
+  'Non-profit & NGO',
+  'Pharmaceuticals',
+  'Real Estate',
+  'Retail',
+  'Telecommunications',
+  'Transportation & Logistics',
+  'Other'
+];
 
 /**
  * ClientDetails component for handling the "Billed To" section of the invoice
@@ -34,15 +73,40 @@ const ClientDetails = ({
   const [newClientData, setNewClientData] = useState({
     clientName: '',
     businessName: '',
+    industry: '',
     gstin: '',
+    panNumber: '',
     email: '',
     phone: '',
+    showEmailInInvoice: false,
+    showPhoneInInvoice: false,
+    businessAlias: '',
+    uniqueKey: '',
+    // Address fields
     addressLine: '',
     city: '',
+    district: '',
     state: '',
     pincode: '',
     country: 'India',
+    buildingNumber: '',
+    streetAddress: '',
+    // Logo
+    logo: null,
     additionalDetails: []
+  });
+  
+  // States for collapsible sections
+  const [taxInfoExpanded, setTaxInfoExpanded] = useState(true);
+  const [addressExpanded, setAddressExpanded] = useState(true);
+  const [additionalDetailsExpanded, setAdditionalDetailsExpanded] = useState(true);
+  
+  // State for custom field dialog
+  const [openCustomFieldDialog, setOpenCustomFieldDialog] = useState(false);
+  const [customField, setCustomField] = useState({
+    name: '',
+    type: 'singleLineText',
+    options: ['Option 1']
   });
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
@@ -61,17 +125,38 @@ const ClientDetails = ({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   
+  // Caching states
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [cachedSearchTerm, setCachedSearchTerm] = useState('');
+  
   // Get the selected client data
   const selectedClientData = clientOptions.find(c => c.client_id === selectedClient);
   
   // Function to fetch clients based on search term
   const fetchClients = async (searchTerm) => {
     try {
+      // Check if we can use cached data
+      const currentTime = Date.now();
+      const cacheExpiryTime = 60000; // 1 minute cache expiry
+      
+      if (
+        searchTerm === cachedSearchTerm && 
+        currentTime - lastFetchTime < cacheExpiryTime &&
+        clientOptions.length > 0
+      ) {
+        console.log('Using cached client data for:', searchTerm);
+        return; // Use cached data, skip API call
+      }
+      
       setLoading(true);
       console.log('Fetching clients with search term:', searchTerm);
       
       // Call the API with the search term
       const response = await api.get(`/api/client/business/all?search=${encodeURIComponent(searchTerm || '')}`);
+      
+      // Update cache timestamp and search term
+      setLastFetchTime(currentTime);
+      setCachedSearchTerm(searchTerm);
       
       console.log('Client search response:', response);
       
@@ -115,7 +200,7 @@ const ClientDetails = ({
   const debouncedFetchClients = useCallback(
     debounce((searchTerm) => {
       fetchClients(searchTerm);
-    }, 500),
+    }, 300), // Reduced debounce time for faster response
     []
   );
   
@@ -132,6 +217,12 @@ const ClientDetails = ({
       setClientOptions(clients);
     }
   }, [clients]);
+  
+  // Preload client data when component mounts
+  useEffect(() => {
+    // Fetch initial client data on component mount
+    fetchClients('');
+  }, []);
   
   // Fetch user's location and set country defaults
   const fetchLocationData = async () => {
@@ -244,34 +335,111 @@ const ClientDetails = ({
     setOpenNewDialog(false);
   };
   
+  // File input reference
+  const fileInputRef = useRef(null);
+  
+  // Handle logo file selection
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setAlert({
+        open: true,
+        message: 'Please upload a JPEG or PNG file',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setAlert({
+        open: true,
+        message: 'File size must be less than 10MB',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Validate image dimensions
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      
+      // Check if dimensions are too large
+      if (img.width > 1080 || img.height > 1080) {
+        setAlert({
+          open: true,
+          message: 'Image dimensions should not exceed 1080x1080px',
+          severity: 'warning'
+        });
+        // Still allow the image but with a warning
+      }
+      
+      // Update state with the file
+      setNewClientData(prev => ({
+        ...prev,
+        logo: file
+      }));
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      setAlert({
+        open: true,
+        message: 'Invalid image file',
+        severity: 'error'
+      });
+    };
+    
+    img.src = URL.createObjectURL(file);
+  };
+  
   // Handle input changes in the new client form
   const handleNewClientInputChange = (e) => {
     const { name, value } = e.target;
-    setNewClientData(prev => ({
-      ...prev,
-      [name]: value
-    }));
     
-    // If country changes, update the country code
+    // If country changes, update the country code and reset state if needed
     if (name === 'country') {
       const country = countries.find(c => c.name === value);
       if (country) {
         setCountryCode(country.code.toLowerCase());
         
         // Reset state if country changes
-        if (prev.country !== value) {
+        if (newClientData.country !== value) {
           setNewClientData(prev => ({
             ...prev,
+            [name]: value,
             state: ''
           }));
+          return; // Return early since we've already updated the state
         }
       }
     }
+    
+    // For all other fields or if country didn't need state reset
+    setNewClientData(prev => ({
+      ...prev,
+      [name]: value
+    }));
     
     // If pincode changes and is of sufficient length, trigger lookup
     if (name === 'pincode' && value.length >= 5) {
       handlePincodeLookup(value);
     }
+  };
+  
+  // Handle checkbox changes
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setNewClientData(prev => ({
+      ...prev,
+      [name]: checked
+    }));
   };
   
   // Handle pincode lookup
@@ -501,13 +669,23 @@ const ClientDetails = ({
       
       // Prepare data for API
       const clientData = {
-        clientName: newClientData.clientName || newClientData.businessName,
+        // Use businessName as the clientName
+        clientName: newClientData.businessName,
         businessName: newClientData.businessName,
+        industry: newClientData.industry,
         gstin: newClientData.gstin,
+        panNumber: newClientData.panNumber,
         email: newClientData.email,
         phone: newClientData.phone,
+        showEmailInInvoice: newClientData.showEmailInInvoice,
+        showPhoneInInvoice: newClientData.showPhoneInInvoice,
+        businessAlias: newClientData.businessAlias,
+        uniqueKey: newClientData.uniqueKey,
         address: {
           addressLine: newClientData.addressLine,
+          streetAddress: newClientData.streetAddress,
+          buildingNumber: newClientData.buildingNumber,
+          district: newClientData.district,
           city: newClientData.city,
           state: newClientData.state,
           pincode: newClientData.pincode,
@@ -519,6 +697,30 @@ const ClientDetails = ({
           : undefined
       };
       
+      // Handle logo upload if a logo was selected
+      if (newClientData.logo) {
+        // Create a FormData object for file upload
+        const formData = new FormData();
+        formData.append('logo', newClientData.logo);
+        
+        try {
+          // Upload the logo first
+          const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          // If logo upload was successful, add the logo URL to the client data
+          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+            clientData.logoUrl = logoResponse.data.logoUrl;
+          }
+        } catch (logoError) {
+          console.error('Error uploading logo:', logoError);
+          // Continue with client creation even if logo upload fails
+        }
+      }
+      
       // Log the payload to verify additionalDetails are included
       console.log('Creating client with data:', clientData);
       
@@ -527,6 +729,17 @@ const ClientDetails = ({
       
       // Add the new client to the list and select it
       const newClient = response.data;
+      console.log('New client created:', newClient);
+      
+      // Add the new client to the clientOptions state
+      setClientOptions(prevOptions => {
+        // Check if the client already exists in the options
+        const exists = prevOptions.some(client => client.client_id === newClient.client_id);
+        if (!exists) {
+          return [...prevOptions, newClient];
+        }
+        return prevOptions;
+      });
       
       // If setSelectedClient is provided, select the new client
       if (setSelectedClient) {
@@ -588,11 +801,20 @@ const ClientDetails = ({
             open={open}
             onOpen={() => {
               setOpen(true);
-              // Fetch initial data when dropdown is opened
-              if (inputValue) {
-                debouncedFetchClients(inputValue);
+              
+              // Check if we need to fetch data when dropdown is opened
+              const currentTime = Date.now();
+              const cacheExpiryTime = 60000; // 1 minute cache expiry
+              
+              // Only fetch if cache is expired or we don't have data
+              if (currentTime - lastFetchTime >= cacheExpiryTime || clientOptions.length === 0) {
+                if (inputValue) {
+                  debouncedFetchClients(inputValue);
+                } else {
+                  fetchClients('');
+                }
               } else {
-                fetchClients('');
+                console.log('Using cached client data on dropdown open');
               }
             }}
             onClose={() => setOpen(false)}
@@ -600,6 +822,13 @@ const ClientDetails = ({
             loading={loading}
             getOptionLabel={(option) => option.clientName || option.businessName || ''}
             isOptionEqualToValue={(option, value) => option.client_id === value.client_id}
+            filterOptions={(options, state) => {
+              // Filter out the currently selected client from dropdown options
+              // to prevent duplication in the dropdown
+              return options.filter(option => 
+                !selectedClientData || option.client_id !== selectedClientData.client_id
+              );
+            }}
             renderInput={(params) => (
               <TextField 
                 {...params} 
@@ -610,12 +839,29 @@ const ClientDetails = ({
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {loading ? <CircularProgress color="inherit" size={20} /> : null}
+                      {loading ? (
+                        <CircularProgress 
+                          color="primary" 
+                          size={20} 
+                          sx={{ 
+                            animation: 'fadeIn 0.3s',
+                            '@keyframes fadeIn': {
+                              '0%': { opacity: 0 },
+                              '100%': { opacity: 1 }
+                            }
+                          }} 
+                        />
+                      ) : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),
                 }}
-                helperText="Start typing to search for clients"
+                helperText={loading ? "Loading clients..." : "Start typing to search for clients"}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    transition: 'all 0.2s ease-in-out',
+                  }
+                }}
               />
             )}
             noOptionsText="No clients found. Try a different search term or add a new client."
@@ -640,72 +886,199 @@ const ClientDetails = ({
           </Button>
         </Box>
 
-        {selectedClientData && (
-          <Box sx={{ p: 2, border: '1px solid #eee', borderRadius: 1, mt: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Avatar sx={{ mr: 2 }}>
-                <Person />
-              </Avatar>
-              <Typography variant="subtitle1" fontWeight="bold">
-                {selectedClientData.clientName || selectedClientData.businessName}
+        {/* Client Details Display Section with optimized rendering */}
+        <Box 
+          sx={{ 
+            p: 2, 
+            border: '1px solid #eee', 
+            borderRadius: 1, 
+            mt: 2,
+            minHeight: '150px',
+            position: 'relative',
+            transition: 'all 0.3s ease-in-out',
+            opacity: selectedClientData ? 1 : 0.7,
+            backgroundColor: selectedClientData ? 'white' : '#f9f9f9'
+          }}
+        >
+          {!selectedClient && !loading && (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '100%',
+              p: 2
+            }}>
+              <Typography variant="body1" color="text.secondary" align="center">
+                Select a client to view their details
               </Typography>
             </Box>
-
-            {selectedClientData.address && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <LocationOn color="action" sx={{ mr: 1, fontSize: 'small' }} />
-                <Typography variant="body2">
-                  {selectedClientData.address.addressLine}, {selectedClientData.address.city},
-                  {selectedClientData.address.state} - {selectedClientData.address.pincode}
-                </Typography>
-              </Box>
-            )}
-
-            {selectedClientData.email && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Email color="action" sx={{ mr: 1, fontSize: 'small' }} />
-                <Typography variant="body2">
-                  {selectedClientData.email}
-                </Typography>
-              </Box>
-            )}
-
-            {selectedClientData.phone && (
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Phone color="action" sx={{ mr: 1, fontSize: 'small' }} />
-                <Typography variant="body2">
-                  {selectedClientData.phone}
-                </Typography>
-              </Box>
-            )}
-
-            {selectedClientData.gstin && (
-              <Typography variant="body2" sx={{ mb: 1 }}>
-                <Box component="span" fontWeight="bold">GSTIN:</Box> {selectedClientData.gstin}
+          )}
+          
+          {loading && !selectedClientData && (
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              height: '100%',
+              p: 2
+            }}>
+              <CircularProgress size={30} sx={{ mb: 2 }} />
+              <Typography variant="body2" color="text.secondary">
+                Loading client details...
               </Typography>
-            )}
-          </Box>
-        )}
+            </Box>
+          )}
+          
+          {selectedClientData && (
+            <Box sx={{ 
+              animation: 'fadeIn 0.4s',
+              '@keyframes fadeIn': {
+                '0%': { opacity: 0, transform: 'translateY(10px)' },
+                '100%': { opacity: 1, transform: 'translateY(0)' }
+              }
+            }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Avatar sx={{ mr: 2, bgcolor: 'primary.main' }}>
+                  <Person />
+                </Avatar>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {selectedClientData.clientName || selectedClientData.businessName}
+                </Typography>
+              </Box>
+
+              {selectedClientData.address && (
+                <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 1 }}>
+                  <LocationOn color="action" sx={{ mr: 1, fontSize: 'small', mt: 0.5 }} />
+                  <Typography variant="body2">
+                    {selectedClientData.address.addressLine}
+                    {selectedClientData.address.city && `, ${selectedClientData.address.city}`}
+                    {selectedClientData.address.state && `, ${selectedClientData.address.state}`}
+                    {selectedClientData.address.pincode && ` - ${selectedClientData.address.pincode}`}
+                  </Typography>
+                </Box>
+              )}
+
+              {selectedClientData.email && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Email color="action" sx={{ mr: 1, fontSize: 'small' }} />
+                  <Typography variant="body2">
+                    {selectedClientData.email}
+                  </Typography>
+                </Box>
+              )}
+
+              {selectedClientData.phone && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <Phone color="action" sx={{ mr: 1, fontSize: 'small' }} />
+                  <Typography variant="body2">
+                    {selectedClientData.phone}
+                  </Typography>
+                </Box>
+              )}
+
+              {selectedClientData.gstin && (
+                <Typography variant="body2" sx={{ mb: 1 }}>
+                  <Box component="span" fontWeight="bold">GSTIN:</Box> {selectedClientData.gstin}
+                </Typography>
+              )}
+            </Box>
+          )}
+        </Box>
       </CardContent>
       
       {/* New Client Dialog */}
       <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Add New Client</DialogTitle>
+        <DialogTitle>
+          <Typography 
+            variant="h6" 
+            sx={{ 
+              borderBottom: '1px solid', 
+              paddingBottom: 1,
+              display: 'inline-block'
+            }}
+          >
+            Add New Client
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Enter your client details below. These details will be used in the "Billed To" section of your invoices.
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 2, mb: 1 }}>
+            Basic Client Details
           </Typography>
           <Grid container spacing={3} sx={{ mt: 0 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Client Name"
-                name="clientName"
-                value={newClientData.clientName}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
+            {/* First row - Logo upload */}
+            <Grid item xs={12}>
+              <Box sx={{ mb: 2 }}>
+                <input
+                  accept="image/jpeg,image/png"
+                  style={{ display: 'none' }}
+                  id="logo-upload"
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleLogoChange}
+                />
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: 150,
+                    cursor: 'pointer',
+                    borderStyle: 'dashed',
+                    borderColor: newClientData.logo ? 'primary.main' : 'divider',
+                    bgcolor: newClientData.logo ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      borderColor: 'primary.main',
+                      bgcolor: 'rgba(0, 0, 0, 0.02)'
+                    }
+                  }}
+                  onClick={() => fileInputRef.current.click()}
+                >
+                  {newClientData.logo ? (
+                    <Box sx={{ textAlign: 'center' }}>
+                      <Avatar
+                        src={URL.createObjectURL(newClientData.logo)}
+                        alt="Client Logo"
+                        sx={{ width: 80, height: 80, mb: 2 }}
+                      />
+                      <Typography variant="body2" color="textSecondary">
+                        {newClientData.logo.name}
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary">
+                        {(newClientData.logo.size / (1024 * 1024)).toFixed(2)} MB
+                      </Typography>
+                      <Button 
+                        size="small" 
+                        sx={{ mt: 1 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setNewClientData(prev => ({ ...prev, logo: null }));
+                        }}
+                      >
+                        Change
+                      </Button>
+                    </Box>
+                  ) : (
+                    <>
+                      <CloudUpload color="primary" sx={{ fontSize: 40, mb: 1 }} />
+                      <Typography variant="body1" align="center" gutterBottom>
+                        Upload Logo
+                      </Typography>
+                      <Typography variant="caption" color="textSecondary" align="center">
+                        JPEG, PNG format • Max 10MB • 1080×1080px
+                      </Typography>
+                    </>
+                  )}
+                </Paper>
+              </Box>
             </Grid>
+            
+            {/* Second row - Business Name and Industry */}
             <Grid item xs={12} sm={6}>
               <TextField
                 label="Business Name"
@@ -715,59 +1088,41 @@ const ClientDetails = ({
                 fullWidth
                 required
                 margin="normal"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Business fontSize="small" />
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="GSTIN"
-                name="gstin"
-                value={newClientData.gstin}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Client Industry</InputLabel>
+                <Select
+                  name="industry"
+                  value={newClientData.industry}
+                  onChange={handleNewClientInputChange}
+                  label="Client Industry"
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Category fontSize="small" />
+                    </InputAdornment>
+                  }
+                >
+                  {industryOptions.map((industry) => (
+                    <MenuItem key={industry} value={industry}>
+                      {industry}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText>Select the primary industry of your client</FormHelperText>
+              </FormControl>
             </Grid>
+            
+            {/* Third row - Country and City */}
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="Email"
-                name="email"
-                value={newClientData.email}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone"
-                name="phone"
-                value={newClientData.phone}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Address Line"
-                name="addressLine"
-                value={newClientData.addressLine}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="City"
-                name="city"
-                value={newClientData.city}
-                onChange={handleNewClientInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Country</InputLabel>
                 <Select
@@ -791,180 +1146,453 @@ const ClientDetails = ({
                     </Typography>
                   </Box>
                 )}
+                <FormHelperText>Default selection based on your location</FormHelperText>
               </FormControl>
             </Grid>
-            {/* State - Only shown if country has states */}
-            {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
-              <Grid item xs={12} sm={4}>
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>State</InputLabel>
-                  <Select
-                    name="state"
-                    value={newClientData.state}
-                    onChange={handleNewClientInputChange}
-                    label="State"
-                  >
-                    {countryStates[newClientData.country]?.states?.map((state) => (
-                      <MenuItem key={state} value={state}>
-                        {state}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            ) : (
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  label="State"
-                  name="state"
-                  value={newClientData.state}
-                  onChange={handleNewClientInputChange}
-                  fullWidth
-                  margin="normal"
-                />
-              </Grid>
-            )}
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField
-                label="Pincode"
-                name="pincode"
-                value={newClientData.pincode}
+                label="City/Town"
+                name="city"
+                value={newClientData.city}
                 onChange={handleNewClientInputChange}
                 fullWidth
                 margin="normal"
-                InputProps={{
-                  endAdornment: pincodeLoading ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={20} />
-                    </InputAdornment>
-                  ) : pincodeSuccess ? (
-                    <InputAdornment position="end">
-                      <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.2rem' }}>✓</span>
-                      </Box>
-                    </InputAdornment>
-                  ) : null
-                }}
-                error={Boolean(pincodeError)}
-                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter pincode to auto-fill city, state, and country")}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: pincodeSuccess ? 'success.main' : undefined,
-                    },
-                  },
-                  '& .MuiFormHelperText-root': {
-                    color: pincodeSuccess ? 'success.main' : undefined,
-                  }
-                }}
               />
             </Grid>
             
-            {/* Additional Details Section */}
+            {/* Tax Information Section (Collapsible) */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                Additional Details
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Add any custom information about your client as key-value pairs
-              </Typography>
-              
-              <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                {/* Display existing key-value pairs */}
-                {newClientData.additionalDetails.length > 0 ? (
-                  <Box sx={{ mb: 2 }}>
-                    {newClientData.additionalDetails.map((detail, index) => (
-                      <Box 
-                        key={index} 
-                        sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          mb: 2,
-                          p: 1,
-                          borderRadius: 1,
-                          bgcolor: 'rgba(0, 0, 0, 0.03)'
-                        }}
-                      >
-                        <Grid container spacing={2} alignItems="center">
-                          <Grid item xs={5}>
-                            <TextField
-                              fullWidth
-                              label="Key"
-                              name={`additionalDetails[${index}].key`}
-                              value={detail.key}
-                              onChange={(e) => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails[index].key = e.target.value;
-                                setNewClientData(prev => ({
-                                  ...prev,
-                                  additionalDetails: newDetails
-                                }));
-                              }}
-                              size="small"
-                            />
-                          </Grid>
-                          <Grid item xs={5}>
-                            <TextField
-                              fullWidth
-                              label="Value"
-                              name={`additionalDetails[${index}].value`}
-                              value={detail.value}
-                              onChange={(e) => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails[index].value = e.target.value;
-                                setNewClientData(prev => ({
-                                  ...prev,
-                                  additionalDetails: newDetails
-                                }));
-                              }}
-                              size="small"
-                            />
-                          </Grid>
-                          <Grid item xs={2}>
-                            <IconButton 
-                              color="error"
-                              onClick={() => {
-                                const newDetails = [...newClientData.additionalDetails];
-                                newDetails.splice(index, 1);
-                                setNewClientData(prev => ({
-                                  ...prev,
-                                  additionalDetails: newDetails
-                                }));
-                              }}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))}
-                  </Box>
-                ) : (
-                  <Box sx={{ textAlign: 'center', py: 2 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      No additional details added yet
-                    </Typography>
-                  </Box>
-                )}
-                
-                {/* Button to add new key-value pair */}
-                <Button
-                  variant="outlined"
-                  startIcon={<Add />}
-                  onClick={() => {
-                    setNewClientData(prev => ({
-                      ...prev,
-                      additionalDetails: [
-                        ...prev.additionalDetails,
-                        { key: '', value: '' }
-                      ]
-                    }));
-                  }}
-                  fullWidth
-                >
-                  Add Custom Field
-                </Button>
+              <Box 
+                sx={{ 
+                  mt: 3, 
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  '&:hover': { color: 'primary.main' }
+                }}
+                onClick={() => setTaxInfoExpanded(!taxInfoExpanded)}
+              >
+                <Typography variant="subtitle1" fontWeight="medium">
+                  Tax Information (Optional)
+                </Typography>
+                <IconButton size="small">
+                  {taxInfoExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
               </Box>
+              <Divider />
+              
+              {taxInfoExpanded && (
+                <Box sx={{ mt: 2 }}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Business GSTIN"
+                        name="gstin"
+                        value={newClientData.gstin}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., 22AAAAA0000A1Z5"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="PAN Number"
+                        name="panNumber"
+                        value={newClientData.panNumber}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., AAAAA0000A"
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+            </Grid>
+            
+            {/* Address Section (Collapsible) */}
+            <Grid item xs={12}>
+              <Box 
+                sx={{ 
+                  mt: 3, 
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  '&:hover': { color: 'primary.main' }
+                }}
+                onClick={() => setAddressExpanded(!addressExpanded)}
+              >
+                <Typography variant="subtitle1" fontWeight="medium">
+                  Address
+                </Typography>
+                <IconButton size="small">
+                  {addressExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </Box>
+              <Divider />
+              
+              {addressExpanded && (
+                <Box sx={{ mt: 2 }}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth margin="normal">
+                        <InputLabel>Country</InputLabel>
+                        <Select
+                          name="country"
+                          value={newClientData.country}
+                          onChange={handleNewClientInputChange}
+                          label="Country"
+                          disabled={geoLocationLoading}
+                        >
+                          {countries.map((country) => (
+                            <MenuItem key={country.code} value={country.name}>
+                              {country.name}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    
+                    {/* State/Province - Only shown if country has states */}
+                    {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth margin="normal">
+                          <InputLabel>State/Province</InputLabel>
+                          <Select
+                            name="state"
+                            value={newClientData.state}
+                            onChange={handleNewClientInputChange}
+                            label="State/Province"
+                          >
+                            {countryStates[newClientData.country]?.states?.map((state) => (
+                              <MenuItem key={state} value={state}>
+                                {state}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    ) : (
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          label="State/Province"
+                          name="state"
+                          value={newClientData.state}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          margin="normal"
+                        />
+                      </Grid>
+                    )}
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="District"
+                        name="district"
+                        value={newClientData.district}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="City/Town"
+                        name="city"
+                        value={newClientData.city}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Building Number/House Number"
+                        name="buildingNumber"
+                        value={newClientData.buildingNumber}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Postal/Zip Code"
+                        name="pincode"
+                        value={newClientData.pincode}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        InputProps={{
+                          endAdornment: pincodeLoading ? (
+                            <InputAdornment position="end">
+                              <CircularProgress size={20} />
+                            </InputAdornment>
+                          ) : pincodeSuccess ? (
+                            <InputAdornment position="end">
+                              <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                <span style={{ fontSize: '1.2rem' }}>✓</span>
+                              </Box>
+                            </InputAdornment>
+                          ) : null
+                        }}
+                        error={Boolean(pincodeError)}
+                        helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter postal code to auto-fill location details")}
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            '& fieldset': {
+                              borderColor: pincodeSuccess ? 'success.main' : undefined,
+                            },
+                          },
+                          '& .MuiFormHelperText-root': {
+                            color: pincodeSuccess ? 'success.main' : undefined,
+                          }
+                        }}
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Street Address"
+                        name="streetAddress"
+                        value={newClientData.streetAddress}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        multiline
+                        rows={2}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
+            </Grid>
+            
+            {/* Additional Details Section (Collapsible) */}
+            <Grid item xs={12}>
+              <Box 
+                sx={{ 
+                  mt: 3, 
+                  mb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  cursor: 'pointer',
+                  '&:hover': { color: 'primary.main' }
+                }}
+                onClick={() => setAdditionalDetailsExpanded(!additionalDetailsExpanded)}
+              >
+                <Typography variant="subtitle1" fontWeight="medium">
+                  Additional Details (Optional)
+                </Typography>
+                <IconButton size="small">
+                  {additionalDetailsExpanded ? <ExpandLess /> : <ExpandMore />}
+                </IconButton>
+              </Box>
+              <Divider />
+              
+              {additionalDetailsExpanded && (
+                <Box sx={{ mt: 2 }}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Business Alias (Nick Name)"
+                        name="businessAlias"
+                        value={newClientData.businessAlias}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., ABC Corp"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Unique Key"
+                        name="uniqueKey"
+                        value={newClientData.uniqueKey}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., CLIENT001"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Email"
+                        name="email"
+                        value={newClientData.email}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., contact@example.com"
+                        helperText={
+                          <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            Add to directly email documents from Invokta
+                          </Typography>
+                        }
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={newClientData.showEmailInInvoice}
+                            onChange={handleCheckboxChange}
+                            name="showEmailInInvoice"
+                            color="primary"
+                          />
+                        }
+                        label="Show Email in Invoice"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="Phone Number"
+                        name="phone"
+                        value={newClientData.phone}
+                        onChange={handleNewClientInputChange}
+                        fullWidth
+                        margin="normal"
+                        placeholder="e.g., +91 9876543210"
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Box component="span" sx={{ fontSize: '0.875rem', color: 'text.secondary' }}>
+                                +{countryCode === 'in' ? '91' : 
+                                   countryCode === 'ae' ? '971' : 
+                                   countryCode === 'us' ? '1' : 
+                                   countryCode === 'gb' ? '44' : '00'}
+                              </Box>
+                            </InputAdornment>
+                          ),
+                        }}
+                        helperText={
+                          <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                            Add to directly WhatsApp documents from Invokta
+                          </Typography>
+                        }
+                      />
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={newClientData.showPhoneInInvoice}
+                            onChange={handleCheckboxChange}
+                            name="showPhoneInInvoice"
+                            color="primary"
+                          />
+                        }
+                        label="Show Phone in Invoice"
+                      />
+                    </Grid>
+                    
+                    {/* Custom Fields Section */}
+                    <Grid item xs={12}>
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Custom Fields
+                        </Typography>
+                        
+                        <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                          {/* Display existing key-value pairs */}
+                          {newClientData.additionalDetails.length > 0 ? (
+                            <Box sx={{ mb: 2 }}>
+                              {newClientData.additionalDetails.map((detail, index) => (
+                                <Box 
+                                  key={index} 
+                                  sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    mb: 2,
+                                    p: 1,
+                                    borderRadius: 1,
+                                    bgcolor: 'rgba(0, 0, 0, 0.03)'
+                                  }}
+                                >
+                                  <Grid container spacing={2} alignItems="center">
+                                    <Grid item xs={5}>
+                                      <TextField
+                                        fullWidth
+                                        label="Key"
+                                        name={`additionalDetails[${index}].key`}
+                                        value={detail.key}
+                                        onChange={(e) => {
+                                          const newDetails = [...newClientData.additionalDetails];
+                                          newDetails[index].key = e.target.value;
+                                          setNewClientData(prev => ({
+                                            ...prev,
+                                            additionalDetails: newDetails
+                                          }));
+                                        }}
+                                        size="small"
+                                      />
+                                    </Grid>
+                                    <Grid item xs={5}>
+                                      <TextField
+                                        fullWidth
+                                        label="Value"
+                                        name={`additionalDetails[${index}].value`}
+                                        value={detail.value}
+                                        onChange={(e) => {
+                                          const newDetails = [...newClientData.additionalDetails];
+                                          newDetails[index].value = e.target.value;
+                                          setNewClientData(prev => ({
+                                            ...prev,
+                                            additionalDetails: newDetails
+                                          }));
+                                        }}
+                                        size="small"
+                                      />
+                                    </Grid>
+                                    <Grid item xs={2}>
+                                      <IconButton 
+                                        color="error"
+                                        onClick={() => {
+                                          const newDetails = [...newClientData.additionalDetails];
+                                          newDetails.splice(index, 1);
+                                          setNewClientData(prev => ({
+                                            ...prev,
+                                            additionalDetails: newDetails
+                                          }));
+                                        }}
+                                      >
+                                        <DeleteIcon />
+                                      </IconButton>
+                                    </Grid>
+                                  </Grid>
+                                </Box>
+                              ))}
+                            </Box>
+                          ) : (
+                            <Box sx={{ textAlign: 'center', py: 2 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                No custom fields added yet
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          {/* Button to add new custom field */}
+                          <Button
+                            variant="outlined"
+                            startIcon={<Add />}
+                            onClick={() => setOpenCustomFieldDialog(true)}
+                            fullWidth
+                          >
+                            Add Custom Field
+                          </Button>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              )}
             </Grid>
           </Grid>
         </DialogContent>
@@ -978,6 +1606,159 @@ const ClientDetails = ({
             startIcon={saving ? <CircularProgress size={20} /> : <Add />}
           >
             {saving ? 'Creating...' : 'Create Client'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Custom Field Dialog */}
+      <Dialog 
+        open={openCustomFieldDialog} 
+        onClose={() => setOpenCustomFieldDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Add Custom Field</DialogTitle>
+        <DialogContent>
+          <Grid container spacing={2} sx={{ mt: 1 }}>
+            <Grid item xs={12}>
+              <TextField
+                label="Field Name"
+                value={customField.name}
+                onChange={(e) => setCustomField(prev => ({ ...prev, name: e.target.value }))}
+                fullWidth
+                margin="normal"
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Field Type</InputLabel>
+                <Select
+                  value={customField.type}
+                  onChange={(e) => setCustomField(prev => ({ ...prev, type: e.target.value }))}
+                  label="Field Type"
+                >
+                  <MenuItem value="singleLineText">Single Line Text</MenuItem>
+                  <MenuItem value="multiLineText">Multi Line Text</MenuItem>
+                  <MenuItem value="email">Email</MenuItem>
+                  <MenuItem value="phone">Phone</MenuItem>
+                  <MenuItem value="url">URL</MenuItem>
+                  <MenuItem value="currency">Currency</MenuItem>
+                  <MenuItem value="checkbox">Multiple Select: Checkbox</MenuItem>
+                  <MenuItem value="multiDropdown">Multiple Select: Dropdown</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            
+            {/* Options for checkbox and multiDropdown types */}
+            {(customField.type === 'checkbox' || customField.type === 'multiDropdown') && (
+              <Grid item xs={12}>
+                <Box sx={{ mt: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="subtitle2">Customize Options</Typography>
+                    <Button 
+                      startIcon={<Add />} 
+                      size="small"
+                      onClick={() => {
+                        setCustomField(prev => ({
+                          ...prev,
+                          options: [...prev.options, `Option ${prev.options.length + 1}`]
+                        }));
+                      }}
+                    >
+                      Add new option
+                    </Button>
+                  </Box>
+                  
+                  {customField.options.map((option, index) => (
+                    <Box 
+                      key={index} 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        mb: 1 
+                      }}
+                    >
+                      <TextField
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...customField.options];
+                          newOptions[index] = e.target.value;
+                          setCustomField(prev => ({
+                            ...prev,
+                            options: newOptions
+                          }));
+                        }}
+                        fullWidth
+                        size="small"
+                        placeholder={`Option ${index + 1}`}
+                        sx={{ mr: 1 }}
+                      />
+                      <IconButton 
+                        size="small" 
+                        color="error"
+                        onClick={() => {
+                          const newOptions = [...customField.options];
+                          newOptions.splice(index, 1);
+                          setCustomField(prev => ({
+                            ...prev,
+                            options: newOptions
+                          }));
+                        }}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Box>
+                  ))}
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenCustomFieldDialog(false)}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            color="primary"
+            onClick={() => {
+              if (!customField.name) {
+                setAlert({
+                  open: true,
+                  message: 'Please enter a field name',
+                  severity: 'error'
+                });
+                return;
+              }
+              
+              // Create the new custom field
+              const newCustomField = {
+                key: customField.name,
+                value: '',
+                type: customField.type,
+                options: customField.type === 'checkbox' || customField.type === 'multiDropdown' 
+                  ? customField.options 
+                  : []
+              };
+              
+              // Add to additionalDetails
+              setNewClientData(prev => ({
+                ...prev,
+                additionalDetails: [
+                  ...prev.additionalDetails,
+                  newCustomField
+                ]
+              }));
+              
+              // Reset and close dialog
+              setCustomField({
+                name: '',
+                type: 'singleLineText',
+                options: ['Option 1']
+              });
+              setOpenCustomFieldDialog(false);
+            }}
+          >
+            Add Field
           </Button>
         </DialogActions>
       </Dialog>
