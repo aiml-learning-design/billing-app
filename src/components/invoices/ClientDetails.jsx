@@ -5,7 +5,8 @@ import {
   Button, Avatar, Divider, Autocomplete, TextField,
   Dialog, DialogTitle, DialogContent, DialogActions,
   CircularProgress, Snackbar, Alert, IconButton, InputAdornment,
-  Paper, Tooltip, Switch, FormControlLabel, FormHelperText
+  Paper, Tooltip, Switch, FormControlLabel, FormHelperText,
+  OutlinedInput
 } from '@mui/material';
 import { 
   Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon,
@@ -120,6 +121,7 @@ const ClientDetails = ({
   // Country detection states
   const [countryCode, setCountryCode] = useState('in');
   const [selectedCountry, setSelectedCountry] = useState('India');
+  const [phoneDialCode, setPhoneDialCode] = useState('+91'); // Default to India's dial code
   const [geoLocationLoading, setGeoLocationLoading] = useState(false);
   const [pincodeLoading, setPincodeLoading] = useState(false);
   const [pincodeError, setPincodeError] = useState(null);
@@ -273,6 +275,7 @@ const ClientDetails = ({
         if (uaeCountry) {
           setSelectedCountry(uaeCountry.name);
           setCountryCode('ae');
+          setPhoneDialCode(uaeCountry.dialCode); // Set phone dial code
           setNewClientData(prev => ({
             ...prev,
             country: uaeCountry.name
@@ -288,6 +291,12 @@ const ClientDetails = ({
         setSelectedCountry(userData.country_name);
         const detectedCountryCode = userData.country_code.toLowerCase();
         setCountryCode(detectedCountryCode);
+        
+        // Find the country object to get the dial code
+        const countryObj = countries.find(c => c.name === userData.country_name);
+        if (countryObj) {
+          setPhoneDialCode(countryObj.dialCode); // Set phone dial code
+        }
 
         // Update country with the detected country
         setNewClientData(prev => ({
@@ -301,6 +310,7 @@ const ClientDetails = ({
           console.log(`Found country by code: ${countryByCode.name}`);
           setSelectedCountry(countryByCode.name);
           setCountryCode(userData.country_code.toLowerCase());
+          setPhoneDialCode(countryByCode.dialCode); // Set phone dial code
           setNewClientData(prev => ({
             ...prev,
             country: countryByCode.name
@@ -311,6 +321,7 @@ const ClientDetails = ({
           console.log(`No matching country found, defaulting to ${defaultCountry.name}`);
           setSelectedCountry(defaultCountry.name);
           setCountryCode(defaultCountry.code.toLowerCase());
+          setPhoneDialCode(defaultCountry.dialCode); // Set phone dial code
           setNewClientData(prev => ({
             ...prev,
             country: defaultCountry.name
@@ -322,6 +333,7 @@ const ClientDetails = ({
         console.log(`No country data, defaulting to ${defaultCountry.name}`);
         setSelectedCountry(defaultCountry.name);
         setCountryCode(defaultCountry.code.toLowerCase());
+        setPhoneDialCode(defaultCountry.dialCode); // Set phone dial code
         setNewClientData(prev => ({
           ...prev,
           country: defaultCountry.name
@@ -334,6 +346,7 @@ const ClientDetails = ({
       console.log(`Error fetching location, defaulting to ${defaultCountry.name}`);
       setSelectedCountry(defaultCountry.name);
       setCountryCode(defaultCountry.code.toLowerCase());
+      setPhoneDialCode(defaultCountry.dialCode); // Set phone dial code
       setNewClientData(prev => ({
         ...prev,
         country: defaultCountry.name
@@ -442,6 +455,7 @@ const ClientDetails = ({
       const country = countries.find(c => c.name === value);
       if (country) {
         setCountryCode(country.code.toLowerCase());
+        setPhoneDialCode(country.dialCode); // Update phone dial code when country changes
         
         // Reset state if country changes
         if (newClientData.country !== value) {
@@ -453,6 +467,12 @@ const ClientDetails = ({
           return; // Return early since we've already updated the state
         }
       }
+    }
+    
+    // Handle phoneDialCode changes directly
+    if (name === 'phoneDialCode') {
+      setPhoneDialCode(value);
+      return; // Return early since we've already updated the state
     }
     
     // For all other fields or if country didn't need state reset
@@ -710,7 +730,7 @@ const ClientDetails = ({
         gstin: newClientData.gstin,
         panNumber: newClientData.panNumber,
         email: newClientData.email,
-        phone: newClientData.phone,
+        phone: newClientData.phone ? `${phoneDialCode}${newClientData.phone}` : '',
         showEmailInInvoice: newClientData.showEmailInInvoice,
         showPhoneInInvoice: newClientData.showPhoneInInvoice,
         businessAlias: newClientData.businessAlias,
@@ -1695,37 +1715,60 @@ const ClientDetails = ({
                     </Grid>
                     
                     <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="Phone Number"
-                        name="phone"
-                        value={newClientData.phone}
-                        onChange={handleNewClientInputChange}
-                        fullWidth
-                        margin="normal"
-                        placeholder="e.g., 9876543210"
-                        InputProps={{
-                          style: { height: '56px' },
-                          sx: { borderRadius: '8px' },
-                          startAdornment: (
-                            <InputAdornment position="start">
+                      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                        <FormControl sx={{ width: '120px', mr: 1 }}>
+                          <InputLabel id="phone-country-code-label">Code</InputLabel>
+                          <Select
+                            labelId="phone-country-code-label"
+                            name="phoneDialCode"
+                            value={phoneDialCode}
+                            onChange={handleNewClientInputChange}
+                            input={<OutlinedInput label="Code" />}
+                            sx={{ 
+                              height: '56px',
+                              borderRadius: '8px'
+                            }}
+                            renderValue={(selected) => (
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                 <Phone fontSize="small" color="primary" sx={{ mr: 0.5 }} />
-                                <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                                  +{countryCode === 'in' ? '91' : 
-                                     countryCode === 'ae' ? '971' : 
-                                     countryCode === 'us' ? '1' : 
-                                     countryCode === 'gb' ? '44' : '00'}
+                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
+                                  {selected}
                                 </Typography>
                               </Box>
-                            </InputAdornment>
-                          ),
-                        }}
-                        helperText={
-                          <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-                            Add to directly WhatsApp documents from Invokta
-                          </Typography>
-                        }
-                      />
+                            )}
+                          >
+                            {countries.map((country) => (
+                              <MenuItem key={country.code} value={country.dialCode}>
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Typography variant="body2" sx={{ width: '30px' }}>
+                                    {country.code}
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ ml: 1 }}>
+                                    {country.dialCode}
+                                  </Typography>
+                                </Box>
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                        <TextField
+                          label="Phone Number"
+                          name="phone"
+                          value={newClientData.phone}
+                          onChange={handleNewClientInputChange}
+                          fullWidth
+                          margin="normal"
+                          placeholder="e.g., 9876543210"
+                          InputProps={{
+                            style: { height: '56px' },
+                            sx: { borderRadius: '8px' },
+                          }}
+                          helperText={
+                            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
+                              Add to directly WhatsApp documents from Invokta
+                            </Typography>
+                          }
+                        />
                       <FormControlLabel
                         control={
                           <Switch
@@ -1737,6 +1780,7 @@ const ClientDetails = ({
                         }
                         label="Show Phone in Invoice"
                       />
+                    </Box>
                     </Grid>
                   </Grid>
                 </Box>
