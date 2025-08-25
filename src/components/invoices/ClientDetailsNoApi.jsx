@@ -503,6 +503,19 @@ const ClientDetailsNoApi = ({
       // Add the new client to the list and select it
       const newClient = response.data;
       
+      // Add the new client to clientOptions so it appears in search results immediately
+      setClientOptions(prevOptions => {
+        // Check if the client already exists in the options
+        const exists = prevOptions.some(client => client.client_id === newClient.client_id);
+        if (!exists) {
+          return [newClient, ...prevOptions];
+        }
+        return prevOptions;
+      });
+      
+      // Update the input value to show the new client name
+      setInputValue(newClient.clientName || newClient.businessName);
+      
       // If setSelectedClient is provided, select the new client
       if (setSelectedClient) {
         setSelectedClient(newClient.client_id);
