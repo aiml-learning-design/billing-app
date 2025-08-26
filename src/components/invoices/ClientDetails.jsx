@@ -1355,7 +1355,7 @@ const ClientDetails = ({
             </Grid>
             
             {/* Row 5: Address Section (Collapsible) */}
-            <Grid item xs={12} sx={{ mt: 2 }}>
+            <Grid item xs={12} sx={{ mt: 2, width: '720px' }}>
               <Paper 
                 variant="outlined" 
                 sx={{ 
@@ -1425,7 +1425,7 @@ const ClientDetails = ({
                       
                       {/* State/Province - Only shown if country has states */}
                       {newClientData.country && countryStates[newClientData.country] && countryStates[newClientData.country].hasStates ? (
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={6} sx={{ width: '400px' }}>
                           <FormControl fullWidth variant="outlined">
                             <InputLabel>State/Province</InputLabel>
                             <Select
@@ -1438,7 +1438,8 @@ const ClientDetails = ({
                               }}
                               sx={{ 
                                 borderRadius: '8px',
-                                height: '56px'
+                                height: '56px',
+                                width: '100%'
                               }}
                               startAdornment={
                                 <InputAdornment position="start">
@@ -1455,7 +1456,7 @@ const ClientDetails = ({
                           </FormControl>
                         </Grid>
                       ) : (
-                        <Grid item xs={12} md={6}>
+                        <Grid item xs={12} md={6} sx={{ width: '320px' }}>
                           <TextField
                             label="State/Province"
                             name="state"
@@ -1466,7 +1467,7 @@ const ClientDetails = ({
                             placeholder="Enter state or province"
                             InputProps={{
                               style: { height: '56px' },
-                              sx: { borderRadius: '8px' },
+                              sx: { borderRadius: '8px' , width: '330px'},
                               startAdornment: (
                                 <InputAdornment position="start">
                                   <LocationOn fontSize="small" color="primary" />
@@ -1488,7 +1489,7 @@ const ClientDetails = ({
                           placeholder="Enter district"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px', width: '330px' },
                             startAdornment: (
                               <InputAdornment position="start">
                                 <LocationOn fontSize="small" color="primary" />
@@ -1509,7 +1510,7 @@ const ClientDetails = ({
                           placeholder="Enter city or town"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px', width: '330px' },
                             startAdornment: (
                               <InputAdornment position="start">
                                 <LocationOn fontSize="small" color="primary" />
@@ -1530,7 +1531,7 @@ const ClientDetails = ({
                           placeholder="Enter building or house number"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px' , width: '330px'},
                             startAdornment: (
                               <InputAdornment position="start">
                                 <LocationOn fontSize="small" color="primary" />
@@ -1551,7 +1552,7 @@ const ClientDetails = ({
                           placeholder="Enter postal or zip code"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px' , width: '330px'},
                             startAdornment: (
                               <InputAdornment position="start">
                                 <LocationOn fontSize="small" color="primary" />
@@ -1594,7 +1595,7 @@ const ClientDetails = ({
                           multiline
                           rows={2}
                           InputProps={{
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px', width: '680px', height: '58px' },
                             startAdornment: (
                               <InputAdornment position="start" sx={{ alignSelf: 'flex-start', mt: 1.5 }}>
                                 <LocationOn fontSize="small" color="primary" />
@@ -1611,7 +1612,7 @@ const ClientDetails = ({
             </Grid>
             
             {/* Row 6: Additional Details Section (Collapsible) */}
-            <Grid item xs={12}>
+            <Grid item xs={12} sx={{ width: '720px' }}>
               <Box 
                 sx={{ 
                   mt: 3, 
@@ -1642,12 +1643,12 @@ const ClientDetails = ({
                         name="businessAlias"
                         value={newClientData.businessAlias}
                         onChange={handleNewClientInputChange}
-                        fullWidth
+
                         margin="normal"
                         placeholder="e.g., ABC Corp"
                         InputProps={{
                           style: { height: '56px' },
-                          sx: { borderRadius: '8px' }
+                          sx: { borderRadius: '8px', width: '340px' }
                         }}
                       />
                     </Grid>
@@ -1662,7 +1663,7 @@ const ClientDetails = ({
                         placeholder="e.g., CLIENT001"
                         InputProps={{
                           style: { height: '56px' },
-                          sx: { borderRadius: '8px' }
+                          sx: { borderRadius: '8px', width: '340px' }
                         }}
                       />
                     </Grid>
@@ -1679,7 +1680,7 @@ const ClientDetails = ({
                 </Typography>
                 <Divider sx={{ mt: 1 }} />
                 
-                <Box sx={{ mt: 2 }}>
+                <Box sx={{ mt: 2}}>
                   <Grid container spacing={3}>
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -1687,12 +1688,11 @@ const ClientDetails = ({
                         name="email"
                         value={newClientData.email}
                         onChange={handleNewClientInputChange}
-                        fullWidth
                         margin="normal"
                         placeholder="e.g., contact@example.com"
                         InputProps={{
                           style: { height: '56px' },
-                          sx: { borderRadius: '8px' },
+                          sx: { borderRadius: '8px', width: '330px'},
                           startAdornment: (
                             <InputAdornment position="start">
                               <Email fontSize="small" color="primary" />
@@ -1705,17 +1705,7 @@ const ClientDetails = ({
                           </Typography>
                         }
                       />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={newClientData.showEmailInInvoice}
-                            onChange={handleCheckboxChange}
-                            name="showEmailInInvoice"
-                            color="primary"
-                          />
-                        }
-                        label="Show Email in Invoice"
-                      />
+
                     </Grid>
                     
                     <Grid item xs={12} sm={6}>
@@ -1729,8 +1719,7 @@ const ClientDetails = ({
                             onChange={handleNewClientInputChange}
                             input={<OutlinedInput label="Code" />}
                             sx={{ 
-                              height: '56px',
-                              borderRadius: '8px'
+                              height: '56px'
                             }}
                             renderValue={(selected) => (
                               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1773,17 +1762,7 @@ const ClientDetails = ({
                             </Typography>
                           }
                         />
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={newClientData.showPhoneInInvoice}
-                            onChange={handleCheckboxChange}
-                            name="showPhoneInInvoice"
-                            color="primary"
-                          />
-                        }
-                        label="Show Phone in Invoice"
-                      />
+
                     </Box>
                     </Grid>
                   </Grid>
