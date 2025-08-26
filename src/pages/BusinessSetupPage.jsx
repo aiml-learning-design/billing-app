@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -59,28 +60,20 @@ const validationSchema = Yup.object().shape({
 });
 
 const BusinessSetupPage = () => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [countryCode, setCountryCode] = useState('in');
-  const [selectedCountry, setSelectedCountry] = useState('India');
-  const [geoLocationLoading, setGeoLocationLoading] = useState(true);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [pincodeLoading, setPincodeLoading] = useState(false);
-  const [pincodeError, setPincodeError] = useState(null);
-  const [pincodeSuccess, setPincodeSuccess] = useState(false);
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  
-  // Check if user already has business details and redirect to dashboard if they do
-  useEffect(() => {
-    const hasBusinessDetails = user?.businesses && user.businesses.length > 0;
-    
-    if (hasBusinessDetails) {
-      console.log('User already has business details. Redirecting to dashboard...');
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
-  
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [countryCode, setCountryCode] = useState('in');
+    const [selectedCountry, setSelectedCountry] = useState('India');
+    const [geoLocationLoading, setGeoLocationLoading] = useState(true);
+    const [successMessage, setSuccessMessage] = useState(null);
+    const [pincodeLoading, setPincodeLoading] = useState(false);
+    const [pincodeError, setPincodeError] = useState(null);
+    const [pincodeSuccess, setPincodeSuccess] = useState(false);
+    const navigate = useNavigate();
+
+    const businessSetUpContext = searchParams.get('context');
+
   const formik = useFormik({
     initialValues: {
       businessName: '',
@@ -136,7 +129,10 @@ const BusinessSetupPage = () => {
         console.log('Payload:', payload);
 
         // Make API call with the API service
-        const response = await api.post('/api/vendor/business/add', payload);
+        const contextType = businessSetUpContext == 'vendor' ? 'vendor'
+         : businessSetUpContext == 'client' ? 'client'
+         : 'vendor';
+        const response = await api.post(`/api/${contextType}/business/add`, payload);
         if(!response.success) {
             setError('Error creating business');
         }
@@ -466,7 +462,7 @@ const BusinessSetupPage = () => {
       <Box sx={{ mt: 5, mb: 5 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" gutterBottom align="center">
-            Tell us about your business
+            Tell us about your {businessSetUpContext}
           </Typography>
           <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary" sx={{ mb: 4 }}>
             This helps us personalize your experience
