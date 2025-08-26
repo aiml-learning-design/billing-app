@@ -1140,7 +1140,7 @@ const ClientDetails = ({
                 </Paper>
               </Box>
             </Grid>
-            
+            <Grid container spacing={2}>
             {/* Row 2: Business Name and Industry */}
             <Grid container item spacing={3} sx={{ mt: 1, mb: 1 }}>
               <Grid item xs={12}>
@@ -1154,13 +1154,13 @@ const ClientDetails = ({
                   name="businessName"
                   value={newClientData.businessName}
                   onChange={handleNewClientInputChange}
-                  fullWidth
+
                   required
                   variant="outlined"
                   placeholder="Enter business name"
                   InputProps={{
                     style: { height: '56px' },
-                    sx: { borderRadius: '8px' },
+                    sx: { borderRadius: '8px', width: "270px"},
                     startAdornment: (
                       <InputAdornment position="start">
                         <Business fontSize="small" color="primary" />
@@ -1222,7 +1222,8 @@ const ClientDetails = ({
                     }}
                     sx={{ 
                       borderRadius: '8px',
-                      height: '56px'
+                      height: '56px',
+                      width: "270px"
                     }}
                     startAdornment={
                       <InputAdornment position="start">
@@ -1258,7 +1259,7 @@ const ClientDetails = ({
                   placeholder="Enter city or town"
                   InputProps={{
                     style: { height: '56px' },
-                    sx: { borderRadius: '8px' },
+                    sx: { borderRadius: '8px', width: "270px" },
                     startAdornment: (
                       <InputAdornment position="start">
                         <LocationOn fontSize="small" color="primary" />
@@ -1286,7 +1287,8 @@ const ClientDetails = ({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     cursor: 'pointer',
-                    bgcolor: taxInfoExpanded ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
+                    width: "720px",
+                   bgcolor: taxInfoExpanded ? 'rgba(0, 0, 0, 0.02)' : 'transparent',
                     '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
                   }}
                   onClick={() => setTaxInfoExpanded(!taxInfoExpanded)}
@@ -1312,18 +1314,18 @@ const ClientDetails = ({
                           name="gstin"
                           value={newClientData.gstin}
                           onChange={handleNewClientInputChange}
-                          fullWidth
                           variant="outlined"
                           placeholder="e.g., 22AAAAA0000A1Z5"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px' , width: "330px"},
                             startAdornment: (
                               <InputAdornment position="start">
                                 <Save fontSize="small" color="primary" />
                               </InputAdornment>
                             ),
                           }}
+
                         />
                       </Grid>
                       <Grid item xs={12} md={6}>
@@ -1337,7 +1339,7 @@ const ClientDetails = ({
                           placeholder="e.g., AAAAA0000A"
                           InputProps={{
                             style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { borderRadius: '8px', width: "330px" },
                             startAdornment: (
                               <InputAdornment position="start">
                                 <Save fontSize="small" color="primary" />
@@ -1374,9 +1376,9 @@ const ClientDetails = ({
                   }}
                   onClick={() => setAddressExpanded(!addressExpanded)}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'left' }}>
                     <LocationOn color="primary" sx={{ mr: 1.5, fontSize: 20 }} />
-                    <Typography variant="subtitle1" fontWeight="medium">
+                    <Typography variant="subtitle1" fontWeight="medium" sx={{ flexGrow: 1, textAlign: 'left' }}>
                       Address
                     </Typography>
                   </Box>
@@ -1403,7 +1405,8 @@ const ClientDetails = ({
                             }}
                             sx={{ 
                               borderRadius: '8px',
-                              height: '56px'
+                              height: '56px',
+                             width: "330px"
                             }}
                             startAdornment={
                               <InputAdornment position="start">
@@ -1431,7 +1434,7 @@ const ClientDetails = ({
                               onChange={handleNewClientInputChange}
                               label="State/Province"
                               inputProps={{
-                                style: { height: '56px' }
+                                style: { height: '56px'}
                               }}
                               sx={{ 
                                 borderRadius: '8px',
@@ -1604,6 +1607,7 @@ const ClientDetails = ({
                   </Box>
                 )}
               </Paper>
+            </Grid>
             </Grid>
             
             {/* Row 6: Additional Details Section (Collapsible) */}
