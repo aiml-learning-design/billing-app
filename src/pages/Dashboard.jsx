@@ -39,6 +39,24 @@ const Dashboard = () => {
   const [businessDetails, setBusinessDetails] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
   
+  // Common card styling to ensure all cards have equal dimensions
+  const cardStyle = {
+    height: '350px', // Fixed height for all cards
+    minWidth: '250px',
+    padding: 3,
+    borderRadius: '0.75rem',
+    backgroundColor: '#f8f9fa',
+    border: '1px solid #e0e0e0',
+    transition: 'border-color 300ms linear, background-color 300ms linear, box-shadow 300ms',
+    boxShadow: 'none',
+    display: 'flex',
+    flexDirection: 'column',
+    '&:hover': {
+      borderColor: '#bdbdbd',
+      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+    }
+  };
+  
   // Business details functionality has been moved to BusinessDetails page
   
   useEffect(() => {
@@ -255,317 +273,273 @@ const Dashboard = () => {
             Getting Started
           </Typography>
           
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    Create Your First Invoice
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Start by creating your first invoice to track your business transactions.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    onClick={() => navigate('/invoices/new-invoice')}
-                  >
-                    Create Invoice
-                  </Button>
-                </CardContent>
-              </Card>
+          <Grid container spacing={4}>
+            <Grid item xs={12} sm={6} lg={4}>
+              <Box sx={{
+                ...cardStyle,
+                alignItems: 'center',
+                textAlign: 'center'
+              }}>
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  <Receipt fontSize="large" />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Create Your First Invoice
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                  Start by creating your first invoice to track your business transactions.
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => navigate('/invoices/new-invoice')}
+                  fullWidth
+                >
+                  Create Invoice
+                </Button>
+              </Box>
             </Grid>
             
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    Manage Your Business
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Update your business details and settings.
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    startIcon={<Business />}
-                    onClick={() => navigate('/profile')}
-                  >
-                    Business Profile
-                  </Button>
-                </CardContent>
-              </Card>
+            <Grid item xs={12} sm={6} lg={4}>
+              <Box sx={{
+                ...cardStyle,
+                alignItems: 'center',
+                textAlign: 'center'
+              }}>
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  <Business fontSize="large" />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Manage Your Business
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                  Update your business details and settings.
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/profile')}
+                  fullWidth
+                >
+                  Business Profile
+                </Button>
+              </Box>
             </Grid>
             
-            <Grid item xs={12} md={4}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                    Need Help?
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    Contact support if you're experiencing issues with the dashboard.
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    onClick={() => window.open('mailto:support@invokta.com')}
-                  >
-                    Contact Support
-                  </Button>
-                </CardContent>
-              </Card>
+            <Grid item xs={12} sm={6} lg={4}>
+              <Box sx={{
+                ...cardStyle,
+                alignItems: 'center',
+                textAlign: 'center'
+              }}>
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  <Person fontSize="large" />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Need Help?
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                  Contact support if you're experiencing issues with the dashboard.
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() => window.open('mailto:support@invokta.com')}
+                  fullWidth
+                >
+                  Contact Support
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </>
       ) : (
         <>
-          {/* Business Details section */}
-          <Card sx={{ mb: 3, p: 2 }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <Business sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Manage Your Business Details
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                View and manage all your business profiles in one place.
-              </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<Business />}
-                onClick={() => navigate('/business-details')}
-              >
-                View Business Details
-              </Button>
-            </CardContent>
-          </Card>
-          
-          {/* Client Details section */}
-          <Card sx={{ mb: 3, p: 2 }}>
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-              <Store sx={{ fontSize: 80, color: 'primary.main', mb: 2 }} />
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold' }}>
-                Client Details
-              </Typography>
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                View and manage all your client profiles in one place.
-              </Typography>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<Store />}
-                onClick={() => navigate('/client-details')}
-              >
-                View Client Details
-              </Button>
-            </CardContent>
-          </Card>
-
           <Divider sx={{ my: 3 }} />
 
-          {/* Invoice Navigation Box */}
-          <Box sx={{ mb: 4 }}>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
-              Invoice Management
-            </Typography>
-            
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={4}>
-                <Box
-                  sx={{
-                    animation: '0.5s cubic-bezier(0.34, 0.35, 0.2, 1) 0s 1 normal none running expandOut',
-                    minWidth: '17.5rem',
-                    padding: 3, // equivalent to var(--sizes-large)
-                    borderRadius: '0.75rem',
-                    backgroundColor: '#f8f9fa', // equivalent to var(--color-neutral-25)
-                    border: '1px solid #e0e0e0', // equivalent to var(--color-neutral-200)
-                    transition: 'border-color 300ms linear, background-color 300ms linear, box-shadow 300ms',
-                    boxShadow: 'none',
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    '&:hover': {
-                      borderColor: '#bdbdbd',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
-                    }
-                  }}
-                >
-                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+          {/* Main Management Sections */}
+          <Grid container spacing={4} sx={{ mb: 4 }}>
+            {/* Invoice Management Section */}
+            <Grid item xs={12} lg={6}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Invoice Management
+              </Typography>
+              
+              <Box
+                sx={{
+                  ...cardStyle,
+                  animation: '0.5s cubic-bezier(0.34, 0.35, 0.2, 1) 0s 1 normal none running expandOut'
+                }}
+              >
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Invoices
+                </Typography>
+                
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                  Effortlessly create and share professional invoices to clients via Email and WhatsApp.
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    onClick={() => navigate('/invoices')}
+                    fullWidth
+                  >
                     Invoices
-                  </Typography>
+                  </Button>
                   
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
-                    Effortlessly create and share professional invoices to clients via Email and WhatsApp.
-                  </Typography>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => navigate('/invoices/new-invoice')}
+                    fullWidth
+                  >
+                    Create New Invoice
+                  </Button>
                   
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => navigate('/invoices')}
-                      fullWidth
-                    >
-                      Invoices
-                    </Button>
+                  <Button
+                    variant="text"
+                    color="primary"
+                    onClick={() => window.open('https://www.youtube.com', '_blank')}
+                    fullWidth
+                    sx={{ mt: 1 }}
+                  >
+                    See Demo Video
+                  </Button>
+                </Box>
+              </Box>
+            </Grid>
+            
+            {/* Business Management Section */}
+            <Grid item xs={12} lg={6}>
+              <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
+                Business Management
+              </Typography>
+              
+              <Grid container spacing={4}>
+                {/* Business Details Box */}
+                <Grid item xs={12} sm={6}>
+                  <Box
+                    sx={{
+                      ...cardStyle,
+                      animation: '0.5s cubic-bezier(0.34, 0.35, 0.2, 1) 0s 1 normal none running expandOut'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Business sx={{ color: 'primary.main', mr: 1 }} />
+                      <Typography variant="h6" fontWeight="bold">
+                        Business Details
+                      </Typography>
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                      Manage your business profiles and settings
+                    </Typography>
                     
                     <Button
                       variant="contained"
                       color="primary"
-                      onClick={() => navigate('/invoices/new-invoice')}
+                      onClick={() => navigate('/business-details')}
                       fullWidth
                     >
-                      Create New Invoice
-                    </Button>
-                    
-                    <Button
-                      variant="text"
-                      color="primary"
-                      onClick={() => window.open('https://www.youtube.com', '_blank')}
-                      fullWidth
-                      sx={{ mt: 1 }}
-                    >
-                      See Demo Video
+                      Manage
                     </Button>
                   </Box>
-                </Box>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{ color: 'primary.main', mb: 2 }}>
-                      <Business fontSize="large" />
+                </Grid>
+                
+                {/* Client Details Box */}
+                <Grid item xs={12} sm={6}>
+                  <Box
+                    sx={{
+                      ...cardStyle,
+                      animation: '0.5s cubic-bezier(0.34, 0.35, 0.2, 1) 0s 1 normal none running expandOut'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Store sx={{ color: 'primary.main', mr: 1 }} />
+                      <Typography variant="h6" fontWeight="bold">
+                        Client Details
+                      </Typography>
                     </Box>
-                    <Typography variant="h6" gutterBottom>
-                      Manage Business
+                    
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, flex: 1 }}>
+                      Manage your client profiles and information
                     </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      Update your business details and settings
-                    </Typography>
+                    
                     <Button
                       variant="contained"
-                      onClick={() => navigate('/profile')}
+                      color="primary"
+                      onClick={() => navigate('/client-details')}
                       fullWidth
-                      sx={{ mt: 'auto' }}
                     >
                       Manage
                     </Button>
-                  </CardContent>
-                </Card>
-              </Grid>
-              
-              <Grid item xs={12} sm={6} md={4}>
-                <Card sx={{ height: '100%' }}>
-                  <CardContent sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center'
-                  }}>
-                    <Box sx={{ color: 'primary.main', mb: 2 }}>
-                      <MonetizationOn fontSize="large" />
-                    </Box>
-                    <Typography variant="h6" gutterBottom>
-                      Payment Accounts
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2 }}
-                    >
-                      Manage your payment accounts and banking details
-                    </Typography>
-                    <Button
-                      variant="contained"
-                      onClick={() => navigate('/payment-accounts')}
-                      fullWidth
-                      sx={{ mt: 'auto' }}
-                    >
-                      Manage
-                    </Button>
-                  </CardContent>
-                </Card>
+                  </Box>
+                </Grid>
               </Grid>
             </Grid>
-          </Box>
+          </Grid>
 
           <Typography variant="h5" gutterBottom sx={{ fontWeight: 'bold' }}>
             Quick Actions
           </Typography>
 
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={4}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{ color: 'primary.main', mb: 2 }}>
-                    <Business fontSize="large" />
-                  </Box>
-                  <Typography variant="h6" gutterBottom>
-                    Manage Business
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2 }}
-                  >
-                    Update your business details and settings
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/profile')}
-                    fullWidth
-                    sx={{ mt: 'auto' }}
-                  >
-                    Manage
-                  </Button>
-                </CardContent>
-              </Card>
+          <Grid container spacing={4}>
+            <Grid item xs={12} sm={6} lg={4}>
+              <Box sx={{
+                ...cardStyle,
+                alignItems: 'center',
+                textAlign: 'center'
+              }}>
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  <Business fontSize="large" />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Manage Business
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2, flex: 1 }}
+                >
+                  Update your business details and settings
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/profile')}
+                  fullWidth
+                >
+                  Manage
+                </Button>
+              </Box>
             </Grid>
             
-            <Grid item xs={12} sm={6} md={4}>
-              <Card sx={{ height: '100%' }}>
-                <CardContent sx={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  textAlign: 'center'
-                }}>
-                  <Box sx={{ color: 'primary.main', mb: 2 }}>
-                    <MonetizationOn fontSize="large" />
-                  </Box>
-                  <Typography variant="h6" gutterBottom>
-                    Payment Accounts
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2 }}
-                  >
-                    Manage your payment accounts and banking details
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    onClick={() => navigate('/payment-accounts')}
-                    fullWidth
-                    sx={{ mt: 'auto' }}
-                  >
-                    Manage
-                  </Button>
-                </CardContent>
-              </Card>
+            <Grid item xs={12} sm={6} lg={4}>
+              <Box sx={{
+                ...cardStyle,
+                alignItems: 'center',
+                textAlign: 'center'
+              }}>
+                <Box sx={{ color: 'primary.main', mb: 2 }}>
+                  <MonetizationOn fontSize="large" />
+                </Box>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  Payment Accounts
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2, flex: 1 }}
+                >
+                  Manage your payment accounts and banking details
+                </Typography>
+                <Button
+                  variant="contained"
+                  onClick={() => navigate('/payment-accounts')}
+                  fullWidth
+                >
+                  Manage
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </>
