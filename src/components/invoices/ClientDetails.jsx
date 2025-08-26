@@ -1043,30 +1043,29 @@ const ClientDetails = ({
       </CardContent>
       
       {/* New Client Dialog */}
-      <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth="md" fullWidth>
+      <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth={false}
+      PaperProps={{sx: { width: "770px", maxWidth: "95%" }  }}>
         <DialogTitle>
           <Typography 
             variant="h6" 
             sx={{ 
-              borderBottom: '1px solid', 
+              borderBottom: '1px solid',
               paddingBottom: 1,
-              display: 'inline-block'
+              display: 'inline-block',
+              width: '100%'
             }}
           >
             Add New Client
           </Typography>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 2, mb: 1 }}>
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 2, mb: 3 }}>
             Basic Client Details
           </Typography>
           <Grid container spacing={3} sx={{ mt: 0 }}>
             {/* Row 1: Logo upload */}
-            <Grid item xs={12}>
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 1 }}>
-                  Upload Logo
-                </Typography>
+            <Grid item xs={12} >
+              <Box sx={{ mb: 3 }} >
                 <input
                   accept="image/jpeg,image/png"
                   style={{ display: 'none' }}
@@ -1094,7 +1093,8 @@ const ClientDetails = ({
                     '&:hover': {
                       borderColor: 'primary.main',
                       bgcolor: 'rgba(0, 0, 0, 0.02)'
-                    }
+                    },
+                   width: "720px"
                   }}
                   onClick={() => fileInputRef.current.click()}
                 >
