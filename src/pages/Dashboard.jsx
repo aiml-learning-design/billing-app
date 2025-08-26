@@ -86,10 +86,10 @@ const Dashboard = () => {
       buttonText: 'Manage'
     },
     {
-      title: 'Bank Details',
-      description: 'Manage your bank accounts and payment methods',
+      title: 'Payment Accounts',
+      description: 'Manage your payment accounts and banking details',
       icon: <MonetizationOn fontSize="large" />,
-      action: () => navigate('/bank-details'),
+      action: () => navigate('/payment-accounts'),
       buttonText: 'Manage'
     }
   ];
@@ -474,18 +474,18 @@ const Dashboard = () => {
                       <MonetizationOn fontSize="large" />
                     </Box>
                     <Typography variant="h6" gutterBottom>
-                      Bank Details
+                      Payment Accounts
                     </Typography>
                     <Typography
                       variant="body2"
                       color="text.secondary"
                       sx={{ mb: 2 }}
                     >
-                      Manage your bank accounts and payment methods
+                      Manage your payment accounts and banking details
                     </Typography>
                     <Button
                       variant="contained"
-                      onClick={() => navigate('/bank-details')}
+                      onClick={() => navigate('/payment-accounts')}
                       fullWidth
                       sx={{ mt: 'auto' }}
                     >
@@ -547,18 +547,18 @@ const Dashboard = () => {
                     <MonetizationOn fontSize="large" />
                   </Box>
                   <Typography variant="h6" gutterBottom>
-                    Bank Details
+                    Payment Accounts
                   </Typography>
                   <Typography
                     variant="body2"
                     color="text.secondary"
                     sx={{ mb: 2 }}
                   >
-                    Manage your bank accounts and payment methods
+                    Manage your payment accounts and banking details
                   </Typography>
                   <Button
                     variant="contained"
-                    onClick={() => navigate('/bank-details')}
+                    onClick={() => navigate('/payment-accounts')}
                     fullWidth
                     sx={{ mt: 'auto' }}
                   >
