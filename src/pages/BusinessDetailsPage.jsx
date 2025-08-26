@@ -320,7 +320,7 @@ const BusinessDetails = () => {
   // Function to handle adding a new business
   const handleAddBusiness = () => {
     // Navigate to business setup page with self context
-    navigate('/business-setup');
+    navigate('/business-setup?context=business');
   };
 
   return (
