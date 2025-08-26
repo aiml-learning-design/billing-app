@@ -15,7 +15,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { UI_CONFIG, API_CONFIG } from '../config/config';
 
-const BusinessDetails = () => {
+const BusinessDetailsPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -560,4 +560,4 @@ const BusinessDetails = () => {
   );
 };
 
-export default BusinessDetails;
+export default BusinessDetailsPage;
