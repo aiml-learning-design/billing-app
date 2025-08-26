@@ -4,13 +4,17 @@ import {
   Avatar, Button, FormControl, InputLabel, Select, MenuItem,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   CircularProgress, Snackbar, Alert, Autocomplete, Divider,
-  IconButton, InputAdornment
+  IconButton, InputAdornment, FormControlLabel, Switch, Tooltip,
+  FormHelperText
 } from '@mui/material';
-import { Business, Edit, Save, Add, Delete as DeleteIcon } from '@mui/icons-material';
+import { Business, Edit, Save, Add, Delete as DeleteIcon, Label, Category } from '@mui/icons-material';
 import api from '../../services/api';
 import axios from 'axios';
 import countries from '../../utils/countries';
 import countryStates from '../../utils/countryStates';
+import PhoneInput from 'react-phone-input-2';
+import 'react-phone-input-2/lib/material.css';
+import 'react-phone-input-2/lib/style.css';
 
 /**
  * BusinessDetails component for displaying business information in the "Billed By" section
@@ -47,8 +51,13 @@ const BusinessDetails = ({
     businessName: '',
     gstin: '',
     pan: '',
+    checkGstType: false,
     email: '',
     phone: '',
+    showEmailInInvoice: false,
+    showPhoneInInvoice: false,
+    directEmailDocuments: false,
+    directWhatsAppDocuments: false,
     addressLine: '',
     city: '',
     state: '',
@@ -59,6 +68,13 @@ const BusinessDetails = ({
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [inputValue, setInputValue] = useState('');
+  const [customField, setCustomField] = useState({
+    name: '',
+    type: 'singleLineText',
+    label: '',
+    options: ['Option 1']
+  });
+  const [openCustomFieldDialog, setOpenCustomFieldDialog] = useState(false);
   
   // Country detection states
   const [countryCode, setCountryCode] = useState('in');
@@ -187,8 +203,13 @@ const BusinessDetails = ({
       businessName: inputValue || '',
       gstin: '',
       pan: '',
+      checkGstType: false,
       email: '',
       phone: '',
+      showEmailInInvoice: false,
+      showPhoneInInvoice: false,
+      directEmailDocuments: false,
+      directWhatsAppDocuments: false,
       addressLine: '',
       city: '',
       state: '',
@@ -235,6 +256,31 @@ const BusinessDetails = ({
     if (name === 'pincode' && value.length >= 5) {
       handlePincodeLookup(value);
     }
+  };
+  
+  // Handle checkbox changes
+  const handleCheckboxChange = (e) => {
+    const { name, checked } = e.target;
+    setNewBusinessData(prev => ({
+      ...prev,
+      [name]: checked
+    }));
+  };
+  
+  // Handle phone input changes for new business
+  const handleNewBusinessPhoneChange = (value) => {
+    setNewBusinessData(prev => ({
+      ...prev,
+      phone: value
+    }));
+  };
+  
+  // Handle phone input changes for edit form
+  const handleEditPhoneChange = (value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      phone: value
+    }));
   };
   
   // Handle pincode lookup
@@ -525,6 +571,7 @@ const BusinessDetails = ({
         businessName: newBusinessData.businessName,
         gstin: newBusinessData.gstin,
         pan: newBusinessData.pan,
+        checkGstType: newBusinessData.checkGstType,
         officeAddress: {
           email: newBusinessData.email,
           phone: newBusinessData.phone,
@@ -534,6 +581,10 @@ const BusinessDetails = ({
           pincode: newBusinessData.pincode,
           country: newBusinessData.country
         },
+        showEmailInInvoice: newBusinessData.showEmailInInvoice,
+        showPhoneInInvoice: newBusinessData.showPhoneInInvoice,
+        directEmailDocuments: newBusinessData.directEmailDocuments,
+        directWhatsAppDocuments: newBusinessData.directWhatsAppDocuments,
         // Only include additionalDetails if there are any
         additionalDetails: newBusinessData.additionalDetails.length > 0 
           ? newBusinessData.additionalDetails 
@@ -769,14 +820,31 @@ const BusinessDetails = ({
               />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone"
-                name="phone"
-                value={editFormData.phone}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
+              <Box sx={{ mt: 2, mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                  Phone
+                </Typography>
+                <PhoneInput
+                  country={countryCode}
+                  value={editFormData.phone}
+                  onChange={handleEditPhoneChange}
+                  inputStyle={{
+                    width: '100%',
+                    height: '40px',
+                    fontSize: '0.875rem'
+                  }}
+                  containerStyle={{
+                    width: '100%'
+                  }}
+                />
+                <style>
+                  {`
+                    .react-tel-input .country-list .country {
+                      padding: 5px 35px;
+                    }
+                  `}
+                </style>
+              </Box>
             </Grid>
             <Grid item xs={12}>
               <TextField
@@ -838,13 +906,19 @@ const BusinessDetails = ({
       <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth="md" fullWidth>
         <DialogTitle>Add New Business</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1, mb: 2 }}>
-            Enter your business details below. These details will be used in the "Billed By" section of your invoices.
+          <Typography variant="h6" fontWeight="bold" sx={{ mt: 2, mb: 1 }}>
+            Business details
+          </Typography>
+          <Divider sx={{ mb: 3 }} />
+          
+          {/* Basic Information Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
+            Basic Information
           </Typography>
           <Grid container spacing={3} sx={{ mt: 0 }}>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Business Name"
+                label="Vendor's Business Name*"
                 name="businessName"
                 value={newBusinessData.businessName}
                 onChange={handleNewBusinessInputChange}
@@ -853,9 +927,54 @@ const BusinessDetails = ({
                 margin="normal"
               />
             </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Select Country*</InputLabel>
+                <Select
+                  name="country"
+                  value={newBusinessData.country}
+                  onChange={handleNewBusinessInputChange}
+                  label="Select Country*"
+                  required
+                >
+                  {countries.map((country) => (
+                    <MenuItem key={country.code} value={country.name}>
+                      {country.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {geoLocationLoading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                  <CircularProgress size={16} sx={{ mr: 1 }} />
+                  <Typography variant="caption" color="text.secondary">
+                    Detecting your location...
+                  </Typography>
+                </Box>
+              )}
+            </Grid>
+            
             <Grid item xs={12} sm={6}>
               <TextField
-                label="GSTIN"
+                label="City/Town"
+                name="city"
+                value={newBusinessData.city}
+                onChange={handleNewBusinessInputChange}
+                fullWidth
+                margin="normal"
+              />
+            </Grid>
+          </Grid>
+          
+          {/* Tax Information Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
+            Tax Information (optional)
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Business GSTIN"
                 name="gstin"
                 value={newBusinessData.gstin}
                 onChange={handleNewBusinessInputChange}
@@ -865,7 +984,7 @@ const BusinessDetails = ({
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="PAN"
+                label="Business PAN Number"
                 name="pan"
                 value={newBusinessData.pan}
                 onChange={handleNewBusinessInputChange}
@@ -873,56 +992,54 @@ const BusinessDetails = ({
                 margin="normal"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Email"
-                name="email"
-                value={newBusinessData.email}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Phone"
-                name="phone"
-                value={newBusinessData.phone}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
             <Grid item xs={12}>
-              <TextField
-                label="Address Line"
-                name="addressLine"
-                value={newBusinessData.addressLine}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={newBusinessData.checkGstType}
+                    onChange={handleCheckboxChange}
+                    name="checkGstType"
+                    color="primary"
+                  />
+                }
+                label="Check GST Type"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="City"
-                name="city"
-                value={newBusinessData.city}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
-              />
+          </Grid>
+          
+          {/* Address Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
+            Address (optional)
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth margin="normal">
+                <InputLabel>Select Country</InputLabel>
+                <Select
+                  name="country"
+                  value={newBusinessData.country}
+                  onChange={handleNewBusinessInputChange}
+                  label="Select Country"
+                >
+                  {countries.map((country) => (
+                    <MenuItem key={country.code} value={country.name}>
+                      {country.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             </Grid>
+            
             {/* State - Only shown if country has states */}
             {newBusinessData.country && countryStates[newBusinessData.country] && countryStates[newBusinessData.country].hasStates ? (
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={6}>
                 <FormControl fullWidth margin="normal">
-                  <InputLabel>State</InputLabel>
+                  <InputLabel>State / Province</InputLabel>
                   <Select
                     name="state"
                     value={newBusinessData.state}
                     onChange={handleNewBusinessInputChange}
-                    label="State"
+                    label="State / Province"
                   >
                     {countryStates[newBusinessData.country]?.states?.map((state) => (
                       <MenuItem key={state} value={state}>
@@ -933,9 +1050,9 @@ const BusinessDetails = ({
                 </FormControl>
               </Grid>
             ) : (
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={12} sm={6}>
                 <TextField
-                  label="State"
+                  label="State / Province"
                   name="state"
                   value={newBusinessData.state}
                   onChange={handleNewBusinessInputChange}
@@ -944,9 +1061,21 @@ const BusinessDetails = ({
                 />
               </Grid>
             )}
-            <Grid item xs={12} sm={4}>
+            
+            <Grid item xs={12} sm={6}>
               <TextField
-                label="Pincode"
+                label="City/Town"
+                name="city"
+                value={newBusinessData.city}
+                onChange={handleNewBusinessInputChange}
+                fullWidth
+                margin="normal"
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Postal Code / Zip Code"
                 name="pincode"
                 value={newBusinessData.pincode}
                 onChange={handleNewBusinessInputChange}
@@ -966,7 +1095,7 @@ const BusinessDetails = ({
                   ) : null
                 }}
                 error={Boolean(pincodeError)}
-                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter pincode to auto-fill city, state, and country")}
+                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "")}
                 sx={{
                   '& .MuiOutlinedInput-root': {
                     '& fieldset': {
@@ -980,42 +1109,122 @@ const BusinessDetails = ({
               />
             </Grid>
             
-            {/* Country */}
+            <Grid item xs={12}>
+              <TextField
+                label="Street Address"
+                name="addressLine"
+                value={newBusinessData.addressLine}
+                onChange={handleNewBusinessInputChange}
+                fullWidth
+                margin="normal"
+              />
+            </Grid>
+          </Grid>
+          
+          {/* Additional Details Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
+            Additional Details (optional)
+          </Typography>
+          <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Country</InputLabel>
-                <Select
-                  name="country"
-                  value={newBusinessData.country}
-                  onChange={handleNewBusinessInputChange}
-                  label="Country"
-                >
-                  {countries.map((country) => (
-                    <MenuItem key={country.code} value={country.name}>
-                      {country.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {geoLocationLoading && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <CircularProgress size={16} sx={{ mr: 1 }} />
-                  <Typography variant="caption" color="text.secondary">
-                    Detecting your location...
-                  </Typography>
-                </Box>
-              )}
+              <TextField
+                label="Email"
+                name="email"
+                value={newBusinessData.email}
+                onChange={handleNewBusinessInputChange}
+                fullWidth
+                margin="normal"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <Box sx={{ mt: 2, mb: 1 }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
+                  Phone No.
+                </Typography>
+                <PhoneInput
+                  country={countryCode}
+                  value={newBusinessData.phone}
+                  onChange={handleNewBusinessPhoneChange}
+                  inputStyle={{
+                    width: '100%',
+                    height: '40px',
+                    fontSize: '0.875rem'
+                  }}
+                  containerStyle={{
+                    width: '100%'
+                  }}
+                />
+                <style>
+                  {`
+                    .react-tel-input .country-list .country {
+                      padding: 5px 35px;
+                    }
+                  `}
+                </style>
+              </Box>
             </Grid>
             
-            {/* Additional Details Section */}
             <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                Additional Details
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Add any custom information about your business as key-value pairs
-              </Typography>
-              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newBusinessData.directEmailDocuments}
+                      onChange={handleCheckboxChange}
+                      name="directEmailDocuments"
+                      color="primary"
+                    />
+                  }
+                  label="Add to directly email documents from Invoka"
+                />
+                
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newBusinessData.directWhatsAppDocuments}
+                      onChange={handleCheckboxChange}
+                      name="directWhatsAppDocuments"
+                      color="primary"
+                    />
+                  }
+                  label="Add to directly WhatsApp documents from Invoka"
+                />
+                
+                <Box sx={{ display: 'flex', gap: 4 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={newBusinessData.showEmailInInvoice}
+                        onChange={handleCheckboxChange}
+                        name="showEmailInInvoice"
+                        color="primary"
+                      />
+                    }
+                    label="Show Email in Invoice"
+                  />
+                  
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={newBusinessData.showPhoneInInvoice}
+                        onChange={handleCheckboxChange}
+                        name="showPhoneInInvoice"
+                        color="primary"
+                      />
+                    }
+                    label="Show Phone in Invoice"
+                  />
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+          
+          {/* Add Custom Fields Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
+            Add Custom Fields
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
               <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                 {/* Display existing key-value pairs */}
                 {newBusinessData.additionalDetails.length > 0 ? (
@@ -1036,7 +1245,7 @@ const BusinessDetails = ({
                           <Grid item xs={5}>
                             <TextField
                               fullWidth
-                              label="Key"
+                              label="Field Name*"
                               name={`additionalDetails[${index}].key`}
                               value={detail.key}
                               onChange={(e) => {
@@ -1048,6 +1257,7 @@ const BusinessDetails = ({
                                 }));
                               }}
                               size="small"
+                              helperText="The name of the field that will only be used and shown internally"
                             />
                           </Grid>
                           <Grid item xs={5}>
@@ -1089,24 +1299,16 @@ const BusinessDetails = ({
                 ) : (
                   <Box sx={{ textAlign: 'center', py: 2 }}>
                     <Typography variant="body2" color="text.secondary">
-                      No additional details added yet
+                      No custom fields added yet
                     </Typography>
                   </Box>
                 )}
                 
-                {/* Button to add new key-value pair */}
+                {/* Button to add new custom field */}
                 <Button
                   variant="outlined"
                   startIcon={<Add />}
-                  onClick={() => {
-                    setNewBusinessData(prev => ({
-                      ...prev,
-                      additionalDetails: [
-                        ...prev.additionalDetails,
-                        { key: '', value: '' }
-                      ]
-                    }));
-                  }}
+                  onClick={() => setOpenCustomFieldDialog(true)}
                   fullWidth
                 >
                   Add Custom Field
@@ -1125,6 +1327,308 @@ const BusinessDetails = ({
             startIcon={saving ? <CircularProgress size={20} /> : <Add />}
           >
             {saving ? 'Creating...' : 'Create Business'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Custom Field Dialog */}
+      <Dialog 
+        open={openCustomFieldDialog} 
+        onClose={() => setOpenCustomFieldDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: '12px',
+            overflow: 'hidden'
+          }
+        }}
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          py: 2
+        }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Add sx={{ mr: 1.5, fontSize: 24 }} />
+            <Typography variant="h6" fontWeight="medium">
+              Add Custom Field
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={3}>
+            <Grid item xs={12}>
+              <TextField
+                label="Field Name*"
+                value={customField.name}
+                onChange={(e) => setCustomField(prev => ({ ...prev, name: e.target.value }))}
+                fullWidth
+                required
+                variant="outlined"
+                placeholder="Enter field name"
+                helperText="The name of the field that will only be used and shown internally"
+                InputProps={{
+                  style: { height: '56px' },
+                  sx: { borderRadius: '8px' },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Business fontSize="small" color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{ mt: 1 }}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth variant="outlined">
+                <InputLabel>Field Type*</InputLabel>
+                <Select
+                  value={customField.type}
+                  onChange={(e) => setCustomField(prev => ({ ...prev, type: e.target.value }))}
+                  label="Field Type*"
+                  inputProps={{
+                    style: { height: '56px' }
+                  }}
+                  sx={{ 
+                    borderRadius: '8px',
+                    height: '56px'
+                  }}
+                  startAdornment={
+                    <InputAdornment position="start">
+                      <Category fontSize="small" color="primary" />
+                    </InputAdornment>
+                  }
+                >
+                  <MenuItem value="singleLineText">Single Line Text</MenuItem>
+                  <MenuItem value="multiLineText">Multi Line Text</MenuItem>
+                  <MenuItem value="email">Email</MenuItem>
+                  <MenuItem value="phone">Phone</MenuItem>
+                  <MenuItem value="url">URL</MenuItem>
+                  <MenuItem value="number">Number</MenuItem>
+                  <MenuItem value="currency">Currency</MenuItem>
+                  <MenuItem value="date">Date</MenuItem>
+                  <MenuItem value="checkbox">Multiple Select: Checkbox</MenuItem>
+                  <MenuItem value="multiDropdown">Multiple Select: Dropdown</MenuItem>
+                </Select>
+                <FormHelperText>Select the type of field you want to add</FormHelperText>
+              </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                label="Label*"
+                value={customField.label || ''}
+                onChange={(e) => setCustomField(prev => ({ ...prev, label: e.target.value }))}
+                fullWidth
+                required
+                variant="outlined"
+                placeholder="Enter field label"
+                InputProps={{
+                  style: { height: '56px' },
+                  sx: { borderRadius: '8px' },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Label fontSize="small" color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Grid>
+            
+            {/* Options for checkbox and multiDropdown types */}
+            {(customField.type === 'checkbox' || customField.type === 'multiDropdown') && (
+              <Grid item xs={12}>
+                <Box 
+                  sx={{ 
+                    p: 2, 
+                    mt: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '8px',
+                    bgcolor: 'rgba(0, 0, 0, 0.01)'
+                  }}
+                >
+                  <Box sx={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    mb: 2 
+                  }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Add color="primary" fontSize="small" sx={{ mr: 1 }} />
+                      <Typography variant="subtitle2" fontWeight="medium">
+                        Customize Options
+                      </Typography>
+                    </Box>
+                    <Button 
+                      variant="outlined"
+                      startIcon={<Add />} 
+                      size="small"
+                      onClick={() => {
+                        setCustomField(prev => ({
+                          ...prev,
+                          options: [...prev.options, `Option ${prev.options.length + 1}`]
+                        }));
+                      }}
+                      sx={{ 
+                        borderRadius: '8px',
+                        height: '36px'
+                      }}
+                    >
+                      Add new option
+                    </Button>
+                  </Box>
+                  
+                  <Box sx={{ maxHeight: '200px', overflowY: 'auto', pr: 1 }}>
+                    {customField.options.map((option, index) => (
+                      <Box 
+                        key={index} 
+                        sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          mb: 2,
+                          p: 1.5,
+                          borderRadius: '8px',
+                          bgcolor: 'background.paper',
+                          border: '1px solid',
+                          borderColor: 'divider'
+                        }}
+                      >
+                        <Grid container spacing={2} alignItems="center">
+                          <Grid item xs={9}>
+                            <TextField
+                              value={option}
+                              onChange={(e) => {
+                                const newOptions = [...customField.options];
+                                newOptions[index] = e.target.value;
+                                setCustomField(prev => ({
+                                  ...prev,
+                                  options: newOptions
+                                }));
+                              }}
+                              fullWidth
+                              size="small"
+                              variant="outlined"
+                              placeholder={`Option ${index + 1}`}
+                              InputProps={{
+                                style: { height: '40px' },
+                                sx: { borderRadius: '8px' },
+                                startAdornment: (
+                                  <InputAdornment position="start">
+                                    <Business fontSize="small" color="primary" />
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          </Grid>
+                          <Grid item xs={3} sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <Tooltip title="Edit Option">
+                              <IconButton 
+                                size="small" 
+                                color="primary"
+                                sx={{ mr: 0.5 }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Delete Option">
+                              <IconButton 
+                                size="small" 
+                                color="error"
+                                onClick={() => {
+                                  const newOptions = [...customField.options];
+                                  newOptions.splice(index, 1);
+                                  setCustomField(prev => ({
+                                    ...prev,
+                                    options: newOptions
+                                  }));
+                                }}
+                              >
+                                <DeleteIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
+          </Grid>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, py: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          <Button 
+            onClick={() => setOpenCustomFieldDialog(false)}
+            variant="outlined"
+            sx={{ 
+              borderRadius: '8px',
+              px: 3,
+              py: 1
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            variant="contained" 
+            color="primary"
+            startIcon={<Add />}
+            sx={{ 
+              borderRadius: '8px',
+              px: 3,
+              py: 1
+            }}
+            onClick={() => {
+              if (!customField.name) {
+                setAlert({
+                  open: true,
+                  message: 'Please enter a field name',
+                  severity: 'error'
+                });
+                return;
+              }
+              
+              if (!customField.label) {
+                setAlert({
+                  open: true,
+                  message: 'Please enter a field label',
+                  severity: 'error'
+                });
+                return;
+              }
+              
+              // Create the new custom field
+              const newCustomField = {
+                key: customField.name,
+                value: '',
+                type: customField.type,
+                label: customField.label,
+                options: customField.type === 'checkbox' || customField.type === 'multiDropdown' 
+                  ? customField.options 
+                  : []
+              };
+              
+              // Add to additionalDetails
+              setNewBusinessData(prev => ({
+                ...prev,
+                additionalDetails: [
+                  ...prev.additionalDetails,
+                  newCustomField
+                ]
+              }));
+              
+              // Reset and close dialog
+              setCustomField({
+                name: '',
+                type: 'singleLineText',
+                label: '',
+                options: ['Option 1']
+              });
+              setOpenCustomFieldDialog(false);
+            }}
+          >
+            Add Field
           </Button>
         </DialogActions>
       </Dialog>
