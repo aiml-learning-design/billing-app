@@ -1692,7 +1692,7 @@ const ClientDetails = ({
                         placeholder="e.g., contact@example.com"
                         InputProps={{
                           style: { height: '56px' },
-                          sx: { borderRadius: '8px', width: '330px'},
+                          sx: { borderRadius: '8px', width: '320px'},
                           startAdornment: (
                             <InputAdornment position="start">
                               <Email fontSize="small" color="primary" />
@@ -1707,10 +1707,12 @@ const ClientDetails = ({
                       />
 
                     </Grid>
-                    
+
+
                     <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                        <FormControl sx={{ width: '120px', mr: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
+                        {/* Country Code */}
+                        <FormControl sx={{ width: 120 }}>
                           <InputLabel id="phone-country-code-label">Code</InputLabel>
                           <Select
                             labelId="phone-country-code-label"
@@ -1718,53 +1720,60 @@ const ClientDetails = ({
                             value={phoneDialCode}
                             onChange={handleNewClientInputChange}
                             input={<OutlinedInput label="Code" />}
-                            sx={{ 
-                              height: '56px'
+                            sx={{
+                              height: 56,
+                              '& .MuiSelect-select': { display: 'flex', alignItems: 'center', height: '56px', padding: '0 14px' },
                             }}
-                            renderValue={(selected) => (
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Phone fontSize="small" color="primary" sx={{ mr: 0.5 }} />
-                                <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                  {selected}
-                                </Typography>
-                              </Box>
-                            )}
                           >
                             {countries.map((country) => (
                               <MenuItem key={country.code} value={country.dialCode}>
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <Typography variant="body2" sx={{ width: '30px' }}>
-                                    {country.code}
-                                  </Typography>
-                                  <Typography variant="body2" sx={{ ml: 1 }}>
-                                    {country.dialCode}
-                                  </Typography>
-                                </Box>
+                                {country.dialCode}
                               </MenuItem>
                             ))}
                           </Select>
                         </FormControl>
+
+                        {/* Phone Number */}
                         <TextField
                           label="Phone Number"
                           name="phone"
                           value={newClientData.phone}
                           onChange={handleNewClientInputChange}
                           fullWidth
-                          margin="normal"
                           placeholder="e.g., 9876543210"
                           InputProps={{
-                            style: { height: '56px' },
-                            sx: { borderRadius: '8px' },
+                            sx: { height: 56, display: 'flex', alignItems: 'center', borderRadius: '8px', width: '250px' },
                           }}
-                          helperText={
-                            <Typography variant="caption" sx={{ fontStyle: 'italic', color: 'text.secondary' }}>
-                              Add to directly WhatsApp documents from Invokta
-                            </Typography>
-                          }
                         />
-
-                    </Box>
+                      </Box>
                     </Grid>
+
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={newClientData.showEmailInInvoice}
+                                onChange={handleCheckboxChange}
+                                name="showEmailInInvoice"
+                                color="primary"
+                              />
+                            }
+                            label="Show Email in Invoice"
+                            sx={{ mr: 16 }}  // add gap to the right
+                          />
+
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={newClientData.showPhoneInInvoice}
+                                onChange={handleCheckboxChange}
+                                name="showPhoneInInvoice"
+                                color="primary"
+                              />
+                            }
+                            label="Show Phone in Invoice"
+                          />
+                        </Box>
                   </Grid>
                 </Box>
               </Box>
