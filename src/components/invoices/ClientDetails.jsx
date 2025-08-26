@@ -10,7 +10,7 @@ import {
 } from '@mui/material';
 import { 
   Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon,
-  CloudUpload, ExpandMore, ExpandLess, Business, Category
+  CloudUpload, ExpandMore, ExpandLess, Business, Category, Label
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
@@ -112,6 +112,7 @@ const ClientDetails = ({
   const [customField, setCustomField] = useState({
     name: '',
     type: 'singleLineText',
+    label: '',
     options: ['Option 1']
   });
   const [saving, setSaving] = useState(false);
@@ -1976,13 +1977,14 @@ const ClientDetails = ({
           <Grid container spacing={3}>
             <Grid item xs={12}>
               <TextField
-                label="Field Name"
+                label="Field Name*"
                 value={customField.name}
                 onChange={(e) => setCustomField(prev => ({ ...prev, name: e.target.value }))}
                 fullWidth
                 required
                 variant="outlined"
                 placeholder="Enter field name"
+                helperText="The name of the field that will only be used and shown internally"
                 InputProps={{
                   style: { height: '56px' },
                   sx: { borderRadius: '8px' },
@@ -1997,11 +1999,11 @@ const ClientDetails = ({
             </Grid>
             <Grid item xs={12}>
               <FormControl fullWidth variant="outlined">
-                <InputLabel>Field Type</InputLabel>
+                <InputLabel>Field Type*</InputLabel>
                 <Select
                   value={customField.type}
                   onChange={(e) => setCustomField(prev => ({ ...prev, type: e.target.value }))}
-                  label="Field Type"
+                  label="Field Type*"
                   inputProps={{
                     style: { height: '56px' }
                   }}
@@ -2020,12 +2022,35 @@ const ClientDetails = ({
                   <MenuItem value="email">Email</MenuItem>
                   <MenuItem value="phone">Phone</MenuItem>
                   <MenuItem value="url">URL</MenuItem>
+                  <MenuItem value="number">Number</MenuItem>
                   <MenuItem value="currency">Currency</MenuItem>
+                  <MenuItem value="date">Date</MenuItem>
                   <MenuItem value="checkbox">Multiple Select: Checkbox</MenuItem>
                   <MenuItem value="multiDropdown">Multiple Select: Dropdown</MenuItem>
                 </Select>
                 <FormHelperText>Select the type of field you want to add</FormHelperText>
               </FormControl>
+            </Grid>
+            
+            <Grid item xs={12}>
+              <TextField
+                label="Label*"
+                value={customField.label || ''}
+                onChange={(e) => setCustomField(prev => ({ ...prev, label: e.target.value }))}
+                fullWidth
+                required
+                variant="outlined"
+                placeholder="Enter field label"
+                InputProps={{
+                  style: { height: '56px' },
+                  sx: { borderRadius: '8px' },
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Label fontSize="small" color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </Grid>
             
             {/* Options for checkbox and multiDropdown types */}
@@ -2181,11 +2206,21 @@ const ClientDetails = ({
                 return;
               }
               
+              if (!customField.label) {
+                setAlert({
+                  open: true,
+                  message: 'Please enter a field label',
+                  severity: 'error'
+                });
+                return;
+              }
+              
               // Create the new custom field
               const newCustomField = {
                 key: customField.name,
                 value: '',
                 type: customField.type,
+                label: customField.label,
                 options: customField.type === 'checkbox' || customField.type === 'multiDropdown' 
                   ? customField.options 
                   : []
@@ -2204,6 +2239,7 @@ const ClientDetails = ({
               setCustomField({
                 name: '',
                 type: 'singleLineText',
+                label: '',
                 options: ['Option 1']
               });
               setOpenCustomFieldDialog(false);
