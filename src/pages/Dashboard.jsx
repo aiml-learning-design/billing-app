@@ -374,7 +374,7 @@ const Dashboard = () => {
                         boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)'
                       }
                     }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 , width: '720px'}}>
                         <Business sx={{ color: 'primary.main', mr: 1 }} />
                         <Typography variant="h6" fontWeight="bold">
                           Business Details
@@ -411,7 +411,7 @@ const Dashboard = () => {
                         boxShadow: '0 1px 4px rgba(0, 0, 0, 0.1)'
                       }
                     }}>
-                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 , width: '720px'}}>
                         <Store sx={{ color: 'primary.main', mr: 1 }} />
                         <Typography variant="h6" fontWeight="bold">
                           Client Details
