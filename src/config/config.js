@@ -39,6 +39,15 @@ export const API_CONFIG = {
       GET_SELF_DETAILS: '/api/vendor/business/all',
     },
     
+    // Bank and Payment Accounts
+    BANK: {
+      ADD: '/api/bank/add',
+      UPDATE: '/api/bank/update',
+      GET_ALL: '/api/bank/all',
+      GET_BY_ID: (id) => `/api/bank/${id}`,
+      DELETE: (id) => `/api/bank/${id}`,
+    },
+    
     // Invoices
     INVOICE: {
       CREATE: '/api/invoices/create',
@@ -86,6 +95,7 @@ export const UI_CONFIG = {
     { text: 'Client Details', icon: 'Store', route: '/client-details' },
     { text: 'Item Details', icon: 'ListAlt', route: '/item-details' },
     { text: 'Shipping Details', icon: 'Description', route: '/shipping-details' },
+    { text: 'Payment Accounts', icon: 'MonetizationOn', route: '/payment-accounts', new: true },
     { text: 'Profile', icon: 'Person', route: '/profile' },
   ],
   

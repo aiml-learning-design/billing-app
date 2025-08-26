@@ -17,6 +17,7 @@ import BusinessDetailsPage from './pages/BusinessDetailsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
 import ShippingDetailsPage from './pages/ShippingDetailsPage';
 import ItemDetailsPage from './pages/ItemDetailsPage';
+import PaymentAccountsPage from './pages/PaymentAccountsPage';
 import NewInvoice from './pages/NewInvoice';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Navbar from './components/layout/Navbar';
@@ -59,6 +60,7 @@ function App() {
               <Route path="/client-details" element={<ClientDetailsPage />} />
               <Route path="/shipping-details" element={<ShippingDetailsPage />} />
               <Route path="/item-details" element={<ItemDetailsPage />} />
+              <Route path="/payment-accounts" element={<PaymentAccountsPage />} />
             </Route>
           </Route>
 

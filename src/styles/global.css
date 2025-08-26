@@ -544,6 +544,18 @@ a:hover {
   opacity: 1;
 }
 
+/* Animations */
+@keyframes expandOut {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
 /* Responsive Utilities */
 @media (max-width: 576px) {
   .container {
