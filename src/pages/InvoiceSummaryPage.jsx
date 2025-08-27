@@ -5,12 +5,15 @@ import {
   Card, CardContent, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, FormControlLabel, Switch, TextField,
   MenuItem, Select, FormControl, InputLabel, Dialog, DialogTitle,
-  DialogContent, DialogContentText, DialogActions, InputAdornment
+  DialogContent, DialogContentText, DialogActions, InputAdornment,
+  IconButton, Tooltip
 } from '@mui/material';
 import {
   Edit, Print, Download, Email, WhatsApp, MoreVert,
-  Check, ArrowForward, Add, Remove, KeyboardArrowUp, KeyboardArrowDown
+  Check, ArrowForward, Add, Remove, KeyboardArrowUp, KeyboardArrowDown,
+  Visibility, VisibilityOff
 } from '@mui/icons-material';
+import InvoiceLogo from '../assets/INVOICE.png';
 
 /**
  * InvoiceSummaryPage component for displaying the invoice summary after saving
@@ -41,6 +44,12 @@ const InvoiceSummaryPage = () => {
   const [qrCodeData, setQRCodeData] = useState(null);
   const [qrCodeLoading, setQRCodeLoading] = useState(false);
   const [qrCodeError, setQRCodeError] = useState(null);
+  
+  // Business logo state
+  const [showBusinessLogo, setShowBusinessLogo] = useState(true);
+  const [businessLogo, setBusinessLogo] = useState(null);
+  const [businessLogoLoading, setBusinessLogoLoading] = useState(false);
+  const [businessLogoError, setBusinessLogoError] = useState(null);
 
   // Get the current date for the footer
   const currentDate = new Date();
@@ -105,6 +114,40 @@ const InvoiceSummaryPage = () => {
     }
   }, [location]);
   
+  // Fetch business logo when component mounts
+  useEffect(() => {
+    const fetchBusinessLogo = async () => {
+      if (!invoiceData || !invoiceData.businessId) return;
+      
+      try {
+        setBusinessLogoLoading(true);
+        const response = await fetch(`/api/v1/media/load?businessId=${invoiceData.businessId}&type=BUSINESS_LOGO`);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch business logo: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.assetData) {
+          // Convert byte array to base64 string for display
+          const base64String = data.data.assetData.join('');
+          setBusinessLogo(`data:${data.data.contentType || 'image/png'};base64,${base64String}`);
+        } else {
+          console.error('Business logo data not found in response:', data);
+          setBusinessLogoError('Business logo not found');
+        }
+      } catch (error) {
+        console.error('Error fetching business logo:', error);
+        setBusinessLogoError(error.message);
+      } finally {
+        setBusinessLogoLoading(false);
+      }
+    };
+    
+    fetchBusinessLogo();
+  }, [invoiceData]);
+
   // Fetch QR code data when showQRCode is toggled on
   useEffect(() => {
     if (showQRCode) {
@@ -846,9 +889,42 @@ const InvoiceSummaryPage = () => {
           {/* Invoice Details Card */}
           <Card sx={{ mb: 3, width: '100%', maxWidth: 'none' }}>
             <CardContent sx={{ px: { xs: 2, sm: 3, md: 4, width: '1290px' } }}>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Invoice
-              </Typography>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {/* Invoice Logo */}
+                  <Box sx={{ mr: 2, display: 'flex', justifyContent: 'flex-start' }}>
+                    <img 
+                      src={InvoiceLogo} 
+                      alt="Invoice Logo" 
+                      style={{ height: '200px', objectFit: 'contain' }} 
+                    />
+                  </Box>
+                  <Typography variant="h6" fontWeight="bold">
+                    Invoice
+                  </Typography>
+                </Box>
+                
+                {/* Business Logo */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  {showBusinessLogo && businessLogo && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', height: '160px' }}>
+                      <img 
+                        src={businessLogo} 
+                        alt="Business Logo" 
+                        style={{ maxHeight: '100%', maxWidth: '600px', objectFit: 'contain' }} 
+                      />
+                    </Box>
+                  )}
+                  <Tooltip title={showBusinessLogo ? "Hide Business Logo" : "Show Business Logo"}>
+                    <IconButton 
+                      onClick={() => setShowBusinessLogo(!showBusinessLogo)}
+                      size="small"
+                    >
+                      {showBusinessLogo ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Box>
 
               <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <Box>
@@ -887,25 +963,26 @@ const InvoiceSummaryPage = () => {
                 </Box>
               </Box>
 
-              <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Grid container spacing={5} sx={{ mb: 6 }}>
                 <Grid item xs={12} sm={6}>
                   <Paper 
                     elevation={0} 
                     sx={{ 
-                      p: 2, 
+                      p: 6, 
                       bgcolor: '#f5f9ff', 
                       borderRadius: 2,
                       border: '1px solid #e3f2fd',
-                      height: '100%'
+                      height: '100%',
+                      minHeight: '300px'
                     }}
                   >
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.8rem', width: '493px' }}>
                       From
                     </Typography>
-                    <Typography variant="body1" fontWeight="medium">
+                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 3 }}>
                       {invoiceData?.billedBy?.businessName || 'asdfgh'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
                       {invoiceData?.billedBy?.officeAddress?.country || 'United States of America (USA)'}
                     </Typography>
                   </Paper>
@@ -915,20 +992,21 @@ const InvoiceSummaryPage = () => {
                   <Paper 
                     elevation={0} 
                     sx={{ 
-                      p: 2, 
+                      p: 6, 
                       bgcolor: '#fff8f5', 
                       borderRadius: 2,
                       border: '1px solid #ffebee',
-                      height: '100%'
+                      height: '100%',
+                      minHeight: '300px'
                     }}
                   >
-                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.8rem', width: '492px' }}>
                       For
                     </Typography>
-                    <Typography variant="body1" fontWeight="medium">
+                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 3 }}>
                       {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
                       {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
                     </Typography>
                   </Paper>
