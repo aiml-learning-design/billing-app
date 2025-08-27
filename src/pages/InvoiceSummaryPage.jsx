@@ -968,18 +968,18 @@ const InvoiceSummaryPage = () => {
                   <Paper 
                     elevation={0} 
                     sx={{ 
-                      p: 6, 
+                      p: 5, 
                       bgcolor: '#f5f9ff', 
                       borderRadius: 2,
                       border: '1px solid #e3f2fd',
                       height: '100%',
-                      minHeight: '300px'
+                      minHeight: '240px'
                     }}
                   >
-                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.8rem', width: '493px' }}>
+                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.3rem', width: '493px' }}>
                       From
                     </Typography>
-                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 3 }}>
+                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 2 }}>
                       {invoiceData?.billedBy?.businessName || 'asdfgh'}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
@@ -992,18 +992,18 @@ const InvoiceSummaryPage = () => {
                   <Paper 
                     elevation={0} 
                     sx={{ 
-                      p: 6, 
+                      p: 5, 
                       bgcolor: '#fff8f5', 
                       borderRadius: 2,
                       border: '1px solid #ffebee',
                       height: '100%',
-                      minHeight: '300px'
+                      minHeight: '240px'
                     }}
                   >
-                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.8rem', width: '492px' }}>
+                    <Typography variant="subtitle1" color="text.secondary" gutterBottom sx={{ fontSize: '1.3rem', width: '492px' }}>
                       For
                     </Typography>
-                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 3 }}>
+                    <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 2 }}>
                       {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
@@ -1078,43 +1078,51 @@ const InvoiceSummaryPage = () => {
                       Bank Details
                     </Typography>
                     
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                          Account Name
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          Dheeraj
-                        </Typography>
-                      </Box>
+                    <Grid container spacing={2} direction="column">
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                            Account Name
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            Dheeraj
+                          </Typography>
+                        </Box>
+                      </Grid>
                       
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                          Account Number
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          523461431
-                        </Typography>
-                      </Box>
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                            Account Number
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            523461431
+                          </Typography>
+                        </Box>
+                      </Grid>
                       
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                          IBAN
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          jdfjha
-                        </Typography>
-                      </Box>
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                            IBAN
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            jdfjha
+                          </Typography>
+                        </Box>
+                      </Grid>
                       
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                          Bank
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          dfjbhdfa
-                        </Typography>
-                      </Box>
-                    </Box>
+                      <Grid item xs={12}>
+                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                            Bank
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            dfjbhdfa
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
                   </Box>
                 )}
                 
@@ -1239,7 +1247,7 @@ const InvoiceSummaryPage = () => {
         
         {/* Customize Invoice Design - Full Width Row */}
         <Grid item xs={12}>
-          <Card sx={{ mb: 3, width: '100%', maxWidth: 'none' }}>
+          <Card sx={{ mb: 3, width: '1290px' }}>
             <CardContent sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">
