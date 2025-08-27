@@ -347,176 +347,178 @@ const InvoiceSummaryPage = () => {
 
       {/* Main Content */}
       <Grid container spacing={3}>
-        {/* Left Column */}
-        <Grid item xs={12} md={8}>
-          {/* Invoice Summary Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" fontWeight="bold" gutterBottom>
-                Invoice Summary
-              </Typography>
-              
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Invoice No
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.invoiceNumber || 'A00002'}
-                  </Typography>
+        {/* Invoice Summary and Client Information in one wide box */}
+        <Grid container spacing={3} sx={{ mb: 3 }}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Grid container spacing={3}>
+                  {/* Invoice Summary - Left Side (Vertical Layout) */}
+                  <Grid item xs={12} md={6}>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      Invoice Summary
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Invoice No
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {invoiceData?.invoiceNumber || 'A00002'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Status
+                        </Typography>
+                        <Chip
+                          label="Unpaid"
+                          color="error"
+                          size="small"
+                        />
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Invoice Date
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {invoiceData?.invoiceDate ? new Date(invoiceData.invoiceDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          }) : 'Aug 27, 2025'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Due Date
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {invoiceData?.dueDate ? new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                          }) : 'Sep 10, 2025'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Total Amount
+                        </Typography>
+                        <Typography variant="body1" fontWeight="bold">
+                          ${invoiceData?.total || '1'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Payment Options
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          Account Transfer
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <FormControlLabel
+                          control={<Switch color="primary" />}
+                          label="Add Late payment fee"
+                        />
+                      </Box>
+                    </Box>
+                  </Grid>
+                  
+                  {/* Client Information - Right Side */}
+                  <Grid item xs={12} md={6}>
+                    {/* For - Client Information */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        For
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
+                      </Typography>
+                    </Box>
+                    
+                    {/* Client Balance */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Client Balance
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium" color="error">
+                        $2(Due)
+                      </Typography>
+                      <Button
+                        variant="text"
+                        color="primary"
+                        size="small"
+                      >
+                        View Ledger Statement
+                      </Button>
+                    </Box>
+                    
+                    {/* Email Status */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Email Status
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        Not Sent
+                      </Typography>
+                    </Box>
+                    
+                    {/* Created by */}
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        Created by
+                      </Typography>
+                      <Typography variant="body1" fontWeight="medium">
+                        Dheeraj Kumar
+                      </Typography>
+                    </Box>
+                  </Grid>
                 </Grid>
                 
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Status
-                  </Typography>
-                  <Chip
-                    label="Unpaid"
-                    color="error"
-                    size="small"
-                  />
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Invoice Date
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.invoiceDate ? new Date(invoiceData.invoiceDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    }) : 'Aug 26, 2025'}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6} md={3}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Due Date
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.dueDate ? new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    }) : 'Sep 10, 2025'}
-                  </Typography>
-                </Grid>
-              </Grid>
-              
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Total Amount
-                  </Typography>
-                  <Typography variant="body1" fontWeight="bold">
-                    ${invoiceData?.total || '1'}
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Payment Options
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    Account Transfer
-                  </Typography>
-                </Grid>
-              </Grid>
-              
-              <Box sx={{ mt: 2 }}>
-                <FormControlLabel
-                  control={<Switch color="primary" />}
-                  label="Add Late payment fee"
-                />
-              </Box>
-            </CardContent>
-          </Card>
-          
-          {/* Client Information Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    For
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
-                  </Typography>
+                {/* Show in Invoice and Tags at the bottom */}
+                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={6}>
+                      <FormControlLabel
+                        control={<Switch color="primary" size="small" />}
+                        label="Show in Invoice"
+                      />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="subtitle2" color="text.secondary">
+                          Tags
+                        </Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Add />}
+                        >
+                          Add Tags
+                        </Button>
+                      </Box>
+                    </Grid>
+                  </Grid>
                 </Box>
-                
-                <Box sx={{ textAlign: 'right' }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Client Balance
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium" color="error">
-                    $2(Due)
-                  </Typography>
-                  <Button
-                    variant="text"
-                    color="primary"
-                    size="small"
-                  >
-                    View Ledger Statement
-                  </Button>
-                </Box>
-              </Box>
-            </CardContent>
-          </Card>
-          
-          {/* Email Status Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Email Status
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    Not Sent
-                  </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Created by
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    Dheeraj Kumar
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-          
-          {/* Tags Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Show in Invoice
-                </Typography>
-                <Typography variant="subtitle2" color="text.secondary">
-                  Tags
-                </Typography>
-              </Box>
-              
-              <Box sx={{ mt: 2 }}>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  startIcon={<Add />}
-                >
-                  Add Tags
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-          
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+        
+        {/* Main Invoice Details */}
+        <Grid item xs={12}>
           {/* Invoice Details Card */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -588,7 +590,7 @@ const InvoiceSummaryPage = () => {
               </Grid>
               
               {/* Invoice Items Table */}
-              <TableContainer component={Paper} sx={{ mb: 3 }}>
+              <TableContainer component={Paper} sx={{ mb: 3, width: '100%', overflowX: 'auto' }}>
                 <Table>
                   <TableHead>
                     <TableRow>
@@ -601,7 +603,7 @@ const InvoiceSummaryPage = () => {
                   </TableHead>
                   <TableBody>
                     {(invoiceData?.purchasedOrderRequest?.itemDetailsRequest || [
-                      { id: 1, itemName: 'paneer', quantity: 1, price: 1, amount: 1 }
+                      { id: 1, itemName: 'pnaee', quantity: 11, price: 67868341, amount: 746551751 }
                     ]).map((item, index) => (
                       <TableRow key={index}>
                         <TableCell>{index + 1}.</TableCell>
@@ -687,8 +689,8 @@ const InvoiceSummaryPage = () => {
           </Card>
         </Grid>
         
-        {/* Right Column - Customization Options */}
-        <Grid item xs={12} md={4}>
+        {/* Customize Invoice Design - Full Width Row */}
+        <Grid item xs={12}>
           <Card sx={{ mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
