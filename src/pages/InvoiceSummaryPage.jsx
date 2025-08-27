@@ -4,11 +4,12 @@ import {
   Box, Typography, Grid, Paper, Divider, Button, Chip,
   Card, CardContent, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, FormControlLabel, Switch, TextField,
-  MenuItem, Select, FormControl, InputLabel
+  MenuItem, Select, FormControl, InputLabel, Dialog, DialogTitle,
+  DialogContent, DialogContentText, DialogActions, InputAdornment
 } from '@mui/material';
 import {
   Edit, Print, Download, Email, WhatsApp, MoreVert,
-  Check, ArrowForward, Add
+  Check, ArrowForward, Add, Remove, KeyboardArrowUp, KeyboardArrowDown
 } from '@mui/icons-material';
 
 /**
@@ -23,6 +24,23 @@ const InvoiceSummaryPage = () => {
   const [invoiceData, setInvoiceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState(1); // Start at step 2 (Add Bank Details)
+  
+  // Late fee dialog state
+  const [lateFeeEnabled, setLateFeeEnabled] = useState(false);
+  const [lateFeeDialogOpen, setLateFeeDialogOpen] = useState(false);
+  const [lateFeeType, setLateFeeType] = useState('Percentage'); // 'Percentage' or 'Fixed Amount'
+  const [lateFeeAmount, setLateFeeAmount] = useState('');
+  const [lateFeeAmountError, setLateFeeAmountError] = useState(false);
+  const [daysAfterDueDate, setDaysAfterDueDate] = useState(7);
+  const [taxRate, setTaxRate] = useState('');
+  const [showInInvoice, setShowInInvoice] = useState(true);
+  
+  // Bank details state
+  const [showBankDetails, setShowBankDetails] = useState(true);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [qrCodeData, setQRCodeData] = useState(null);
+  const [qrCodeLoading, setQRCodeLoading] = useState(false);
+  const [qrCodeError, setQRCodeError] = useState(null);
 
   // Get the current date for the footer
   const currentDate = new Date();
@@ -86,6 +104,62 @@ const InvoiceSummaryPage = () => {
       setLoading(false);
     }
   }, [location]);
+  
+  // Fetch QR code data when showQRCode is toggled on
+  useEffect(() => {
+    if (showQRCode) {
+      const fetchQRCodeData = async () => {
+        try {
+          setQRCodeLoading(true);
+          setQRCodeError(null);
+          
+          console.log('Fetching QR code data from API');
+          
+          // Make API call to fetch QR code data
+          // Using the API service from the project
+          // In a real implementation, we would use the api service from the project
+          // const response = await api.get('api/bank/details/qrcode');
+          
+          // For demonstration purposes, we'll simulate a successful API response
+          // This would be replaced with the actual API call in production
+          const mockResponse = {
+            qrCodeUrl: 'https://example.com/qr-code.png',
+            upiId: 'payment@upi',
+            description: 'Scan this QR code to pay via UPI'
+          };
+          
+          // Simulate API delay
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Simulate successful response
+          const response = {
+            ok: true,
+            json: async () => mockResponse
+          };
+          
+          if (!response.ok) {
+            throw new Error(`Failed to fetch QR code data: ${response.status} ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          console.log('QR code data fetched successfully:', data);
+          
+          setQRCodeData(data);
+        } catch (error) {
+          console.error('Error fetching QR code data:', error);
+          setQRCodeError(error.message || 'Failed to fetch QR code data');
+        } finally {
+          setQRCodeLoading(false);
+        }
+      };
+      
+      fetchQRCodeData();
+    } else {
+      // Reset QR code data when switch is turned off
+      setQRCodeData(null);
+      setQRCodeError(null);
+    }
+  }, [showQRCode]);
 
   // Handle step change
   const handleStepChange = (step) => {
@@ -110,6 +184,76 @@ const InvoiceSummaryPage = () => {
     console.log('InvoiceSummaryPage: Edit button clicked');
     console.log('InvoiceSummaryPage: About to navigate to /invoices/new-invoice using window.location');
     window.location.href = '/invoices/new-invoice';
+  };
+  
+  // Handle late fee switch change
+  const handleLateFeeChange = (event) => {
+    const checked = event.target.checked;
+    setLateFeeEnabled(checked);
+    if (checked) {
+      setLateFeeDialogOpen(true);
+    }
+  };
+  
+  // Handle late fee dialog close
+  const handleLateFeeDialogClose = () => {
+    setLateFeeDialogOpen(false);
+    // If no fee amount was set, disable the late fee
+    if (!lateFeeAmount) {
+      setLateFeeEnabled(false);
+    }
+  };
+  
+  // Handle late fee type change
+  const handleLateFeeTypeChange = (event) => {
+    setLateFeeType(event.target.value);
+  };
+  
+  // Handle late fee amount change
+  const handleLateFeeAmountChange = (event) => {
+    const value = event.target.value;
+    setLateFeeAmount(value);
+    // Clear error if value is not empty
+    if (value) {
+      setLateFeeAmountError(false);
+    }
+  };
+  
+  // Handle days after due date change
+  const handleDaysAfterDueDateChange = (event) => {
+    setDaysAfterDueDate(event.target.value);
+  };
+  
+  // Increment days after due date
+  const incrementDaysAfterDueDate = () => {
+    setDaysAfterDueDate(prevDays => prevDays + 1);
+  };
+  
+  // Decrement days after due date
+  const decrementDaysAfterDueDate = () => {
+    setDaysAfterDueDate(prevDays => Math.max(1, prevDays - 1));
+  };
+  
+  // Handle tax rate change
+  const handleTaxRateChange = (event) => {
+    setTaxRate(event.target.value);
+  };
+  
+  // Handle show in invoice change
+  const handleShowInInvoiceChange = (event) => {
+    setShowInInvoice(event.target.checked);
+  };
+  
+  // Handle late fee dialog submit
+  const handleLateFeeDialogSubmit = () => {
+    // Validate form
+    if (!lateFeeAmount) {
+      setLateFeeAmountError(true);
+      return;
+    }
+    
+    // Close dialog
+    setLateFeeDialogOpen(false);
   };
 
   // Log rendering state
@@ -225,8 +369,136 @@ const InvoiceSummaryPage = () => {
   
   console.log('InvoiceSummaryPage: Rendering main content');
 
+  // Late Fee Dialog
+  const renderLateFeeDialog = () => {
+    return (
+      <Dialog
+        open={lateFeeDialogOpen}
+        onClose={handleLateFeeDialogClose}
+        aria-labelledby="late-fee-dialog-title"
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle id="late-fee-dialog-title">Charge Late Fee</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 2 }}>
+            Enable late payment fee to this invoice if it goes unpaid after the given date
+          </DialogContentText>
+          
+          {/* Show In Invoice */}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={showInInvoice}
+                onChange={handleShowInInvoiceChange}
+                color="primary"
+              />
+            }
+            label="Show In Invoice"
+            sx={{ mb: 2, display: 'block' }}
+          />
+          
+          {/* Fee Type */}
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel id="fee-type-label">Fee Type</InputLabel>
+            <Select
+              labelId="fee-type-label"
+              id="fee-type"
+              value={lateFeeType}
+              onChange={handleLateFeeTypeChange}
+              label="Fee Type"
+            >
+              <MenuItem value="Percentage">Percentage</MenuItem>
+              <MenuItem value="Fixed Amount">Fixed Amount</MenuItem>
+            </Select>
+          </FormControl>
+          
+          {/* Fee Amount */}
+          <TextField
+            label={lateFeeType === 'Percentage' ? '% Fee Amount' : 'Fee Amount'}
+            value={lateFeeAmount}
+            onChange={handleLateFeeAmountChange}
+            fullWidth
+            sx={{ mb: 2 }}
+            error={lateFeeAmountError}
+            helperText={lateFeeAmountError ? 'Fee amount is a required field' : ''}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  {lateFeeType === 'Percentage' ? '%' : '$'}
+                </InputAdornment>
+              ),
+            }}
+          />
+          
+          {/* Days After Due Date */}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Days After Due Date
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <TextField
+                value={daysAfterDueDate}
+                onChange={handleDaysAfterDueDateChange}
+                type="number"
+                inputProps={{ min: 1 }}
+                sx={{ width: '100px' }}
+              />
+              <Box sx={{ ml: 1 }}>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={incrementDaysAfterDueDate}
+                  sx={{ minWidth: '36px', p: 0.5 }}
+                >
+                  <KeyboardArrowUp />
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={decrementDaysAfterDueDate}
+                  sx={{ minWidth: '36px', p: 0.5, ml: 0.5 }}
+                  disabled={daysAfterDueDate <= 1}
+                >
+                  <KeyboardArrowDown />
+                </Button>
+              </Box>
+            </Box>
+          </Box>
+          
+          {/* Tax Rate */}
+          <TextField
+            label="% Tax Rate"
+            value={taxRate}
+            onChange={handleTaxRateChange}
+            fullWidth
+            sx={{ mb: 2 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  %
+                </InputAdornment>
+              ),
+            }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleLateFeeDialogClose} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={handleLateFeeDialogSubmit} color="primary" variant="contained">
+            Done
+          </Button>
+        </DialogActions>
+      </Dialog>
+    );
+  };
+
   return (
-    <Box sx={{ p: 1 }}>
+    <Box sx={{ p: 0, width: '100%', maxWidth: 'none' }}>
+      {/* Late Fee Dialog */}
+      {renderLateFeeDialog()}
+      
       {/* User Message */}
       <Box sx={{ mb: 3, p: 3, bgcolor: '#e8f5e9', borderRadius: 1, border: '1px solid #c8e6c9' }}>
         <Typography variant="h6" gutterBottom color="success.main">
@@ -348,196 +620,248 @@ const InvoiceSummaryPage = () => {
       {/* Main Content */}
       <Grid container spacing={3}>
         {/* Invoice Summary and Client Information in one wide box */}
-        <Grid container spacing={3} sx={{ mb: 3 }}>
+        <Grid container spacing={3} sx={{ mb: 3}}>
           <Grid item xs={12}>
             <Card>
               <CardContent>
-                <Grid container spacing={3}>
-                  {/* Invoice Summary - Left Side (Vertical Layout) */}
-                  <Grid item xs={12} md={6}>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      Invoice Summary
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Invoice No
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {invoiceData?.invoiceNumber || 'A00002'}
-                        </Typography>
-                      </Box>
-                      
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Status
-                        </Typography>
-                        <Chip
-                          label="Unpaid"
-                          color="error"
-                          size="small"
-                        />
-                      </Box>
-                      
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Invoice Date
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {invoiceData?.invoiceDate ? new Date(invoiceData.invoiceDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          }) : 'Aug 27, 2025'}
-                        </Typography>
-                      </Box>
-                      
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Due Date
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          {invoiceData?.dueDate ? new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          }) : 'Sep 10, 2025'}
-                        </Typography>
-                      </Box>
-                      
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Total Amount
-                        </Typography>
-                        <Typography variant="body1" fontWeight="bold">
-                          ${invoiceData?.total || '1'}
-                        </Typography>
-                      </Box>
-                      
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Payment Options
-                        </Typography>
-                        <Typography variant="body1" fontWeight="medium">
-                          Account Transfer
-                        </Typography>
-                      </Box>
-                      
-                      <Box>
-                        <FormControlLabel
-                          control={<Switch color="primary" />}
-                          label="Add Late payment fee"
-                        />
-                      </Box>
-                    </Box>
-                  </Grid>
+                {/* Invoice Summary - Two Column Layout */}
+                <Box sx={{ width: '1260px' }}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    Invoice Summary
+                  </Typography>
                   
-                  {/* Client Information - Right Side */}
-                  <Grid item xs={12} md={6}>
-                    {/* For - Client Information */}
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        For
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium">
-                        {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
-                      </Typography>
-                    </Box>
-                    
-                    {/* Client Balance */}
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Client Balance
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium" color="error">
-                        $2(Due)
-                      </Typography>
-                      <Button
-                        variant="text"
-                        color="primary"
-                        size="small"
-                      >
-                        View Ledger Statement
-                      </Button>
-                    </Box>
-                    
-                    {/* Email Status */}
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Email Status
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium">
-                        Not Sent
-                      </Typography>
-                    </Box>
-                    
-                    {/* Created by */}
-                    <Box sx={{ mb: 3 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        Created by
-                      </Typography>
-                      <Typography variant="body1" fontWeight="medium">
-                        Dheeraj Kumar
-                      </Typography>
-                    </Box>
-                  </Grid>
-                </Grid>
-                
-                {/* Show in Invoice and Tags at the bottom */}
-                <Box sx={{ mt: 2, pt: 2, borderTop: '1px solid #e0e0e0' }}>
-                  <Grid container spacing={2} alignItems="center">
-                    <Grid item xs={12} sm={6}>
-                      <FormControlLabel
-                        control={<Switch color="primary" size="small" />}
-                        label="Show in Invoice"
-                      />
+                  <Grid container spacing={3}>
+                    {/* Left Column - Invoice Details (Vertical Layout) */}
+                    <Grid item xs={12} md={6}  sx={{ width: '625px' }}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 2,
+                        p: 2,
+                        borderRight: { md: '1px solid #e0e0e0' }
+                      }}>
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Invoice No:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {invoiceData?.invoiceNumber || 'A00002'}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Status:
+                          </Typography>
+                          <Chip
+                            label="Unpaid"
+                            color="error"
+                            size="small"
+                          />
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Invoice Date:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {invoiceData?.invoiceDate ? new Date(invoiceData.invoiceDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'Aug 27, 2025'}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Due Date:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            {invoiceData?.dueDate ? new Date(invoiceData.dueDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            }) : 'Sep 10, 2025'}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Total Amount:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="bold">
+                            ${invoiceData?.total || '1'}
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Payment Options:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            Account Transfer
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Late Fee:
+                          </Typography>
+                          <Box>
+                            <FormControlLabel
+                              control={
+                                <Switch 
+                                  color="primary" 
+                                  checked={lateFeeEnabled}
+                                  onChange={handleLateFeeChange}
+                                />
+                              }
+                              label="Add Late payment fee"
+                            />
+                            
+                            {/* Display late fee settings when enabled */}
+                            {lateFeeEnabled && lateFeeAmount && (
+                              <Box sx={{ mt: 1, ml: 1 }}>
+                                <Typography variant="body2" color="text.secondary">
+                                  {lateFeeType === 'Percentage' ? (
+                                    `${lateFeeAmount}% of invoice amount after ${daysAfterDueDate} days`
+                                  ) : (
+                                    `$${lateFeeAmount} fixed amount after ${daysAfterDueDate} days`
+                                  )}
+                                  {taxRate && ` + ${taxRate}% tax`}
+                                </Typography>
+                                <Button
+                                  variant="text"
+                                  color="primary"
+                                  size="small"
+                                  onClick={() => setLateFeeDialogOpen(true)}
+                                  sx={{ mt: 0.5, p: 0 }}
+                                >
+                                  Edit
+                                </Button>
+                              </Box>
+                            )}
+                          </Box>
+                        </Box>
+                      </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Tags
-                        </Typography>
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          startIcon={<Add />}
-                        >
-                          Add Tags
-                        </Button>
+                    
+                    {/* Right Column - Client Information (Vertical Layout) */}
+                    <Grid item xs={12} md={6}>
+                      <Box sx={{ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: 2,
+                        p: 2
+                      }}>
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            For:
+                          </Typography>
+                          <Box>
+                            <Typography variant="body1" fontWeight="medium">
+                              {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Client Balance:
+                          </Typography>
+                          <Box>
+                            <Typography variant="body1" fontWeight="medium" color="error">
+                              $2(Due)
+                            </Typography>
+                            <Button
+                              variant="text"
+                              color="primary"
+                              size="small"
+                            >
+                              View Ledger Statement
+                            </Button>
+                          </Box>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Email Status:
+                          </Typography>
+                          <Typography variant="body1" fontWeight="medium">
+                            Not Sent
+                          </Typography>
+                        </Box>
+                        
+                        <Box sx={{ mb: 1, display: 'flex', alignItems: 'flex-start' }}>
+                          <Typography variant="subtitle2" color="text.secondary" sx={{ mr: 2, minWidth: '120px', flexShrink: 0 }}>
+                            Created by:
+                          </Typography>
+                          <Box>
+                            <Typography variant="body1" fontWeight="medium">
+                              Dheeraj Kumar
+                            </Typography>
+                            <FormControlLabel
+                              control={<Switch color="primary" size="small" />}
+                              label="Show in Invoice"
+                            />
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ mt: 2, pt: 2 }}>
+                              <Grid container spacing={2} alignItems="center">
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Typography variant="subtitle2" color="text.secondary">
+                                      Tags
+                                    </Typography>
+                                    <Button
+                                      variant="outlined"
+                                      size="small"
+                                      startIcon={<Add />}
+                                    >
+                                      Add Tags
+                                    </Button>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                          </Box>
                       </Box>
                     </Grid>
                   </Grid>
                 </Box>
+                
+                {/* Show in Invoice and Tags at the bottom */}
+
               </CardContent>
             </Card>
           </Grid>
         </Grid>
         
-        {/* Main Invoice Details */}
+        {/* Main Invoice Details - Full Width */}
         <Grid item xs={12}>
           {/* Invoice Details Card */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
+          <Card sx={{ mb: 3, width: '100%', maxWidth: 'none' }}>
+            <CardContent sx={{ px: { xs: 2, sm: 3, md: 4, width: '1290px' } }}>
               <Typography variant="h6" fontWeight="bold" gutterBottom>
                 Invoice
               </Typography>
-              
-              <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="subtitle2" color="text.secondary">
+
+              <Box sx={{ mb: 3, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Invoice No
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
                     #{invoiceData?.invoiceNumber || 'A00002'}
                   </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="subtitle2" color="text.secondary">
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Invoice Date
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
@@ -547,10 +871,10 @@ const InvoiceSummaryPage = () => {
                       year: 'numeric'
                     }) : 'Aug 26, 2025'}
                   </Typography>
-                </Grid>
-                
-                <Grid item xs={12} sm={4}>
-                  <Typography variant="subtitle2" color="text.secondary">
+                </Box>
+
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Due Date
                   </Typography>
                   <Typography variant="body1" fontWeight="medium">
@@ -560,32 +884,54 @@ const InvoiceSummaryPage = () => {
                       year: 'numeric'
                     }) : 'Sep 10, 2025'}
                   </Typography>
-                </Grid>
-              </Grid>
-              
+                </Box>
+              </Box>
+
               <Grid container spacing={2} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    From
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.billedBy?.businessName || 'asdfgh'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {invoiceData?.billedBy?.officeAddress?.country || 'United States of America (USA)'}
-                  </Typography>
+                  <Paper 
+                    elevation={0} 
+                    sx={{ 
+                      p: 2, 
+                      bgcolor: '#f5f9ff', 
+                      borderRadius: 2,
+                      border: '1px solid #e3f2fd',
+                      height: '100%'
+                    }}
+                  >
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      From
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {invoiceData?.billedBy?.businessName || 'asdfgh'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {invoiceData?.billedBy?.officeAddress?.country || 'United States of America (USA)'}
+                    </Typography>
+                  </Paper>
                 </Grid>
-                
+
                 <Grid item xs={12} sm={6}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    For
-                  </Typography>
-                  <Typography variant="body1" fontWeight="medium">
-                    {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
-                  </Typography>
+                  <Paper 
+                    elevation={0} 
+                    sx={{ 
+                      p: 2, 
+                      bgcolor: '#fff8f5', 
+                      borderRadius: 2,
+                      border: '1px solid #ffebee',
+                      height: '100%'
+                    }}
+                  >
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      For
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
+                    </Typography>
+                  </Paper>
                 </Grid>
               </Grid>
               
@@ -593,7 +939,7 @@ const InvoiceSummaryPage = () => {
               <TableContainer component={Paper} sx={{ mb: 3, width: '100%', overflowX: 'auto' }}>
                 <Table>
                   <TableHead>
-                    <TableRow>
+                    <TableRow sx={{ backgroundColor: '#87CEEB' }}>
                       <TableCell width="5%">#</TableCell>
                       <TableCell>Item</TableCell>
                       <TableCell align="right">Quantity</TableCell>
@@ -621,55 +967,179 @@ const InvoiceSummaryPage = () => {
                 <Typography variant="body2" color="text.secondary">
                   ₹0.00
                 </Typography>
-                <FormControlLabel
-                  control={<Switch color="primary" />}
-                  label="Hide Bank Details"
-                />
+                <Box sx={{ display: 'flex', gap: 2 }}>
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        color="primary" 
+                        checked={showBankDetails}
+                        onChange={(e) => setShowBankDetails(e.target.checked)}
+                      />
+                    }
+                    label="Hide Bank Details"
+                  />
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        color="primary" 
+                        checked={showQRCode}
+                        onChange={(e) => setShowQRCode(e.target.checked)}
+                      />
+                    }
+                    label="Display Payment QR Code"
+                  />
+                </Box>
               </Box>
               
-              {/* Bank Details */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  Bank Details
-                </Typography>
+              {/* Bank Details and QR Code Section */}
+              <Box sx={{ display: 'flex', mb: 3 }}>
+                {/* Bank Details */}
+                {showBankDetails && (
+                  <Box sx={{ flex: 1, mr: showQRCode ? 2 : 0 }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Bank Details
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Account Name
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          Dheeraj
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Account Number
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          523461431
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          IBAN
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          jdfjha
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                          Bank
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          dfjbhdfa
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Box>
+                )}
                 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Account Name
+                {/* QR Code */}
+                {showQRCode && (
+                  <Box sx={{ 
+                    flex: 1, 
+                    ml: showBankDetails ? 2 : 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '1px dashed #ccc',
+                    borderRadius: 1,
+                    p: 2
+                  }}>
+                    <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                      Payment QR Code
                     </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      Dheeraj
+                    
+                    <Box sx={{ 
+                      width: 200, 
+                      height: 200, 
+                      bgcolor: '#f5f5f5',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      mb: 2,
+                      position: 'relative'
+                    }}>
+                      {qrCodeLoading && (
+                        <Box sx={{ 
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: 'rgba(255, 255, 255, 0.8)'
+                        }}>
+                          <Typography variant="body2" color="text.secondary">
+                            Loading QR Code...
+                          </Typography>
+                        </Box>
+                      )}
+                      
+                      {qrCodeError && (
+                        <Box sx={{ p: 2, textAlign: 'center' }}>
+                          <Typography variant="body2" color="error">
+                            Error: {qrCodeError}
+                          </Typography>
+                          <Button 
+                            variant="outlined" 
+                            size="small" 
+                            color="primary"
+                            onClick={() => {
+                              setQRCodeError(null);
+                              setShowQRCode(true); // This will trigger the useEffect to fetch again
+                            }}
+                            sx={{ mt: 1 }}
+                          >
+                            Retry
+                          </Button>
+                        </Box>
+                      )}
+                      
+                      {!qrCodeLoading && !qrCodeError && !qrCodeData && (
+                        <Typography variant="body2" color="text.secondary">
+                          QR Code will appear here
+                        </Typography>
+                      )}
+                      
+                      {!qrCodeLoading && !qrCodeError && qrCodeData && (
+                        <Box 
+                          component="img"
+                          src={qrCodeData.qrCodeUrl || qrCodeData.imageUrl || qrCodeData.url}
+                          alt="Payment QR Code"
+                          sx={{ 
+                            maxWidth: '100%', 
+                            maxHeight: '100%',
+                            objectFit: 'contain'
+                          }}
+                          onError={(e) => {
+                            console.error('Error loading QR code image');
+                            setQRCodeError('Failed to load QR code image');
+                          }}
+                        />
+                      )}
+                    </Box>
+                    
+                    <Typography variant="body2" color="text.secondary">
+                      {qrCodeData?.description || 'Scan to pay via UPI'}
                     </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Account Number
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      523461431
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      IBAN
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      jdfjha
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Typography variant="subtitle2" color="text.secondary">
-                      Bank
-                    </Typography>
-                    <Typography variant="body1" fontWeight="medium">
-                      dfjbhdfa
-                    </Typography>
-                  </Grid>
-                </Grid>
+                    
+                    {qrCodeData?.upiId && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        UPI ID: {qrCodeData.upiId}
+                      </Typography>
+                    )}
+                  </Box>
+                )}
               </Box>
               
               {/* Total */}
@@ -691,8 +1161,8 @@ const InvoiceSummaryPage = () => {
         
         {/* Customize Invoice Design - Full Width Row */}
         <Grid item xs={12}>
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
+          <Card sx={{ mb: 3, width: '100%', maxWidth: 'none' }}>
+            <CardContent sx={{ px: { xs: 2, sm: 3, md: 4 } }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight="bold">
                   Customize Invoice Design
