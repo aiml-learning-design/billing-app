@@ -12,6 +12,7 @@ import BusinessPage from './pages/BusinessPage';
 import BusinessSetupPage from './pages/BusinessSetupPage';
 import InvoicesPage from './pages/InvoicesPage';
 import InvoiceFormPage from './pages/InvoiceFormPage';
+import InvoiceSummaryPage from './pages/InvoiceSummaryPage';
 import UserProfile from './pages/UserProfile';
 import BusinessDetailsPage from './pages/BusinessDetailsPage';
 import ClientDetailsPage from './pages/ClientDetailsPage';
@@ -54,6 +55,8 @@ function App() {
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/invoices/new" element={<InvoiceFormPage />} />
               <Route path="/invoices/new-invoice" element={<NewInvoice />} />
+              <Route path="/invoices/summary/new" element={<InvoiceSummaryPage />} />
+              <Route path="/invoices/summary/:id" element={<InvoiceSummaryPage />} />
               <Route path="/invoices/edit/:id" element={<InvoiceFormPage />} />
               <Route path="/profile" element={<UserProfile />} />
               <Route path="/business-details" element={<BusinessDetailsPage />} />

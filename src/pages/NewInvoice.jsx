@@ -8,7 +8,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { API_CONFIG, AUTH_CONFIG } from '../config/config';
 import {
-  Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel
+  Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel, Button
 } from '@mui/material';
 
 // Import the components we created
@@ -654,6 +654,7 @@ const NewInvoice = () => {
 
   // Handle save and continue
   const handleSaveAndContinue = async () => {
+    console.log('handleSaveAndContinue: Function called');
     try {
       // Use the helper function to create the invoice payload
       const invoiceData = createInvoicePayload('PENDING');
@@ -661,6 +662,19 @@ const NewInvoice = () => {
       // Log the payload to see what's being sent to the API
       console.log('Invoice payload being sent to API:', JSON.stringify(invoiceData, null, 2));
       
+      // TEMPORARY FIX: Skip API calls and navigate directly to the invoice summary page
+      console.log('TEMPORARY FIX: Skipping API calls and navigating directly');
+      
+      // Store invoice data in localStorage
+      localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+      console.log('TEMPORARY FIX: Saved invoiceData to localStorage');
+      
+      // Use window.location for direct navigation instead of react-router navigate
+      console.log('TEMPORARY FIX: Using window.location for direct navigation');
+      window.location.href = '/invoices/summary/new';
+      
+      // The code below is commented out temporarily for testing
+      /*
       // Verify that purchasedOrderRequest and itemDetailsRequest are present and correctly structured
       if (invoiceData.purchasedOrderRequest && Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest)) {
         console.log('purchasedOrderRequest.itemDetailsRequest is present and is an array with', 
@@ -690,8 +704,21 @@ const NewInvoice = () => {
         // Log the response
         console.log('API service response:', apiResponse);
         
-        // If successful, navigate to the payment page
-        navigate(`/invoices/${apiResponse.invoiceId}/payment`);
+        // If successful, navigate to the invoice summary page
+        // Extract invoiceId from the correct location in the response structure
+        const invoiceId = apiResponse.data?.invoiceId || apiResponse.invoiceId || 'new';
+        console.log('API service approach: About to navigate to:', `/invoices/summary/${invoiceId}`);
+        console.log('API service approach: With state:', { invoiceData: invoiceData });
+        
+        try {
+          navigate(`/invoices/summary/${invoiceId}`, { 
+            state: { invoiceData: invoiceData } 
+          });
+          console.log('API service approach: Navigation executed');
+        } catch (navError) {
+          console.error('API service approach: Navigation error:', navError);
+        }
+        
         return; // Exit the function if successful
       } catch (apiError) {
         console.error('Failed to save invoice using api service:', apiError);
@@ -721,16 +748,56 @@ const NewInvoice = () => {
       console.log('Axios direct response status:', axiosResponse.status);
       console.log('Axios direct response data:', JSON.stringify(axiosResponse.data, null, 2));
       
-      // Navigate to the payment page
+      // Navigate to the invoice summary page
+      console.log('Axios direct approach: About to navigate based on response');
+      
       if (axiosResponse.data && axiosResponse.data.data && axiosResponse.data.data.invoiceId) {
-        navigate(`/invoices/${axiosResponse.data.data.invoiceId}/payment`);
+        const invoiceId = axiosResponse.data.data.invoiceId;
+        console.log('Axios direct approach: Found invoiceId in data.data:', invoiceId);
+        console.log('Axios direct approach: About to navigate to:', `/invoices/summary/${invoiceId}`);
+        
+        try {
+          navigate(`/invoices/summary/${invoiceId}`, {
+            state: { invoiceData: invoiceData }
+          });
+          console.log('Axios direct approach: Navigation executed (data.data path)');
+        } catch (navError) {
+          console.error('Axios direct approach: Navigation error (data.data path):', navError);
+        }
       } else if (axiosResponse.data && axiosResponse.data.invoiceId) {
-        navigate(`/invoices/${axiosResponse.data.invoiceId}/payment`);
+        const invoiceId = axiosResponse.data.invoiceId;
+        console.log('Axios direct approach: Found invoiceId in data:', invoiceId);
+        console.log('Axios direct approach: About to navigate to:', `/invoices/summary/${invoiceId}`);
+        
+        try {
+          navigate(`/invoices/summary/${invoiceId}`, {
+            state: { invoiceData: invoiceData }
+          });
+          console.log('Axios direct approach: Navigation executed (data path)');
+        } catch (navError) {
+          console.error('Axios direct approach: Navigation error (data path):', navError);
+        }
       } else {
         console.error('Invoice ID not found in response');
-        // Navigate to invoices list as fallback
-        navigate('/invoices');
+        console.log('Axios direct approach: No invoiceId found, using fallback');
+        
+        // Store invoice data in localStorage as fallback
+        localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+        console.log('Axios direct approach: Saved invoiceData to localStorage');
+        
+        // Navigate to invoice summary without ID
+        console.log('Axios direct approach: About to navigate to fallback route: /invoices/summary/new');
+        
+        try {
+          navigate('/invoices/summary/new', {
+            state: { invoiceData: invoiceData }
+          });
+          console.log('Axios direct approach: Navigation executed (fallback path)');
+        } catch (navError) {
+          console.error('Axios direct approach: Navigation error (fallback path):', navError);
+        }
       }
+      */
     } catch (err) {
       console.error('Failed to save invoice', err);
       console.error('Error details:', err.response ? err.response.data : err.message);
@@ -785,7 +852,31 @@ const NewInvoice = () => {
           <Typography variant="subtitle1">
             Create New Invoice
           </Typography>
-          <Box sx={{ display: 'flex' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {/* Test direct navigation button */}
+            <Button 
+              variant="outlined" 
+              color="secondary"
+              size="small"
+              onClick={() => {
+                console.log('Direct navigation button clicked');
+                // Create minimal invoice data for testing
+                const testInvoiceData = {
+                  invoiceNumber: 'TEST-001',
+                  invoiceDate: new Date().toISOString(),
+                  dueDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString()
+                };
+                // Store in localStorage for testing
+                localStorage.setItem('invoiceData', JSON.stringify(testInvoiceData));
+                // Navigate directly to invoice summary page using window.location
+                console.log('About to navigate directly to /invoices/summary/new using window.location');
+                window.location.href = '/invoices/summary/new';
+              }}
+              sx={{ mr: 2 }}
+            >
+              Test Direct Navigation
+            </Button>
+            
             <Chip 
               label="① Add Invoice Details" 
               color={activeStep === 0 ? "primary" : "default"} 
