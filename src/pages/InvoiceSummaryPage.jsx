@@ -14,6 +14,7 @@ import {
   Visibility, VisibilityOff
 } from '@mui/icons-material';
 import InvoiceLogo from '../assets/INVOICE.png';
+import InvoktaLogo from '../assets/invokta_invoice.png';
 
 /**
  * InvoiceSummaryPage component for displaying the invoice summary after saving
@@ -1240,6 +1241,23 @@ const InvoiceSummaryPage = () => {
                     </Typography>
                   </Box>
                 </Box>
+              </Box>
+              
+              {/* Powered by Invokta */}
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', mt: 3 }}>
+                <Typography variant="body2" color="text.secondary" sx={{ mr: 1 }}>
+                  powered by
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', height: '60px', mr: 1 }}>
+                  <img 
+                    src={InvoktaLogo} 
+                    alt="Invokta Logo" 
+                    style={{ height: '100%', objectFit: 'contain' }} 
+                  />
+                </Box>
+                <Typography variant="body2" color="text.secondary">
+                  invokta.com
+                </Typography>
               </Box>
             </CardContent>
           </Card>
