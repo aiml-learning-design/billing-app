@@ -80,38 +80,40 @@ const ReviewInvoicePage = () => {
     const fetchPaymentAccounts = async () => {
       try {
         console.log('ReviewInvoicePage: Fetching payment accounts');
-        // In a real implementation, this would be an API call
-        // const response = await api.get('/api/banks/all');
+        // Make API call to fetch bank accounts
+        const response = await api.get('/api/banks/all');
         
-        // For demonstration, we'll use mock data
-        const mockAccounts = [
-          {
-            id: 1,
-            bankName: 'Chase Bank',
-            accountNumber: '1234567890',
-            accountHolderName: 'John Doe',
-            isPrimaryAccount: true
-          },
-          {
-            id: 2,
-            bankName: 'Bank of America',
-            accountNumber: '0987654321',
-            accountHolderName: 'John Doe',
-            isPrimaryAccount: false
+        if (response && response.success) {
+          // Extract the bank accounts from the response data
+          const bankAccounts = response.data || [];
+          
+          // Map the API response to the format expected by the dropdown
+          const formattedAccounts = bankAccounts.map(account => ({
+            id: account.bankDetailsId,
+            bankName: account.bankName,
+            accountNumber: account.accountNumber,
+            accountHolderName: account.accountHolderName,
+            isPrimaryAccount: account.primaryAccount
+          }));
+          
+          setPaymentAccounts(formattedAccounts);
+          
+          // Set the primary account as the default selected account
+          const primaryAccount = formattedAccounts.find(account => account.isPrimaryAccount);
+          if (primaryAccount) {
+            setSelectedPaymentAccount(primaryAccount.id);
+          } else if (formattedAccounts.length > 0) {
+            setSelectedPaymentAccount(formattedAccounts[0].id);
           }
-        ];
-        
-        setPaymentAccounts(mockAccounts);
-        
-        // Set the primary account as the default selected account
-        const primaryAccount = mockAccounts.find(account => account.isPrimaryAccount);
-        if (primaryAccount) {
-          setSelectedPaymentAccount(primaryAccount.id);
-        } else if (mockAccounts.length > 0) {
-          setSelectedPaymentAccount(mockAccounts[0].id);
+        } else {
+          console.error('Failed to fetch bank accounts:', response?.message || 'Unknown error');
+          // Use empty array if API call fails
+          setPaymentAccounts([]);
         }
       } catch (error) {
         console.error('Error fetching payment accounts:', error);
+        // Use empty array if API call fails
+        setPaymentAccounts([]);
       }
     };
     
@@ -294,27 +296,37 @@ const ReviewInvoicePage = () => {
   // Handle save and submit
   const handleSaveAndSubmit = async () => {
     console.log('ReviewInvoicePage: Save and submit');
+    
+    // Validate that a payment account is selected
+    if (!selectedPaymentAccount && paymentAccounts.length > 0) {
+      setSubmitError('Please select a payment account before submitting the invoice.');
+      return;
+    }
+    
     setSubmitting(true);
+    setSubmitError(null);
     
     try {
       // In a real implementation, this would be an API call
-      // const response = await api.post('/api/invoices/submit', {
-      //   ...invoiceData,
-      //   paymentAccountId: selectedPaymentAccount
-      // });
+      const response = await api.post('/api/invoices/submit', {
+        ...invoiceData,
+        paymentAccountId: selectedPaymentAccount
+      });
       
-      // For demonstration, we'll simulate a successful API response
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      setSubmitSuccess(true);
-      
-      // Clear the invoice data from localStorage
-      localStorage.removeItem('invoiceData');
-      
-      // Show success message for a few seconds, then navigate to dashboard
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 3000);
+      // Check if the API call was successful
+      if (response && response.success) {
+        setSubmitSuccess(true);
+        
+        // Clear the invoice data from localStorage
+        localStorage.removeItem('invoiceData');
+        
+        // Show success message for a few seconds, then navigate to dashboard
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 3000);
+      } else {
+        throw new Error(response?.message || 'Failed to submit invoice');
+      }
     } catch (error) {
       console.error('Error submitting invoice:', error);
       setSubmitError(error.message || 'Failed to submit invoice');
@@ -392,23 +404,48 @@ const ReviewInvoicePage = () => {
           <Typography variant="h6" fontWeight="bold" gutterBottom>
             Select Payment Account
           </Typography>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel id="payment-account-label">Payment Account</InputLabel>
-            <Select
-              labelId="payment-account-label"
-              id="payment-account"
-              value={selectedPaymentAccount}
-              onChange={handlePaymentAccountChange}
-              label="Payment Account"
-            >
-              {paymentAccounts.map((account) => (
-                <MenuItem key={account.id} value={account.id}>
-                  {account.bankName} - {account.accountNumber} ({account.accountHolderName})
-                  {account.isPrimaryAccount && " (Primary)"}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
+              <Typography>Loading payment accounts...</Typography>
+            </Box>
+          ) : paymentAccounts.length === 0 ? (
+            <Box sx={{ p: 2, bgcolor: '#fff8f5', borderRadius: 1, mb: 2 }}>
+              <Typography color="error" gutterBottom>
+                No payment accounts found.
+              </Typography>
+              <Typography variant="body2">
+                Please add a bank account in the Payment Accounts page before proceeding.
+              </Typography>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                size="small" 
+                sx={{ mt: 1 }}
+                onClick={() => navigate('/payment-accounts')}
+              >
+                Go to Payment Accounts
+              </Button>
+            </Box>
+          ) : (
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="payment-account-label">Payment Account</InputLabel>
+              <Select
+                labelId="payment-account-label"
+                id="payment-account"
+                value={selectedPaymentAccount}
+                onChange={handlePaymentAccountChange}
+                label="Payment Account"
+              >
+                {paymentAccounts.map((account) => (
+                  <MenuItem key={account.id} value={account.id}>
+                    {account.bankName} - {account.accountNumber} ({account.accountHolderName})
+                    {account.isPrimaryAccount && " (Primary)"}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          )}
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <FormControlLabel
@@ -777,7 +814,9 @@ const ReviewInvoicePage = () => {
           size="large"
           startIcon={<Save />}
           onClick={handleSaveAndSubmit}
-          disabled={submitting || submitSuccess}
+          disabled={submitting || submitSuccess || !selectedPaymentAccount || paymentAccounts.length === 0}
+          title={!selectedPaymentAccount && paymentAccounts.length > 0 ? 'Please select a payment account' : 
+                 paymentAccounts.length === 0 ? 'No payment accounts available' : ''}
         >
           {submitting ? 'Submitting...' : 'Save & Submit'}
         </Button>
@@ -808,6 +847,9 @@ const ReviewInvoicePage = () => {
             variant="contained"
             color="primary"
             onClick={handleSaveAndSubmit}
+            disabled={submitting || !selectedPaymentAccount || paymentAccounts.length === 0}
+            title={!selectedPaymentAccount && paymentAccounts.length > 0 ? 'Please select a payment account' : 
+                   paymentAccounts.length === 0 ? 'No payment accounts available' : ''}
           >
             Try Again
           </Button>
