@@ -41,6 +41,9 @@ const ReviewInvoicePage = () => {
   const [businessLogoLoading, setBusinessLogoLoading] = useState(false);
   const [businessLogoError, setBusinessLogoError] = useState(null);
   
+  // Bank details state
+  const [showBankDetails, setShowBankDetails] = useState(true);
+  
   // QR code state
   const [showQRCode, setShowQRCode] = useState(true);
   const [qrCodeData, setQRCodeData] = useState(null);
@@ -448,16 +451,28 @@ const ReviewInvoicePage = () => {
           )}
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch 
-                  color="primary" 
-                  checked={showQRCode}
-                  onChange={(e) => setShowQRCode(e.target.checked)}
-                />
-              }
-              label="Display Payment QR Code"
-            />
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    color="primary" 
+                    checked={showBankDetails}
+                    onChange={(e) => setShowBankDetails(e.target.checked)}
+                  />
+                }
+                label="Hide Bank Details"
+              />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    color="primary" 
+                    checked={showQRCode}
+                    onChange={(e) => setShowQRCode(e.target.checked)}
+                  />
+                }
+                label="Display Payment QR Code"
+              />
+            </Box>
           </Box>
         </CardContent>
       </Card>
@@ -747,20 +762,91 @@ const ReviewInvoicePage = () => {
               </Table>
             </TableContainer>
             
-            {/* Bank Details */}
-            <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-              Payment Details
-            </Typography>
-            <Box sx={{ mb: 3 }}>
-              <Typography variant="body2">
-                <strong>Bank:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.bankName || 'Chase Bank'}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Account Number:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.accountNumber || '1234567890'}
-              </Typography>
-              <Typography variant="body2">
-                <strong>Account Holder:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.accountHolderName || 'John Doe'}
-              </Typography>
+            {/* Bank Details and QR Code Section */}
+            <Box sx={{ display: 'flex', mb: 3 }}>
+              {/* Bank Details */}
+              {showBankDetails && (
+                <Box sx={{ flex: 1, mr: showQRCode ? 2 : 0 }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Payment Details
+                  </Typography>
+                  <Box>
+                    <Typography variant="body2">
+                      <strong>Bank:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.bankName || 'Chase Bank'}
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Account Number:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.accountNumber || '1234567890'}
+                    </Typography>
+                    <Typography variant="body2">
+                      <strong>Account Holder:</strong> {paymentAccounts.find(account => account.id === selectedPaymentAccount)?.accountHolderName || 'John Doe'}
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+              
+              {/* QR Code */}
+              {showQRCode && (
+                <Box sx={{ 
+                  flex: 1, 
+                  ml: showBankDetails ? 2 : 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px dashed #ccc',
+                  borderRadius: 1,
+                  p: 2
+                }}>
+                  <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+                    Payment QR Code
+                  </Typography>
+                  
+                  <Box sx={{ 
+                    width: 200, 
+                    height: 200, 
+                    bgcolor: '#f5f5f5',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    mb: 2,
+                    position: 'relative'
+                  }}>
+                    {qrCodeLoading && (
+                      <Box sx={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'rgba(255, 255, 255, 0.8)'
+                      }}>
+                        <Typography>Loading...</Typography>
+                      </Box>
+                    )}
+                    
+                    {qrCodeError && (
+                      <Typography color="error" align="center">
+                        {qrCodeError}
+                      </Typography>
+                    )}
+                    
+                    {qrCodeData && !qrCodeLoading && !qrCodeError && (
+                      <img 
+                        src={qrCodeData.qrCodeUrl || 'https://example.com/qr-code.png'} 
+                        alt="Payment QR Code" 
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }} 
+                      />
+                    )}
+                  </Box>
+                  
+                  <Typography variant="body2" align="center">
+                    {qrCodeData?.description || 'Scan this QR code to pay via UPI'}
+                  </Typography>
+                </Box>
+              )}
             </Box>
             
             {/* Total */}
