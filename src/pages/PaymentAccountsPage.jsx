@@ -12,6 +12,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import countries from '../utils/countries';
 
 // Function to generate a business ID (equivalent to the Java code provided)
 const generateBusinessId = () => {
@@ -25,6 +26,26 @@ const generateBusinessId = () => {
     .join('');
 };
 
+// Function to get user's country based on IP address
+const getUserCountry = async () => {
+  try {
+    // Using ipinfo.io to get user's country based on IP
+    const response = await fetch('https://ipinfo.io/json?token=YOUR_TOKEN');
+    const data = await response.json();
+    
+    // Find the country in our countries list
+    if (data && data.country) {
+      const countryObj = countries.find(c => c.code === data.country);
+      return countryObj ? countryObj.name : 'United States';
+    }
+    
+    return 'United States';
+  } catch (error) {
+    console.error('Error detecting user location:', error);
+    return 'United States'; // Default fallback
+  }
+};
+
 const PaymentAccountsPage = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -36,8 +57,9 @@ const PaymentAccountsPage = () => {
   const [openNewAccountDialog, setOpenNewAccountDialog] = useState(false);
   const [openBankAccountDialog, setOpenBankAccountDialog] = useState(false);
   const [selectedAccountType, setSelectedAccountType] = useState('');
+  const [userCountry, setUserCountry] = useState('United States');
   const [bankAccountData, setBankAccountData] = useState({
-    country: 'United States of America (USA)',
+    country: 'United States',
     bankName: '',
     accountNumber: '',
     confirmAccountNumber: '',
@@ -58,6 +80,20 @@ const PaymentAccountsPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [editingAccount, setEditingAccount] = useState(null);
+  
+  // Detect user's country on component mount
+  useEffect(() => {
+    const detectUserCountry = async () => {
+      const country = await getUserCountry();
+      setUserCountry(country);
+      setBankAccountData(prev => ({
+        ...prev,
+        country: country
+      }));
+    };
+    
+    detectUserCountry();
+  }, []);
 
   // Handler for editing an account
   const handleEditAccount = (account) => {
@@ -87,21 +123,32 @@ const PaymentAccountsPage = () => {
     try {
       setLoading(true);
       
-      // In a real implementation, this would be an API call
-      // const response = await api.put(`/api/bank/${account.id}/toggle-status`);
+      // Prepare payload for API
+      const payload = {
+        bankDetailsId: account.id,
+        active: !account.status,
+        status: !account.status
+      };
       
-      // For demonstration, we'll update the local state directly
-      const updatedAccounts = accounts.map(acc => 
-        acc.id === account.id ? { ...acc, status: !acc.status } : acc
-      );
+      // Call API to toggle account status
+      const response = await api.put(`/api/banks/${account.id}/toggle-status`, payload);
       
-      setAccounts(updatedAccounts);
-      
-      setAlert({
-        open: true,
-        message: `Account ${account.status ? 'deactivated' : 'activated'} successfully`,
-        severity: 'success'
-      });
+      if (response && response.success) {
+        // Update the local state with the updated account
+        const updatedAccounts = accounts.map(acc => 
+          acc.id === account.id ? { ...acc, status: !acc.status } : acc
+        );
+        
+        setAccounts(updatedAccounts);
+        
+        setAlert({
+          open: true,
+          message: `Account ${account.status ? 'deactivated' : 'activated'} successfully`,
+          severity: 'success'
+        });
+      } else {
+        throw new Error(response?.message || 'Failed to update account status');
+      }
     } catch (error) {
       console.error('Error toggling account status:', error);
       setAlert({
@@ -116,34 +163,64 @@ const PaymentAccountsPage = () => {
 
   // Fetch accounts data
   useEffect(() => {
-    // This would be replaced with actual API call in a real implementation
-    setLoading(true);
-    // Mock data for demonstration
-    const mockAccounts = [
-      {
-        id: 1,
-        bankName: 'Chase Bank',
-        accountNumber: '1234567890',
-        ifscCode: 'CHAS0001234',
-        ibanCode: 'US12CHAS12345678901234',
-        swiftCode: 'CHASUS33XXX',
-        accountHolderName: 'John Doe',
-        accountType: 'Checking',
-        country: 'United States of America (USA)',
-        currency: 'US Dollar(USD, $)',
-        isPrimaryAccount: true,
-        createdAt: '2023-05-15',
-        status: true,
-        upiId: 'business@okaxis',
-        upiActive: true
+    const fetchBankAccounts = async () => {
+      try {
+        setLoading(true);
+        
+        // Make API call to fetch bank accounts
+        const response = await api.get('/api/banks/all');
+        
+        if (response && response.success) {
+          // Extract the bank accounts from the response data
+          const bankAccounts = response.data || [];
+          
+          // Map the API response to the format expected by the table
+          const formattedAccounts = bankAccounts.map(account => ({
+            id: account.bankDetailsId,
+            bankName: account.bankName,
+            accountNumber: account.accountNumber,
+            ifscCode: account.ifsccode,
+            ibanCode: account.ibancode,
+            swiftCode: account.swiftcode,
+            accountHolderName: account.accountHolderName,
+            accountType: account.bankAccountType,
+            country: account.country,
+            currency: account.currency,
+            isPrimaryAccount: account.primaryAccount,
+            createdAt: new Date(account.createdAt || Date.now()).toISOString().split('T')[0],
+            status: account.active,
+            upiId: account.upiID,
+            upiActive: account.upiActive,
+            businessId: account.businessId
+          }));
+          
+          setAccounts(formattedAccounts);
+          setTotalCount(formattedAccounts.length);
+        } else {
+          console.error('Failed to fetch bank accounts:', response?.message || 'Unknown error');
+          setAlert({
+            open: true,
+            message: response?.message || 'Failed to fetch bank accounts',
+            severity: 'error'
+          });
+          setAccounts([]);
+          setTotalCount(0);
+        }
+      } catch (error) {
+        console.error('Error fetching bank accounts:', error);
+        setAlert({
+          open: true,
+          message: error.message || 'Failed to fetch bank accounts',
+          severity: 'error'
+        });
+        setAccounts([]);
+        setTotalCount(0);
+      } finally {
+        setLoading(false);
       }
-    ];
+    };
     
-    setTimeout(() => {
-      setAccounts(mockAccounts);
-      setTotalCount(mockAccounts.length);
-      setLoading(false);
-    }, 1000);
+    fetchBankAccounts();
   }, [page, rowsPerPage, filter]);
 
   // Handle page change
@@ -192,7 +269,7 @@ const PaymentAccountsPage = () => {
   const handleCloseBankAccountDialog = () => {
     setOpenBankAccountDialog(false);
     setBankAccountData({
-      country: 'United States of America (USA)',
+      country: userCountry,
       bankName: '',
       accountNumber: '',
       confirmAccountNumber: '',
@@ -312,34 +389,42 @@ const PaymentAccountsPage = () => {
       // Get current date and time for createdOn field
       const createdOn = editingAccount ? editingAccount.createdAt : new Date().toISOString();
       
-      // Prepare payload for API
+      // Prepare payload for API according to the required format
       const payload = {
+        bankDetailsId: editingAccount ? editingAccount.id : 0,
         bankName: bankAccountData.bankName,
         accountNumber: bankAccountData.accountNumber,
-        ifscCode: bankAccountData.ifscCode,
-        ibanCode: bankAccountData.ibanCode,
-        swiftCode: bankAccountData.swiftCode,
+        confirmAccountNumber: bankAccountData.confirmAccountNumber,
         accountHolderName: bankAccountData.accountHolderName,
-        accountType: bankAccountData.bankAccountType,
-        country: bankAccountData.country,
+        bankAccountType: bankAccountData.bankAccountType,
         currency: bankAccountData.currency,
-        upiId: bankAccountData.upiId,
+        confirmUpiID: bankAccountData.confirmUpiId,
         status: bankAccountData.status,
         businessId: businessId,
-        linked: bankAccountData.isPrimaryAccount,
+        country: bankAccountData.country,
+        bankDetailsMetadDta: {
+          additionalProp1: {},
+          additionalProp2: {},
+          additionalProp3: {}
+        },
+        active: bankAccountData.status,
         upiActive: bankAccountData.upiActive,
-        createdAt: createdOn,
-        customDetails: bankAccountData.customDetails.length > 0 ? bankAccountData.customDetails : undefined
+        primaryAccount: bankAccountData.isPrimaryAccount,
+        ifsccode: bankAccountData.ifscCode,
+        upiID: bankAccountData.upiId,
+        linked: bankAccountData.isPrimaryAccount,
+        ibancode: bankAccountData.ibanCode,
+        swiftcode: bankAccountData.swiftCode
       };
       
       let response;
       
       if (editingAccount) {
         // Call API to update bank account
-        response = await api.put(`/api/bank/${editingAccount.id}`, payload);
+        response = await api.put(`/api/banks/${editingAccount.id}`, payload);
       } else {
         // Call API to add bank account
-        response = await api.post('/api/bank/add', payload);
+        response = await api.post('/api/banks/add', payload);
       }
       
       if (response.success) {
@@ -689,11 +774,11 @@ const PaymentAccountsPage = () => {
                   onChange={handleBankAccountInputChange}
                   label="Country *"
                 >
-                  <MenuItem value="United States of America (USA)">United States of America (USA)</MenuItem>
-                  <MenuItem value="India">India</MenuItem>
-                  <MenuItem value="United Kingdom (UK)">United Kingdom (UK)</MenuItem>
-                  <MenuItem value="Canada">Canada</MenuItem>
-                  <MenuItem value="Australia">Australia</MenuItem>
+                  {countries.map((country) => (
+                    <MenuItem key={country.code} value={country.name}>
+                      {country.name}
+                    </MenuItem>
+                  ))}
                 </Select>
                 {errors.country && <FormHelperText>{errors.country}</FormHelperText>}
               </FormControl>
