@@ -4,7 +4,7 @@ import {
   Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   TablePagination, Chip, IconButton, Dialog, DialogTitle, DialogContent,
   DialogActions, TextField, MenuItem, Select, FormControl, InputLabel,
-  FormHelperText, Divider, CircularProgress, Snackbar, Alert
+  FormHelperText, Divider, CircularProgress, Snackbar, Alert, FormControlLabel, Switch
 } from '@mui/material';
 import {
   Add, Edit, Delete, Refresh, Download, FilterList,
@@ -12,6 +12,18 @@ import {
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+
+// Function to generate a business ID (equivalent to the Java code provided)
+const generateBusinessId = () => {
+  // Create a secure random array of 12 bytes
+  const bytes = new Uint8Array(12);
+  window.crypto.getRandomValues(bytes);
+  
+  // Convert each byte to a 2-digit hex string and join them
+  return Array.from(bytes)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
 
 const PaymentAccountsPage = () => {
   const navigate = useNavigate();
@@ -35,11 +47,72 @@ const PaymentAccountsPage = () => {
     bankAccountType: 'Savings',
     currency: 'US Dollar(USD, $)',
     ifscCode: '',
+    isPrimaryAccount: false,
+    upiId: '',
+    confirmUpiId: '',
+    upiActive: false,
+    status: true,
     customDetails: []
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [editingAccount, setEditingAccount] = useState(null);
+
+  // Handler for editing an account
+  const handleEditAccount = (account) => {
+    setEditingAccount(account);
+    setBankAccountData({
+      country: account.country || 'United States of America (USA)',
+      bankName: account.bankName || '',
+      accountNumber: account.accountNumber || '',
+      confirmAccountNumber: account.accountNumber || '',
+      ibanCode: account.ibanCode || '',
+      swiftCode: account.swiftCode || '',
+      accountHolderName: account.accountHolderName || '',
+      bankAccountType: account.accountType || 'Savings',
+      currency: account.currency || 'US Dollar(USD, $)',
+      ifscCode: account.ifscCode || '',
+      isPrimaryAccount: account.isPrimaryAccount || false,
+      upiId: account.upiId || '',
+      upiActive: account.upiActive || false,
+      status: account.status || true,
+      customDetails: account.customDetails || []
+    });
+    setOpenBankAccountDialog(true);
+  };
+
+  // Handler for toggling account status (active/inactive)
+  const handleToggleAccountStatus = async (account) => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, this would be an API call
+      // const response = await api.put(`/api/bank/${account.id}/toggle-status`);
+      
+      // For demonstration, we'll update the local state directly
+      const updatedAccounts = accounts.map(acc => 
+        acc.id === account.id ? { ...acc, status: !acc.status } : acc
+      );
+      
+      setAccounts(updatedAccounts);
+      
+      setAlert({
+        open: true,
+        message: `Account ${account.status ? 'deactivated' : 'activated'} successfully`,
+        severity: 'success'
+      });
+    } catch (error) {
+      console.error('Error toggling account status:', error);
+      setAlert({
+        open: true,
+        message: error.message || 'Failed to update account status',
+        severity: 'error'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch accounts data
   useEffect(() => {
@@ -49,13 +122,20 @@ const PaymentAccountsPage = () => {
     const mockAccounts = [
       {
         id: 1,
-        name: 'Primary Checking Account',
-        type: 'Bank Account',
-        linkedBank: 'Chase Bank',
-        linkedEmployee: '',
-        linkedLedger: 'Operating Expenses',
-        vpa: 'business@okaxis',
-        createdAt: '2023-05-15'
+        bankName: 'Chase Bank',
+        accountNumber: '1234567890',
+        ifscCode: 'CHAS0001234',
+        ibanCode: 'US12CHAS12345678901234',
+        swiftCode: 'CHASUS33XXX',
+        accountHolderName: 'John Doe',
+        accountType: 'Checking',
+        country: 'United States of America (USA)',
+        currency: 'US Dollar(USD, $)',
+        isPrimaryAccount: true,
+        createdAt: '2023-05-15',
+        status: true,
+        upiId: 'business@okaxis',
+        upiActive: true
       }
     ];
     
@@ -122,9 +202,15 @@ const PaymentAccountsPage = () => {
       bankAccountType: 'Savings',
       currency: 'US Dollar(USD, $)',
       ifscCode: '',
+      isPrimaryAccount: false,
+      upiId: '',
+      confirmUpiId: '',
+      upiActive: false,
+      status: true,
       customDetails: []
     });
     setErrors({});
+    setEditingAccount(null);
   };
 
   // Handle bank account input change
@@ -194,6 +280,19 @@ const PaymentAccountsPage = () => {
       newErrors.accountHolderName = 'Account holder name is required';
     }
     
+    if (!bankAccountData.ifscCode.trim()) {
+      newErrors.ifscCode = 'IFSC code is required';
+    }
+    
+    // Validate UPI ID if provided
+    if (bankAccountData.upiId.trim()) {
+      if (!bankAccountData.confirmUpiId.trim()) {
+        newErrors.confirmUpiId = 'Please confirm UPI ID';
+      } else if (bankAccountData.upiId !== bankAccountData.confirmUpiId) {
+        newErrors.confirmUpiId = 'UPI IDs do not match';
+      }
+    }
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -207,44 +306,64 @@ const PaymentAccountsPage = () => {
     setSubmitting(true);
     
     try {
+      // Generate a business ID if we're adding a new account
+      const businessId = editingAccount ? editingAccount.businessId : generateBusinessId();
+      
+      // Get current date and time for createdOn field
+      const createdOn = editingAccount ? editingAccount.createdAt : new Date().toISOString();
+      
       // Prepare payload for API
       const payload = {
-        country: bankAccountData.country,
         bankName: bankAccountData.bankName,
         accountNumber: bankAccountData.accountNumber,
+        ifscCode: bankAccountData.ifscCode,
         ibanCode: bankAccountData.ibanCode,
         swiftCode: bankAccountData.swiftCode,
         accountHolderName: bankAccountData.accountHolderName,
-        bankAccountType: bankAccountData.bankAccountType,
+        accountType: bankAccountData.bankAccountType,
+        country: bankAccountData.country,
         currency: bankAccountData.currency,
-        ifscCode: bankAccountData.ifscCode,
+        upiId: bankAccountData.upiId,
+        status: bankAccountData.status,
+        businessId: businessId,
+        linked: bankAccountData.isPrimaryAccount,
+        upiActive: bankAccountData.upiActive,
+        createdAt: createdOn,
         customDetails: bankAccountData.customDetails.length > 0 ? bankAccountData.customDetails : undefined
       };
       
-      // Call API to add bank account
-      const response = await api.post('/api/bank/add', payload);
+      let response;
+      
+      if (editingAccount) {
+        // Call API to update bank account
+        response = await api.put(`/api/bank/${editingAccount.id}`, payload);
+      } else {
+        // Call API to add bank account
+        response = await api.post('/api/bank/add', payload);
+      }
       
       if (response.success) {
         setAlert({
           open: true,
-          message: 'Bank account added successfully',
+          message: editingAccount ? 'Bank account updated successfully' : 'Bank account added successfully',
           severity: 'success'
         });
         
         // Close dialog and reset form
         handleCloseBankAccountDialog();
+        setEditingAccount(null);
         
         // Refresh accounts list
         // This would trigger the useEffect to fetch updated data
         setPage(0);
       } else {
-        throw new Error(response.message || 'Failed to add bank account');
+        throw new Error(response.message || `Failed to ${editingAccount ? 'update' : 'add'} bank account`);
       }
     } catch (error) {
-      console.error('Error adding bank account:', error);
+      console.error(`Error ${editingAccount ? 'updating' : 'adding'} bank account:`, error);
       setAlert({
         open: true,
-        message: error.message || 'Failed to add bank account',
+        message: error.message || `Failed to ${editingAccount ? 'update' : 'add'} bank account`,
         severity: 'error'
       });
     } finally {
@@ -340,13 +459,17 @@ const PaymentAccountsPage = () => {
           <Table stickyHeader aria-label="payment accounts table">
             <TableHead>
               <TableRow>
-                <TableCell>Payment Account</TableCell>
+                <TableCell>Bank Name</TableCell>
+                <TableCell>Account Number</TableCell>
+                <TableCell>IFSC</TableCell>
+                <TableCell>IBAN</TableCell>
+                <TableCell>SWIFT</TableCell>
+                <TableCell>Account Holder Name</TableCell>
                 <TableCell>Account Type</TableCell>
-                <TableCell>Linked Bank</TableCell>
-                <TableCell>Linked Employee</TableCell>
-                <TableCell>Linked Ledger</TableCell>
-                <TableCell>VPA</TableCell>
-                <TableCell>Created At</TableCell>
+                <TableCell>Country</TableCell>
+                <TableCell>Currency</TableCell>
+                <TableCell>Primary Account</TableCell>
+                <TableCell>Created On</TableCell>
                 <TableCell>Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -366,25 +489,45 @@ const PaymentAccountsPage = () => {
               ) : (
                 accounts.map((account) => (
                   <TableRow key={account.id} hover>
-                    <TableCell>{account.name}</TableCell>
+                    <TableCell>{account.bankName || '-'}</TableCell>
+                    <TableCell>{account.accountNumber || '-'}</TableCell>
+                    <TableCell>{account.ifscCode || '-'}</TableCell>
+                    <TableCell>{account.ibanCode || '-'}</TableCell>
+                    <TableCell>{account.swiftCode || '-'}</TableCell>
+                    <TableCell>{account.accountHolderName || '-'}</TableCell>
                     <TableCell>
                       <Chip 
-                        label={account.type} 
-                        color={account.type === 'Bank Account' ? 'primary' : 'secondary'}
+                        label={account.accountType} 
+                        color="primary"
                         size="small"
                       />
                     </TableCell>
-                    <TableCell>{account.linkedBank || '-'}</TableCell>
-                    <TableCell>{account.linkedEmployee || '-'}</TableCell>
-                    <TableCell>{account.linkedLedger || '-'}</TableCell>
-                    <TableCell>{account.vpa || '-'}</TableCell>
-                    <TableCell>{account.createdAt}</TableCell>
+                    <TableCell>{account.country || '-'}</TableCell>
+                    <TableCell>{account.currency || '-'}</TableCell>
                     <TableCell>
-                      <IconButton size="small" color="primary">
+                      <Chip 
+                        label={account.isPrimaryAccount ? 'Primary' : 'Secondary'} 
+                        color={account.isPrimaryAccount ? 'success' : 'default'}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>{account.createdAt || '-'}</TableCell>
+                    <TableCell>
+                      <IconButton 
+                        size="small" 
+                        color="primary"
+                        aria-label="edit"
+                        onClick={() => handleEditAccount(account)}
+                      >
                         <Edit fontSize="small" />
                       </IconButton>
-                      <IconButton size="small" color="error">
-                        <Delete fontSize="small" />
+                      <IconButton 
+                        size="small" 
+                        color={account.status ? "error" : "success"}
+                        aria-label={account.status ? "mark as inactive" : "mark as active"}
+                        onClick={() => handleToggleAccountStatus(account)}
+                      >
+                        {account.status ? <Delete fontSize="small" /> : <Refresh fontSize="small" />}
                       </IconButton>
                     </TableCell>
                   </TableRow>
@@ -533,7 +676,7 @@ const PaymentAccountsPage = () => {
         fullWidth
       >
         <DialogTitle sx={{ fontWeight: 'bold' }}>
-          Add New Bank Account
+          {editingAccount ? 'Edit Bank Account' : 'Add New Bank Account'}
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={3} sx={{ mt: 0 }}>
@@ -662,6 +805,86 @@ const PaymentAccountsPage = () => {
               </FormControl>
             </Grid>
             
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={bankAccountData.isPrimaryAccount}
+                    onChange={(e) => handleBankAccountInputChange({
+                      target: { name: 'isPrimaryAccount', value: e.target.checked }
+                    })}
+                    color="primary"
+                  />
+                }
+                label="Primary Account"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={bankAccountData.status}
+                    onChange={(e) => handleBankAccountInputChange({
+                      target: { name: 'status', value: e.target.checked }
+                    })}
+                    color="primary"
+                  />
+                }
+                label={bankAccountData.status ? "Active" : "Inactive"}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="subtitle1" gutterBottom>
+                UPI Details
+              </Typography>
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="UPI ID"
+                name="upiId"
+                value={bankAccountData.upiId}
+                onChange={handleBankAccountInputChange}
+                fullWidth
+                error={!!errors.upiId}
+                helperText={errors.upiId}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="Confirm UPI ID"
+                name="confirmUpiId"
+                value={bankAccountData.confirmUpiId}
+                onChange={handleBankAccountInputChange}
+                fullWidth
+                error={!!errors.confirmUpiId}
+                helperText={errors.confirmUpiId}
+              />
+            </Grid>
+            
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={bankAccountData.upiActive}
+                    onChange={(e) => handleBankAccountInputChange({
+                      target: { name: 'upiActive', value: e.target.checked }
+                    })}
+                    color="primary"
+                  />
+                }
+                label="UPI Active"
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+            </Grid>
+            
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <Typography variant="body2" color="primary" sx={{ mr: 1 }}>
@@ -674,11 +897,20 @@ const PaymentAccountsPage = () => {
             </Grid>
             
             <Grid item xs={12}>
-              <Button variant="outlined" sx={{ mr: 2 }}>
-                Add IFSC Code
-              </Button>
-              <Button variant="outlined">
-                Custom Bank Details
+              <TextField
+                label="IFSC Code"
+                name="ifscCode"
+                value={bankAccountData.ifscCode}
+                onChange={handleBankAccountInputChange}
+                fullWidth
+                error={!!errors.ifscCode}
+                helperText={errors.ifscCode}
+              />
+            </Grid>
+            
+            <Grid item xs={12}>
+              <Button variant="outlined" onClick={handleAddCustomField}>
+                Add Custom Bank Details
               </Button>
             </Grid>
             
@@ -727,7 +959,9 @@ const PaymentAccountsPage = () => {
             disabled={submitting}
             startIcon={submitting ? <CircularProgress size={20} /> : null}
           >
-            {submitting ? 'Adding...' : 'Add Account'}
+            {submitting 
+              ? (editingAccount ? 'Updating...' : 'Adding...') 
+              : (editingAccount ? 'Update Account' : 'Add Account')}
           </Button>
         </DialogActions>
       </Dialog>
