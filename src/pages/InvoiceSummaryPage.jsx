@@ -1622,6 +1622,36 @@ const InvoiceSummaryPage = () => {
         </Grid>
       </Grid>
 
+      {/* Navigation Buttons */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 3, mb: 4 }}>
+        <Button
+          variant="outlined"
+          color="primary"
+          size="large"
+          onClick={() => {
+            console.log('InvoiceSummaryPage: Back button clicked');
+            // Navigate back to invoice creation
+            window.location.href = '/invoices/new-invoice';
+          }}
+        >
+          Back
+        </Button>
+        <Button
+          variant="contained"
+          color="primary"
+          size="large"
+          onClick={() => {
+            console.log('InvoiceSummaryPage: Next button clicked');
+            // Save current invoice data to localStorage
+            localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+            // Navigate to review page
+            navigate('/invoices/review', { state: { invoiceData } });
+          }}
+        >
+          Next: Review Invoice
+        </Button>
+      </Box>
+
       {/* Footer */}
       <Box sx={{ mt: 4, p: 3, bgcolor: '#f5f5f5', borderRadius: 1 }}>
         <Grid container spacing={3}>
