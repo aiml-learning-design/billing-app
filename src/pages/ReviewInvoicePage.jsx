@@ -194,7 +194,7 @@ const ReviewInvoicePage = () => {
       try {
         setBusinessLogoLoading(true);
         // In a real implementation, this would be an API call
-        // const response = await fetch(`/api/v1/media/load?businessId=${invoiceData.businessId}&type=BUSINESS_LOGO`);
+        // const response = await fetch(`/api/v1/media/load?keyIdentifier=${invoiceData.businessId}&type=BUSINESS_LOGO`);
         
         // For demonstration, we'll use a mock response
         const mockResponse = {

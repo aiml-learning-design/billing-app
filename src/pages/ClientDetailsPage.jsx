@@ -3,17 +3,22 @@ import {
   Box, Typography, Button, Grid, Card, CardContent,
   CircularProgress, Divider, Chip, Alert, List, ListItem,
   ListItemIcon, ListItemText, Paper, Avatar, FormControl, Select,
-  MenuItem, Pagination, Stack, IconButton, Collapse
+  MenuItem, Pagination, Stack, IconButton, Collapse, Dialog, DialogTitle,
+  DialogContent, DialogActions, TextField, OutlinedInput, InputLabel,
+  FormHelperText, InputAdornment, Snackbar
 } from '@mui/material';
 import {
   Receipt, Description, MonetizationOn,
   Business, ListAlt, Add, Store, Person,
-  Email, Phone, LocationOn, ExpandMore, ExpandLess
+  Email, Phone, LocationOn, ExpandMore, ExpandLess,
+  Save, CloudUpload, Edit
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { UI_CONFIG, API_CONFIG } from '../config/config';
+import countries from '../utils/countries';
+import countryStates from '../utils/countryStates';
 
 const ClientDetailsPage = () => {
   const { user } = useAuth();
@@ -42,7 +47,38 @@ const ClientDetailsPage = () => {
   const [expandedBusinesses, setExpandedBusinesses] = useState(new Set());
   
   // State to track if the Business Details section is expanded
-  const [businessSectionExpanded, setBusinessSectionExpanded] = useState(false);
+  // Set to true by default so client logos are loaded when the page loads
+  const [businessSectionExpanded, setBusinessSectionExpanded] = useState(true);
+  
+  // State to store client logo URLs
+  const [clientLogoUrls, setClientLogoUrls] = useState({});
+  
+  // Edit dialog states
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [editClientData, setEditClientData] = useState({
+    businessId: '',
+    clientName: '',
+    businessName: '',
+    gstin: '',
+    panNumber: '',
+    email: '',
+    phone: '',
+    address: {
+      addressLine: '',
+      city: '',
+      state: '',
+      pincode: '',
+      country: 'India'
+    },
+    logo: null
+  });
+  const [saving, setSaving] = useState(false);
+  const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
+  const [clientLogo, setClientLogo] = useState(null);
+  const [logoLoading, setLogoLoading] = useState(false);
+  
+  // File input reference for logo upload
+  const fileInputRef = useRef(null);
   
   // Helper function to get businesses from user data
   const getBusinessesFromUser = (userData) => {
@@ -111,6 +147,14 @@ const ClientDetailsPage = () => {
       setPage(totalPages - 1);
     }
   }, [totalPages, page]);
+  
+  // Effect to preload client logos when allBusinesses changes
+  useEffect(() => {
+    if (allBusinesses.length > 0) {
+      console.log('Businesses loaded, preloading client logos');
+      preloadClientLogos(allBusinesses);
+    }
+  }, [allBusinesses]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -319,9 +363,488 @@ const ClientDetailsPage = () => {
     // Navigate to business setup page with client context
     navigate('/business-setup?context=client');
   };
+  
+  // Function to handle editing a client
+  const handleEditClient = (client) => {
+    console.log('Editing client:', client);
+    
+    // Prepare client data for editing
+    const clientData = {
+      businessId: client.businessId || client.business_id,
+      clientName: client.clientName || client.businessName,
+      businessName: client.businessName,
+      gstin: client.gstin || '',
+      panNumber: client.panNumber || client.pan || '',
+      email: client.email || '',
+      phone: client.phone || '',
+      address: {
+        addressLine: client.address?.addressLine || '',
+        city: client.address?.city || '',
+        state: client.address?.state || '',
+        pincode: client.address?.pincode || '',
+        country: client.address?.country || 'India'
+      },
+      logo: null
+    };
+    
+    // Set the edit client data
+    setEditClientData(clientData);
+    
+    // Fetch client logo
+    fetchClientLogo(clientData.businessId);
+    
+    // Open the edit dialog
+    setOpenEditDialog(true);
+  };
+  
+  // Function to fetch client logo
+  const fetchClientLogo = async (businessId) => {
+    if (!businessId) return;
+    
+    try {
+      setLogoLoading(true);
+      
+      // Get the authentication token from localStorage
+      const token = localStorage.getItem('token');
+      
+      // Construct the URL for fetching the logo
+      const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`;
+      
+      // Make an authenticated request to fetch the logo
+      console.log(`Adding authorization header for fetchClientLogo: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
+      
+      const response = await fetch(logoUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+      }
+      
+      // Create a blob URL from the response
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Set the logo URL to the blob URL
+      setClientLogo(objectUrl);
+    } catch (error) {
+      console.error('Error fetching client logo:', error);
+      setClientLogo(null);
+    } finally {
+      setLogoLoading(false);
+    }
+  };
+  
+  // Function to preload client logos
+  const preloadClientLogos = async (businesses) => {
+    if (!businesses || businesses.length === 0) return;
+    
+    console.log('Preloading client logos for businesses:', businesses);
+    
+    // Get the authentication token from localStorage
+    const token = localStorage.getItem('token');
+    
+    // Create a new object to store logo URLs
+    const logoUrls = {};
+    
+    // Use Promise.all to wait for all logo fetches to complete
+    await Promise.all(businesses.map(async (business) => {
+      const businessId = business.businessId || business.business_id;
+      if (!businessId) return;
+      
+      // Make a direct API call to load the logo
+      const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`;
+      
+      console.log(`Preloading logo for business ${businessId} from URL: ${logoUrl}`);
+      
+      try {
+        // Make an authenticated fetch request
+        console.log(`Adding authorization header for ${businessId}: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
+        
+        const response = await fetch(logoUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}` // Add authorization header
+          }
+        });
+        
+        console.log(`Fetch response for logo ${businessId}:`, response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+        }
+        
+        // Create a blob URL from the response
+        const blob = await response.blob();
+        console.log(`Received logo data for business ${businessId}, size: ${blob.size} bytes`);
+        
+        if (blob.size > 0) {
+          const objectUrl = URL.createObjectURL(blob);
+          logoUrls[businessId] = objectUrl;
+          console.log(`Created blob URL for business ${businessId}: ${objectUrl}`);
+        }
+      } catch (error) {
+        console.error(`Fetch error for logo ${businessId}:`, error);
+      }
+    }));
+    
+    // Update the state with all logo URLs
+    setClientLogoUrls(logoUrls);
+    console.log('Updated client logo URLs:', logoUrls);
+  };
+  
+  // Function to handle input changes in the edit form
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    // Handle nested address fields
+    if (name.startsWith('address.')) {
+      const addressField = name.split('.')[1];
+      setEditClientData(prev => ({
+        ...prev,
+        address: {
+          ...prev.address,
+          [addressField]: value
+        }
+      }));
+    } else {
+      // Handle regular fields
+      setEditClientData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+  };
+  
+  // Function to handle logo file selection
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      setAlert({
+        open: true,
+        message: 'Please upload a JPEG or PNG file',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (file.size > maxSize) {
+      setAlert({
+        open: true,
+        message: 'File size must be less than 10MB',
+        severity: 'error'
+      });
+      return;
+    }
+    
+    // Set the logo file
+    setEditClientData(prev => ({
+      ...prev,
+      logo: file
+    }));
+    
+    // Create a local URL for preview
+    setClientLogo(URL.createObjectURL(file));
+  };
+  
+  // Function to handle updating a client
+  const handleUpdateClient = async () => {
+    try {
+      setSaving(true);
+      
+      // Prepare data for API
+      const clientData = {
+        businessId: editClientData.businessId,
+        clientName: editClientData.businessName, // Use businessName as clientName
+        businessName: editClientData.businessName,
+        gstin: editClientData.gstin,
+        panNumber: editClientData.panNumber,
+        email: editClientData.email,
+        phone: editClientData.phone,
+        address: editClientData.address
+      };
+      
+      // Handle logo upload if a logo was selected
+      if (editClientData.logo && editClientData.logo instanceof File) {
+        // Create a FormData object for file upload
+        const formData = new FormData();
+        formData.append('logo', editClientData.logo);
+        formData.append('businessId', editClientData.businessId);
+        
+        try {
+          // Upload the logo first
+          const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+          
+          // If logo upload was successful, add the logo URL to the client data
+          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+            clientData.logoUrl = logoResponse.data.logoUrl;
+          }
+        } catch (logoError) {
+          console.error('Error uploading logo:', logoError);
+          // Continue with client update even if logo upload fails
+        }
+      }
+      
+      // Log the payload to verify data
+      console.log('Updating client with data:', clientData);
+      
+      // Call API to update client
+      const response = await api.post('/api/client/business/update', clientData);
+      
+      // Update the client in the list
+      const updatedClient = response.data;
+      console.log('Client updated:', updatedClient);
+      
+      // Update the client in allBusinesses
+      setAllBusinesses(prevBusinesses => {
+        return prevBusinesses.map(business => {
+          if (business.businessId === updatedClient.businessId || 
+              business.business_id === updatedClient.businessId) {
+            return updatedClient;
+          }
+          return business;
+        });
+      });
+      
+      setAlert({
+        open: true,
+        message: 'Client updated successfully',
+        severity: 'success'
+      });
+      
+      // Close the edit dialog
+      setOpenEditDialog(false);
+    } catch (error) {
+      console.error('Error updating client:', error);
+      setAlert({
+        open: true,
+        message: 'Failed to update client',
+        severity: 'error'
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  // Handle alert close
+  const handleAlertClose = () => {
+    setAlert(prev => ({ ...prev, open: false }));
+  };
 
   return (
     <Box sx={{ p: 3 }}>
+      {/* Alert for success/error messages */}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleAlertClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleAlertClose} severity={alert.severity} sx={{ width: '100%' }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
+      
+      {/* Edit Client Dialog */}
+      <Dialog 
+        open={openEditDialog} 
+        onClose={() => setOpenEditDialog(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Edit Client Details</DialogTitle>
+        <DialogContent dividers>
+          <Grid container spacing={3}>
+            {/* Client Logo */}
+            <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <Box
+                sx={{
+                  width: 150,
+                  height: 150,
+                  borderRadius: '50%',
+                  border: '1px dashed #ccc',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  mb: 2,
+                  overflow: 'hidden',
+                  position: 'relative'
+                }}
+              >
+                {logoLoading ? (
+                  <CircularProgress size={40} />
+                ) : clientLogo ? (
+                  <img 
+                    src={clientLogo} 
+                    alt="Client Logo" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    onError={(e) => {
+                      console.error('Error loading logo');
+                      e.target.src = 'https://via.placeholder.com/150?text=No+Logo';
+                    }}
+                  />
+                ) : (
+                  <Business sx={{ fontSize: 60, color: 'text.secondary' }} />
+                )}
+              </Box>
+              <input
+                type="file"
+                accept="image/jpeg, image/png"
+                style={{ display: 'none' }}
+                ref={fileInputRef}
+                onChange={handleLogoChange}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<CloudUpload />}
+                onClick={() => fileInputRef.current.click()}
+                sx={{ mb: 2 }}
+              >
+                Upload Logo
+              </Button>
+            </Grid>
+            
+            {/* Client Details Form */}
+            <Grid item xs={12} md={8}>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Business Name"
+                    name="businessName"
+                    value={editClientData.businessName}
+                    onChange={handleEditInputChange}
+                    required
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="GSTIN"
+                    name="gstin"
+                    value={editClientData.gstin}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="PAN Number"
+                    name="panNumber"
+                    value={editClientData.panNumber}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    name="email"
+                    type="email"
+                    value={editClientData.email}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone"
+                    name="phone"
+                    value={editClientData.phone}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+              </Grid>
+            </Grid>
+            
+            {/* Address Section */}
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+                Address Details
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <TextField
+                    fullWidth
+                    label="Address Line"
+                    name="address.addressLine"
+                    value={editClientData.address.addressLine}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="City"
+                    name="address.city"
+                    value={editClientData.address.city}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="State"
+                    name="address.state"
+                    value={editClientData.address.state}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    fullWidth
+                    label="Pincode"
+                    name="address.pincode"
+                    value={editClientData.address.pincode}
+                    onChange={handleEditInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel id="country-label">Country</InputLabel>
+                    <Select
+                      labelId="country-label"
+                      name="address.country"
+                      value={editClientData.address.country}
+                      onChange={handleEditInputChange}
+                      label="Country"
+                    >
+                      {countries.map((country) => (
+                        <MenuItem key={country.code} value={country.name}>
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+            </Grid>
+          </Grid>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
+          <Button 
+            variant="contained" 
+            onClick={handleUpdateClient}
+            disabled={saving}
+            startIcon={saving ? <CircularProgress size={20} /> : <Save />}
+          >
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
           Client Details
@@ -400,11 +923,40 @@ const ClientDetailsPage = () => {
                     <Grid item xs={12} md={6} key={index}>
                       <Card sx={{ height: '100%' }}>
                         <CardContent>
-                          {/* Card header with business name and expand/collapse button */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-                              {business.businessName}
-                            </Typography>
+                          {/* Card header with business name, logo, and expand/collapse button */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Box
+                                sx={{
+                                  width: 50,
+                                  height: 50,
+                                  borderRadius: '50%',
+                                  border: '1px solid #eee',
+                                  display: 'flex',
+                                  justifyContent: 'center',
+                                  alignItems: 'center',
+                                  mr: 2,
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                <img 
+                                  src={clientLogoUrls[businessId] || `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`}
+                                  alt=""
+                                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  onError={(e) => {
+                                    e.target.src = '';
+                                    e.target.style.display = 'none';
+                                    // Add null check before accessing parentElement
+                                    if (e.target.parentElement) {
+                                      e.target.parentElement.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0z" fill="none"/><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z" fill="#757575"/></svg>';
+                                    }
+                                  }}
+                                />
+                              </Box>
+                              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                                {business.businessName}
+                              </Typography>
+                            </Box>
                             <IconButton 
                               onClick={() => toggleBusinessExpansion(businessId)}
                               aria-expanded={isExpanded}
@@ -420,20 +972,20 @@ const ClientDetailsPage = () => {
                               {business.gstin ? "GSTIN:" : "PAN:"}
                             </Typography>
                             <Typography variant="body1">
-                              {business.gstin || business.pan || "Not provided"}
+                              {business.gstin || business.panNumber || business.pan || "Not provided"}
                             </Typography>
                           </Box>
                           
                           {/* Collapsible detailed info */}
                           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
-                              {business.gstin && business.pan && (
+                              {business.gstin && (business.panNumber || business.pan) && (
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
                                     PAN:
                                   </Typography>
                                   <Typography variant="body1">
-                                    {business.pan}
+                                    {business.panNumber || business.pan}
                                   </Typography>
                                 </Box>
                               )}
@@ -460,16 +1012,29 @@ const ClientDetailsPage = () => {
                                 </Box>
                               )}
                               
-                              {business.officeAddress && (
+                              {/* Display address from business.address (new structure) or business.officeAddress (old structure) */}
+                              {(business.address || business.officeAddress) && (
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
                                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
                                     Address:
                                   </Typography>
                                   <Typography variant="body1">
-                                    {business.officeAddress.addressLine}, 
-                                    {business.officeAddress.city}, 
-                                    {business.officeAddress.state} - 
-                                    {business.officeAddress.pincode}
+                                    {business.address ? (
+                                      <>
+                                        {business.address.addressLine && `${business.address.addressLine}, `}
+                                        {business.address.city && `${business.address.city}, `}
+                                        {business.address.state && `${business.address.state}`}
+                                        {business.address.pincode && ` - ${business.address.pincode}`}
+                                        {business.address.country && `, ${business.address.country}`}
+                                      </>
+                                    ) : (
+                                      <>
+                                        {business.officeAddress.addressLine && `${business.officeAddress.addressLine}, `}
+                                        {business.officeAddress.city && `${business.officeAddress.city}, `}
+                                        {business.officeAddress.state && `${business.officeAddress.state}`}
+                                        {business.officeAddress.pincode && ` - ${business.officeAddress.pincode}`}
+                                      </>
+                                    )}
                                   </Typography>
                                 </Box>
                               )}
@@ -479,7 +1044,8 @@ const ClientDetailsPage = () => {
                           <Button
                             variant="contained"
                             sx={{ mt: 2 }}
-                            onClick={() => navigate(`/business/edit/${businessId}`)}
+                            startIcon={<Edit />}
+                            onClick={() => handleEditClient(business)}
                           >
                             Edit Client
                           </Button>

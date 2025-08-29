@@ -130,7 +130,7 @@ const InvoiceSummaryPage = () => {
       
       try {
         setBusinessLogoLoading(true);
-        const response = await fetch(`/api/v1/media/load?businessId=${invoiceData.businessId}&type=BUSINESS_LOGO`);
+        const response = await fetch(`/api/v1/media/load?keyIdentifier=${invoiceData.businessId}&type=BUSINESS_LOGO`);
         
         if (!response.ok) {
           throw new Error(`Failed to fetch business logo: ${response.status}`);
