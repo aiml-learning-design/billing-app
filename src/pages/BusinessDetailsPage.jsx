@@ -51,14 +51,14 @@ const BusinessDetailsPage = () => {
       // Direct access (JWT token structure)
       console.log('Found businesses in direct access');
       return userData.businesses;
-    } else if (userData?.usersDto?.businesses && userData.usersDto.businesses.length > 0) {
-      // Nested access via usersDto (email/password login)
-      console.log('Found businesses in usersDto');
-      return userData.usersDto.businesses;
-    } else if (userData?.user?.usersDto?.businesses && userData.user.usersDto.businesses.length > 0) {
-      // Nested access via user.usersDto (Google auth)
-      console.log('Found businesses in user.usersDto');
-      return userData.user.usersDto.businesses;
+    } else if (userData?.userDto?.businesses && userData.userDto.businesses.length > 0) {
+      // Nested access via userDto (email/password login)
+      console.log('Found businesses in userDto');
+      return userData.userDto.businesses;
+    } else if (userData?.user?.userDto?.businesses && userData.user.userDto.businesses.length > 0) {
+      // Nested access via user.userDto (Google auth)
+      console.log('Found businesses in user.userDto');
+      return userData.user.userDto.businesses;
     }
     return null;
   };

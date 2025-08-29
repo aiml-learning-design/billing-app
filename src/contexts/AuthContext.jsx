@@ -28,39 +28,39 @@ export function AuthProvider({ children }) {
       id: userData.id || userData.user_id || userData.userId || null,
       username: userData.username || userData.userName || userData.user_name || null,
       email: userData.email || userData.userEmail || userData.user_email || 
-             userData.usersDto?.email || userData.usersDto?.userEmail || 
-             userData.user?.usersDto?.email || userData.user?.usersDto?.userEmail || null,
+             userData.userDto?.email || userData.userDto?.userEmail ||
+             userData.user?.userDto?.email || userData.user?.userDto?.userEmail || null,
       
       // Name components
       firstName: userData.firstName || userData.first_name || 
-                userData.usersDto?.firstName || userData.usersDto?.first_name ||
-                userData.user?.usersDto?.firstName || userData.user?.usersDto?.first_name || null,
+                userData.userDto?.firstName || userData.userDto?.first_name ||
+                userData.user?.userDto?.firstName || userData.user?.userDto?.first_name || null,
       middleName: userData.middleName || userData.middle_name || 
-                 userData.usersDto?.middleName || userData.usersDto?.middle_name ||
-                 userData.user?.usersDto?.middleName || userData.user?.usersDto?.middle_name || null,
+                 userData.userDto?.middleName || userData.userDto?.middle_name ||
+                 userData.user?.userDto?.middleName || userData.user?.userDto?.middle_name || null,
       lastName: userData.lastName || userData.last_name || 
-               userData.usersDto?.lastName || userData.usersDto?.last_name ||
-               userData.user?.usersDto?.lastName || userData.user?.usersDto?.last_name || null,
+               userData.userDto?.lastName || userData.userDto?.last_name ||
+               userData.user?.userDto?.lastName || userData.user?.userDto?.last_name || null,
       
       // Full name (constructed or from data)
       full_name: userData.full_name || userData.fullName || userData.name || 
-                userData.usersDto?.full_name || userData.usersDto?.fullName || userData.usersDto?.name ||
-                userData.user?.usersDto?.full_name || userData.user?.usersDto?.fullName || userData.user?.usersDto?.name || null,
+                userData.userDto?.full_name || userData.userDto?.fullName || userData.userDto?.name ||
+                userData.user?.userDto?.full_name || userData.user?.userDto?.fullName || userData.user?.userDto?.name || null,
       
       // Contact info
       phone: userData.phone || userData.phoneNumber || 
-            userData.usersDto?.phone || userData.usersDto?.phoneNumber ||
-            userData.user?.usersDto?.phone || userData.user?.usersDto?.phoneNumber || null,
+            userData.userDto?.phone || userData.userDto?.phoneNumber ||
+            userData.user?.userDto?.phone || userData.user?.userDto?.phoneNumber || null,
       
       // Profile image
       pictureUrl: userData.pictureUrl || userData.picture_url || userData.image || userData.picture || userData.avatar ||
-                 userData.usersDto?.pictureUrl || userData.usersDto?.picture_url || userData.usersDto?.image ||
-                 userData.user?.usersDto?.pictureUrl || userData.user?.usersDto?.picture_url || userData.user?.usersDto?.image || null,
+                 userData.userDto?.pictureUrl || userData.userDto?.picture_url || userData.userDto?.image ||
+                 userData.user?.userDto?.pictureUrl || userData.user?.userDto?.picture_url || userData.user?.userDto?.image || null,
       
       // Business details
       businesses: userData.businesses || 
-                 userData.usersDto?.businesses || 
-                 userData.user?.usersDto?.businesses || [],
+                 userData.userDto?.businesses ||
+                 userData.user?.userDto?.businesses || [],
       
       // Keep original data structure for compatibility
       ...userData
@@ -84,11 +84,11 @@ export function AuthProvider({ children }) {
     // If we have auth response data, extract additional info
     if (authResponseData) {
       // Extract any additional user data from auth response
-      if (authResponseData.payload?.user?.usersDto) {
-        const usersDto = authResponseData.payload.user.usersDto;
+      if (authResponseData.payload?.user?.userDto) {
+        const userDto = authResponseData.payload.user.userDto;
         Object.assign(normalized, {
-          ...usersDto,
-          businesses: normalized.businesses || usersDto.businesses || []
+          ...userDto,
+          businesses: normalized.businesses || userDto.businesses || []
         });
       }
     }
@@ -100,9 +100,9 @@ export function AuthProvider({ children }) {
   const hasBusinessDetails = (userData) => {
     // Check if user has businesses in their profile
     // Handle different user data structures:
-    // 1. Direct access to businesses array (from JWT token or usersDto)
-    // 2. Nested access via user.usersDto.businesses (from payload)
-    const hasBusinessesInProfile = userData?.user?.usersDto?.businesses && userData.user.usersDto.businesses.length > 0;
+    // 1. Direct access to businesses array (from JWT token or userDto)
+    // 2. Nested access via user.userDto.businesses (from payload)
+    const hasBusinessesInProfile = userData?.user?.userDto?.businesses && userData.user.userDto.businesses.length > 0;
 
     // Check if user has completed business setup (stored in localStorage)
     const hasCompletedBusinessSetup = localStorage.getItem('businessSetupCompleted') === 'true';
@@ -186,9 +186,9 @@ const handleGoogleAuth = async (apiResponse) => {
     // Try to extract user data from different possible locations in the response
     let userData;
     
-    // First try from payload.user.usersDto (standard structure)
+    // First try from payload.user.userDto (standard structure)
     if (authResponse.payload) {
-      console.log('handleGoogleAuth: Extracting user data from payload.user.usersDto');
+      console.log('handleGoogleAuth: Extracting user data from payload.user.userDto');
       userData = authResponse.payload;
     }
     
@@ -382,12 +382,12 @@ const handleGoogleAuth = async (apiResponse) => {
     try {
       // First try to get user data from payload
       let userData;
-      if(authResponse?.payload?.user?.usersDto) {
-          userData = authResponse.payload.user.usersDto;
+      if(authResponse?.payload?.user?.userDto) {
+          userData = authResponse.payload.user.userDto;
       }
 
       // If payload doesn't have user data in expected format, decode from token
-/*       if (!authResponse?.payload?.user?.usersDto) {
+/*       if (!authResponse?.payload?.user?.userDto) {
         userData = jwt_decode(accessToken);
         console.log('User data extracted from token:', userData);
       } else {

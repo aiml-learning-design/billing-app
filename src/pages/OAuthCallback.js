@@ -30,7 +30,7 @@ const OAuthCallback = () => {
       handleGoogleAuth(authResponse)
         .then((userData) => {
           // Check if user has business details or has completed business setup
-          const hasBusinessDetails = userData?.user?.usersDto?.businesses && userData.user.usersDto.businesses.length > 0;
+          const hasBusinessDetails = userData?.user?.userDto?.businesses && userData.user.userDto.businesses.length > 0;
 
           if(!hasBusinessDetails) {
             localStorage.setItem('businessSetupCompleted', 'false')
