@@ -42,25 +42,56 @@ const ReviewInvoicePage = () => {
   const [businessLogoError, setBusinessLogoError] = useState(null);
   
   // Bank details state
-  const [showBankDetails, setShowBankDetails] = useState(true);
+  const [showBankDetails, setShowBankDetails] = useState(false);
   
   // QR code state
-  const [showQRCode, setShowQRCode] = useState(true);
+  const [showQRCode, setShowQRCode] = useState(false);
   const [qrCodeData, setQRCodeData] = useState(null);
   const [qrCodeLoading, setQRCodeLoading] = useState(false);
   const [qrCodeError, setQRCodeError] = useState(null);
+  
+  // Additional details state
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState(new Map());
 
-  // Load invoice data from location state or localStorage
+  // Load invoice data and display preferences from location state or localStorage
   useEffect(() => {
     console.log('ReviewInvoicePage: Component mounted or location changed');
     
-    // Try to get invoice data from location state
-    if (location.state && location.state.invoiceData) {
-      console.log('ReviewInvoicePage: Found invoiceData in location state');
-      setInvoiceData(location.state.invoiceData);
+    // Try to get data from location state
+    if (location.state) {
+      if (location.state.invoiceData) {
+        console.log('ReviewInvoicePage: Found invoiceData in location state');
+        setInvoiceData(location.state.invoiceData);
+      }
+      
+      // Check for display preferences in location state
+      if (location.state.displayPreferences) {
+        console.log('ReviewInvoicePage: Found displayPreferences in location state', location.state.displayPreferences);
+        const { 
+          showBankDetails: bankDetails, 
+          showQRCode: qrCode,
+          showAdditionalDetails: additionalDetailsVisible,
+          additionalDetailsArray
+        } = location.state.displayPreferences;
+        
+        // Only set these if they are defined (using optional chaining and nullish coalescing)
+        if (bankDetails !== undefined) setShowBankDetails(bankDetails);
+        if (qrCode !== undefined) setShowQRCode(qrCode);
+        if (additionalDetailsVisible !== undefined) setShowAdditionalDetails(additionalDetailsVisible);
+        
+        // Convert additionalDetailsArray back to a Map if it exists
+        if (additionalDetailsArray && Array.isArray(additionalDetailsArray)) {
+          console.log('ReviewInvoicePage: Converting additionalDetailsArray to Map', additionalDetailsArray);
+          const detailsMap = new Map(additionalDetailsArray);
+          setAdditionalDetails(detailsMap);
+        }
+      }
+      
       setLoading(false);
     } else {
-      console.log('ReviewInvoicePage: No invoiceData in location state, checking localStorage');
+      console.log('ReviewInvoicePage: No data in location state, checking localStorage');
+      
       // If not available in location state, try to get from localStorage
       const savedInvoiceData = localStorage.getItem('invoiceData');
       if (savedInvoiceData) {
@@ -74,6 +105,38 @@ const ReviewInvoicePage = () => {
       } else {
         console.log('ReviewInvoicePage: No invoiceData found in localStorage');
       }
+      
+      // Check for display preferences in localStorage
+      const savedDisplayPreferences = localStorage.getItem('invoiceDisplayPreferences');
+      if (savedDisplayPreferences) {
+        try {
+          const parsedPreferences = JSON.parse(savedDisplayPreferences);
+          console.log('ReviewInvoicePage: Found displayPreferences in localStorage', parsedPreferences);
+          
+          // Only set these if they are defined
+          if (parsedPreferences.showBankDetails !== undefined) {
+            setShowBankDetails(parsedPreferences.showBankDetails);
+          }
+          if (parsedPreferences.showQRCode !== undefined) {
+            setShowQRCode(parsedPreferences.showQRCode);
+          }
+          if (parsedPreferences.showAdditionalDetails !== undefined) {
+            setShowAdditionalDetails(parsedPreferences.showAdditionalDetails);
+          }
+          
+          // Convert additionalDetailsArray back to a Map if it exists
+          if (parsedPreferences.additionalDetailsArray && Array.isArray(parsedPreferences.additionalDetailsArray)) {
+            console.log('ReviewInvoicePage: Converting additionalDetailsArray from localStorage to Map', parsedPreferences.additionalDetailsArray);
+            const detailsMap = new Map(parsedPreferences.additionalDetailsArray);
+            setAdditionalDetails(detailsMap);
+          }
+        } catch (error) {
+          console.error('Error parsing display preferences from localStorage:', error);
+        }
+      } else {
+        console.log('ReviewInvoicePage: No displayPreferences found in localStorage');
+      }
+      
       setLoading(false);
     }
   }, [location]);
@@ -310,11 +373,89 @@ const ReviewInvoicePage = () => {
     setSubmitError(null);
     
     try {
-      // In a real implementation, this would be an API call
-      const response = await api.post('/api/invoices/submit', {
-        ...invoiceData,
-        paymentAccountId: selectedPaymentAccount
-      });
+      // Prepare the payload according to the required structure
+      const selectedAccount = paymentAccounts.find(account => account.id === selectedPaymentAccount);
+      
+      // Convert additionalDetails Map to an object if it exists and is shown
+      const additionalDetailsObj = showAdditionalDetails && additionalDetails.size > 0
+        ? Object.fromEntries(additionalDetails)
+        : {};
+      
+      const payload = {
+        companyName: invoiceData?.billedBy?.businessName || "Acme Corporation",
+        invoiceNumber: invoiceData?.invoiceNumber || "INV-2025-0001",
+        invoiceDate: invoiceData?.invoiceDate || new Date().toISOString(),
+        dueDate: invoiceData?.dueDate || new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
+        AdditionalDetails: showAdditionalDetails && additionalDetails.size > 0
+          ? additionalDetailsObj
+          : invoiceData?.billedBy?.businessName || "Acme Corporation",
+        billedBy: {
+          businessId: invoiceData?.billedBy?.businessId || "string",
+          businessName: invoiceData?.billedBy?.businessName || "string",
+          gstin: invoiceData?.billedBy?.gstin || "string",
+          pan: invoiceData?.billedBy?.pan || "string",
+          email: invoiceData?.billedBy?.email || "string",
+          phone: invoiceData?.billedBy?.phone || "string",
+          officeAddress: {
+            id: 0,
+            email: invoiceData?.billedBy?.officeAddress?.email || "string",
+            phone: invoiceData?.billedBy?.officeAddress?.phone || "string",
+            addressLine: invoiceData?.billedBy?.officeAddress?.addressLine || "string",
+            city: invoiceData?.billedBy?.officeAddress?.city || "string",
+            state: invoiceData?.billedBy?.officeAddress?.state || "Andhra Pradesh",
+            pincode: invoiceData?.billedBy?.officeAddress?.pincode || "string",
+            country: invoiceData?.billedBy?.officeAddress?.country || "string"
+          }
+        },
+        billedTo: {
+          businessId: invoiceData?.billedTo?.businessId || "string",
+          businessName: invoiceData?.billedTo?.businessName || "string",
+          gstin: invoiceData?.billedTo?.gstin || "string",
+          pan: invoiceData?.billedTo?.pan || "string",
+          email: invoiceData?.billedTo?.email || "string",
+          phone: invoiceData?.billedTo?.phone || "string",
+          officeAddress: {
+            id: 0,
+            email: invoiceData?.billedTo?.officeAddress?.email || "string",
+            phone: invoiceData?.billedTo?.officeAddress?.phone || "string",
+            addressLine: invoiceData?.billedTo?.officeAddress?.addressLine || "string",
+            city: invoiceData?.billedTo?.officeAddress?.city || "string",
+            state: invoiceData?.billedTo?.officeAddress?.state || "Andhra Pradesh",
+            pincode: invoiceData?.billedTo?.officeAddress?.pincode || "string",
+            country: invoiceData?.billedTo?.officeAddress?.country || "string"
+          }
+        },
+        shippingFrom: {},
+        shippingTo: {},
+        currency: invoiceData?.currency || "INR",
+        purchasedOrderRequest: {
+          itemDetailsRequest: (invoiceData?.purchasedOrderRequest?.itemDetailsRequest || []).map(item => ({
+            itemName: item.itemName || "string",
+            gstRate: item.gstRate || 0,
+            sgst: item.sgst || 0,
+            cgst: item.cgst || 0,
+            igst: item.igst || 0,
+            quantity: item.quantity || 0,
+            price: item.price || 0,
+            amount: item.amount || 0,
+            total: item.total || 0,
+            itemDescription: item.itemDescription || "string"
+          }))
+        },
+        itemDescription: invoiceData?.itemDescription || "Software development services for July 2025",
+        invoiceFor: invoiceData?.invoiceFor || "CUSTOMER",
+        termsConditions: {
+          additionalProp1: ["string"],
+          additionalProp2: ["string"],
+          additionalProp3: ["string"]
+        },
+        additionalNotes: invoiceData?.additionalNotes || "Payment is due within 10 days."
+      };
+      
+      console.log('ReviewInvoicePage: Submitting invoice with payload', payload);
+      
+      // Make API call to create the invoice
+      const response = await api.post('/api/invoices/create', payload);
       
       // Check if the API call was successful
       if (response && response.success) {
@@ -322,11 +463,9 @@ const ReviewInvoicePage = () => {
         
         // Clear the invoice data from localStorage
         localStorage.removeItem('invoiceData');
+        localStorage.removeItem('invoiceDisplayPreferences');
         
-        // Show success message for a few seconds, then navigate to dashboard
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 3000);
+        // Don't navigate away - user will see success UI with large buttons
       } else {
         throw new Error(response?.message || 'Failed to submit invoice');
       }
@@ -471,6 +610,17 @@ const ReviewInvoicePage = () => {
                   />
                 }
                 label="Display Payment QR Code"
+              />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    color="primary" 
+                    checked={showAdditionalDetails}
+                    onChange={(e) => setShowAdditionalDetails(e.target.checked)}
+                    disabled={additionalDetails.size === 0}
+                  />
+                }
+                label="Show Additional Details"
               />
             </Box>
           </Box>
@@ -849,6 +999,29 @@ const ReviewInvoicePage = () => {
               )}
             </Box>
             
+            {/* Additional Details Section */}
+            {showAdditionalDetails && additionalDetails.size > 0 && (
+              <Box sx={{ mb: 3, border: '1px solid #e0e0e0', borderRadius: 1, p: 2 }}>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Additional Details
+                </Typography>
+                <Grid container spacing={2}>
+                  {Array.from(additionalDetails.entries()).map(([key, value]) => (
+                    <Grid item xs={12} key={key}>
+                      <Box sx={{ p: 1, display: 'flex', alignItems: 'center', bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                          {key}
+                        </Typography>
+                        <Typography variant="body1" fontWeight="medium">
+                          {value}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
+            )}
+            
             {/* Total */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
               <Box sx={{ width: '200px' }}>
@@ -908,15 +1081,77 @@ const ReviewInvoicePage = () => {
         </Button>
       </Box>
 
-      {/* Success Message */}
+      {/* Success Message with Large Buttons */}
       {submitSuccess && (
-        <Box sx={{ mb: 3, p: 3, bgcolor: '#e8f5e9', borderRadius: 1, border: '1px solid #c8e6c9' }}>
-          <Typography variant="h6" gutterBottom color="success.main">
-            Invoice Submitted Successfully
+        <Box sx={{ mb: 3, p: 4, bgcolor: '#e8f5e9', borderRadius: 1, border: '1px solid #c8e6c9' }}>
+          <Typography variant="h5" gutterBottom color="success.main" sx={{ fontWeight: 'bold', mb: 2 }}>
+            Invoice Generated Successfully
           </Typography>
-          <Typography variant="body1" paragraph>
-            Your invoice has been saved and submitted. Redirecting to dashboard...
+          <Typography variant="body1" paragraph sx={{ mb: 3 }}>
+            Your invoice has been saved and submitted successfully. You can now export, share, or print your invoice.
           </Typography>
+          
+          {/* Large Action Buttons */}
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<Print sx={{ fontSize: 28 }} />}
+              onClick={handlePrint}
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                fontSize: '1.1rem', 
+                fontWeight: 'bold',
+                minWidth: '180px'
+              }}
+            >
+              Print
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<Download sx={{ fontSize: 28 }} />}
+              onClick={handleExportMenuOpen}
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                fontSize: '1.1rem', 
+                fontWeight: 'bold',
+                minWidth: '180px'
+              }}
+            >
+              Export
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              startIcon={<Share sx={{ fontSize: 28 }} />}
+              onClick={handleShareMenuOpen}
+              sx={{ 
+                py: 2, 
+                px: 4, 
+                fontSize: '1.1rem', 
+                fontWeight: 'bold',
+                minWidth: '180px'
+              }}
+            >
+              Share
+            </Button>
+          </Box>
+          
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={() => navigate('/dashboard')}
+            >
+              Return to Dashboard
+            </Button>
+          </Box>
         </Box>
       )}
 

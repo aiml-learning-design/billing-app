@@ -51,6 +51,14 @@ const InvoiceSummaryPage = () => {
   const [businessLogo, setBusinessLogo] = useState(null);
   const [businessLogoLoading, setBusinessLogoLoading] = useState(false);
   const [businessLogoError, setBusinessLogoError] = useState(null);
+  
+  // Additional details state
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
+  const [additionalDetails, setAdditionalDetails] = useState(new Map());
+  const [additionalDetailsDialogOpen, setAdditionalDetailsDialogOpen] = useState(false);
+  const [newDetailKey, setNewDetailKey] = useState('');
+  const [newDetailValue, setNewDetailValue] = useState('');
+  const [editingDetailKey, setEditingDetailKey] = useState(null);
 
   // Get the current date for the footer
   const currentDate = new Date();
@@ -539,6 +547,7 @@ const InvoiceSummaryPage = () => {
   };
 
   return (
+    <>
     <Box sx={{ p: 0, width: '100%', maxWidth: 'none' }}>
       {/* Late Fee Dialog */}
       {renderLateFeeDialog()}
@@ -1067,6 +1076,16 @@ const InvoiceSummaryPage = () => {
                     }
                     label="Display Payment QR Code"
                   />
+                  <FormControlLabel
+                    control={
+                      <Switch 
+                        color="primary" 
+                        checked={showAdditionalDetails}
+                        onChange={(e) => setShowAdditionalDetails(e.target.checked)}
+                      />
+                    }
+                    label="Show Additional Details"
+                  />
                 </Box>
               </Box>
               
@@ -1228,6 +1247,76 @@ const InvoiceSummaryPage = () => {
                   </Box>
                 )}
               </Box>
+              
+              {/* Additional Details Section */}
+              {showAdditionalDetails && (
+                <Box sx={{ mb: 3, border: '1px solid #e0e0e0', borderRadius: 1, p: 2 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="subtitle1" fontWeight="bold">
+                      Additional Details
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      startIcon={<Add />}
+                      onClick={() => {
+                        setNewDetailKey('');
+                        setNewDetailValue('');
+                        setEditingDetailKey(null);
+                        setAdditionalDetailsDialogOpen(true);
+                      }}
+                    >
+                      Add Detail
+                    </Button>
+                  </Box>
+                  
+                  {additionalDetails.size > 0 ? (
+                    <Grid container spacing={2}>
+                      {Array.from(additionalDetails.entries()).map(([key, value]) => (
+                        <Grid item xs={12} key={key}>
+                          <Box sx={{ p: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between', bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                                {key}
+                              </Typography>
+                              <Typography variant="body1" fontWeight="medium">
+                                {value}
+                              </Typography>
+                            </Box>
+                            <Box>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => {
+                                  setNewDetailKey(key);
+                                  setNewDetailValue(value);
+                                  setEditingDetailKey(key);
+                                  setAdditionalDetailsDialogOpen(true);
+                                }}
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                              <IconButton 
+                                size="small" 
+                                onClick={() => {
+                                  const newDetails = new Map(additionalDetails);
+                                  newDetails.delete(key);
+                                  setAdditionalDetails(newDetails);
+                                }}
+                              >
+                                <Remove fontSize="small" />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary" align="center" sx={{ py: 2 }}>
+                      No additional details added. Click "Add Detail" to add key-value pairs.
+                    </Typography>
+                  )}
+                </Box>
+              )}
               
               {/* Total */}
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -1644,8 +1733,31 @@ const InvoiceSummaryPage = () => {
             console.log('InvoiceSummaryPage: Next button clicked');
             // Save current invoice data to localStorage
             localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
-            // Navigate to review page
-            navigate('/invoices/review', { state: { invoiceData } });
+            // Convert additionalDetails Map to an array of [key, value] pairs for storage
+            const additionalDetailsArray = Array.from(additionalDetails.entries());
+            
+            // Save display preferences to localStorage
+            localStorage.setItem('invoiceDisplayPreferences', JSON.stringify({
+              showBankDetails,
+              showQRCode,
+              showAdditionalDetails,
+              additionalDetailsArray
+            }));
+            
+            // Navigate to review page with invoice data and display preferences
+            navigate('/invoices/review', { 
+              state: { 
+                invoiceData,
+                displayPreferences: {
+                  showBankDetails,
+                  showQRCode,
+                  showAdditionalDetails,
+                  // Pass additionalDetails as an array of [key, value] pairs
+                  // This will be converted back to a Map in ReviewInvoicePage
+                  additionalDetailsArray
+                }
+              } 
+            });
           }}
         >
           Next: Review Invoice
@@ -1715,6 +1827,72 @@ const InvoiceSummaryPage = () => {
         </Grid>
       </Box>
     </Box>
+
+    {/* Additional Details Dialog */}
+    <Dialog 
+      open={additionalDetailsDialogOpen} 
+      onClose={() => setAdditionalDetailsDialogOpen(false)}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>
+        {editingDetailKey ? 'Edit Detail' : 'Add New Detail'}
+      </DialogTitle>
+      <DialogContent>
+        <Box sx={{ pt: 1 }}>
+          <TextField
+            label="Key"
+            fullWidth
+            value={newDetailKey}
+            onChange={(e) => setNewDetailKey(e.target.value)}
+            margin="normal"
+            variant="outlined"
+            error={!newDetailKey.trim()}
+            helperText={!newDetailKey.trim() ? 'Key is required' : ''}
+          />
+          <TextField
+            label="Value"
+            fullWidth
+            value={newDetailValue}
+            onChange={(e) => setNewDetailValue(e.target.value)}
+            margin="normal"
+            variant="outlined"
+            error={!newDetailValue.trim()}
+            helperText={!newDetailValue.trim() ? 'Value is required' : ''}
+            multiline
+            rows={3}
+          />
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => setAdditionalDetailsDialogOpen(false)}>
+          Cancel
+        </Button>
+        <Button 
+          variant="contained" 
+          color="primary"
+          disabled={!newDetailKey.trim() || !newDetailValue.trim()}
+          onClick={() => {
+            const newDetails = new Map(additionalDetails);
+            
+            // If editing, remove the old key-value pair
+            if (editingDetailKey && editingDetailKey !== newDetailKey) {
+              newDetails.delete(editingDetailKey);
+            }
+            
+            // Add the new key-value pair
+            newDetails.set(newDetailKey, newDetailValue);
+            
+            // Update the state
+            setAdditionalDetails(newDetails);
+            setAdditionalDetailsDialogOpen(false);
+          }}
+        >
+          {editingDetailKey ? 'Update' : 'Add'}
+        </Button>
+      </DialogActions>
+    </Dialog>
+    </>
   );
 };
 
