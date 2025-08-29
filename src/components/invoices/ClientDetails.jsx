@@ -413,9 +413,47 @@ const ClientDetails = ({
       return;
     }
     
-    // Validate image dimensions
+    // Function to resize image
+    const resizeImage = (img, maxWidth, maxHeight) => {
+      return new Promise((resolve) => {
+        // Calculate new dimensions while preserving aspect ratio
+        let width = img.width;
+        let height = img.height;
+        
+        if (width > maxWidth || height > maxHeight) {
+          const ratio = Math.min(maxWidth / width, maxHeight / height);
+          width = Math.floor(width * ratio);
+          height = Math.floor(height * ratio);
+        } else {
+          // If image is already smaller than max dimensions, return original file
+          resolve(file);
+          return;
+        }
+        
+        // Create canvas for resizing
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Draw image on canvas with new dimensions
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert canvas to blob
+        canvas.toBlob((blob) => {
+          // Create a new file from the blob
+          const resizedFile = new File([blob], file.name, {
+            type: file.type,
+            lastModified: Date.now()
+          });
+          resolve(resizedFile);
+        }, file.type);
+      });
+    };
+    
+    // Validate image dimensions and resize if needed
     const img = new Image();
-    img.onload = () => {
+    img.onload = async () => {
       URL.revokeObjectURL(img.src);
       
       // Check if dimensions are too large
@@ -425,14 +463,39 @@ const ClientDetails = ({
           message: 'Image dimensions should not exceed 1080x1080px',
           severity: 'warning'
         });
-        // Still allow the image but with a warning
+        
+        // Resize the image to max dimensions
+        try {
+          const resizedFile = await resizeImage(img, 1080, 1080);
+          
+          // Update state with the resized file
+          setNewClientData(prev => ({
+            ...prev,
+            logo: resizedFile
+          }));
+          
+          // Show success message for resize
+          setAlert({
+            open: true,
+            message: 'Image has been automatically resized to fit within 1080x1080px',
+            severity: 'success'
+          });
+        } catch (error) {
+          console.error('Error resizing image:', error);
+          
+          // If resize fails, still use original file
+          setNewClientData(prev => ({
+            ...prev,
+            logo: file
+          }));
+        }
+      } else {
+        // Image dimensions are acceptable, use as is
+        setNewClientData(prev => ({
+          ...prev,
+          logo: file
+        }));
       }
-      
-      // Update state with the file
-      setNewClientData(prev => ({
-        ...prev,
-        logo: file
-      }));
     };
     
     img.onerror = () => {
