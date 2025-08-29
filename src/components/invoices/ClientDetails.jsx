@@ -72,6 +72,7 @@ const ClientDetails = ({
   selectedClient, 
   setSelectedClient,
   onAddNewClient,
+  onClientAdded,
   useApiForClientData = true
 }) => {
   const navigate = useNavigate();
@@ -858,6 +859,12 @@ const ClientDetails = ({
         }
         return prevOptions;
       });
+      
+      // If onClientAdded callback is provided, call it with the new client
+      if (onClientAdded) {
+        console.log('Calling onClientAdded with new client:', newClient);
+        onClientAdded(newClient);
+      }
       
       // If setSelectedClient is provided, select the new client
       if (setSelectedClient) {

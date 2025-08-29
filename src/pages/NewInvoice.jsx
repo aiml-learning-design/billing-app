@@ -950,6 +950,18 @@ const NewInvoice = () => {
                   useApiForClientData={false} // Use no-API mode to avoid redundant API calls
                   // Removed onAddNewClient prop to use the component's built-in dialog
                   // This keeps users in the invoice creation flow when adding a new client
+                  onClientAdded={(newClient) => {
+                    console.log('New client added:', newClient);
+                    // Update the clients state with the new client
+                    setClients(prevClients => {
+                      // Check if the client already exists
+                      const exists = prevClients.some(client => client.client_id === newClient.client_id);
+                      if (!exists) {
+                        return [...prevClients, newClient];
+                      }
+                      return prevClients;
+                    });
+                  }}
                 />
 
                 <ShippingDetails
