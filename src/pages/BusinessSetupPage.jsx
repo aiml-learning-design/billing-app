@@ -86,7 +86,7 @@ const BusinessSetupPage = () => {
       city: '',
       state: '',
       pincode: '',
-      country: 'India',
+      country: '',
       additionalDetails: []
     },
     validationSchema,

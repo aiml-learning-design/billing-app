@@ -1019,23 +1019,32 @@ const ClientDetailsPage = () => {
                                     Address:
                                   </Typography>
                                   <Typography variant="body1">
-                                    {business.address ? (
-                                      <>
-                                        {business.address.addressLine && `${business.address.addressLine}, `}
-                                        {business.address.city && `${business.address.city}, `}
-                                        {business.address.state && `${business.address.state}`}
-                                        {business.address.pincode && ` - ${business.address.pincode}`}
-                                        {business.address.country && `, ${business.address.country}`}
-                                      </>
-                                    ) : (
-                                      <>
-                                        {business.officeAddress.addressLine && `${business.officeAddress.addressLine}, `}
-                                        {business.officeAddress.city && `${business.officeAddress.city}, `}
-                                        {business.officeAddress.state && `${business.officeAddress.state}`}
-                                        {business.officeAddress.pincode && ` - ${business.officeAddress.pincode}`}
-                                      </>
-                                    )}
-                                  </Typography>
+                          {business.address && (
+                            <>
+                              {business.address.email && (
+                                <div><b>Email:</b> {business.address.email}</div>
+                              )}
+                              {business.address.phone && (
+                                <div><b>Phone:</b> {business.address.phone}</div>
+                              )}
+                              {business.address.addressLine && (
+                                <div><b>Address Line:</b> {business.address.addressLine}</div>
+                              )}
+                              {business.address.city && (
+                                <div><b>City:</b> {business.address.city}</div>
+                              )}
+                              {business.address.state && (
+                                <div><b>State:</b> {business.address.state}</div>
+                              )}
+                              {business.address.pincode && (
+                                <div><b>PIN:</b> {business.address.pincode}</div>
+                              )}
+                              {business.address.country && (
+                                <div><b>Country:</b> {business.address.country}</div>
+                              )}
+                            </>
+                          )}
+                        </Typography>
                                 </Box>
                               )}
                             </Box>

@@ -64,11 +64,13 @@ const BusinessDetailsPage = () => {
     email: '',
     phone: '',
     address: {
+        email:'',
+        phone:'',
       addressLine: '',
       city: '',
       state: '',
       pincode: '',
-      country: 'India'
+      country: ''
     },
     logo: null
   });
@@ -378,6 +380,8 @@ const BusinessDetailsPage = () => {
       email: business.email || '',
       phone: business.phone || '',
       address: {
+      email: business.address?.email || '',
+      phone: business.address?.phone || '',
         addressLine: business.address?.addressLine || '',
         city: business.address?.city || '',
         state: business.address?.state || '',
@@ -581,7 +585,7 @@ const BusinessDetailsPage = () => {
         try {
           // Upload the logo first
          // const logoResponse = await api.post('/api/v1/media/upload', formData, {
-          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO`, formData, {
+          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editBusinessData.businessId}&assetType=BUSINESS_LOGO`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -769,69 +773,103 @@ const BusinessDetailsPage = () => {
               </Grid>
             </Grid>
 
-            {/* Address Section */}
-            <Grid item xs={12}>
-              <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-                Address Details
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Address Line"
-                    name="address.addressLine"
-                    value={editBusinessData.address.addressLine}
-                    onChange={handleEditInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="City"
-                    name="address.city"
-                    value={editBusinessData.address.city}
-                    onChange={handleEditInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="State"
-                    name="address.state"
-                    value={editBusinessData.address.state}
-                    onChange={handleEditInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    fullWidth
-                    label="Pincode"
-                    name="address.pincode"
-                    value={editBusinessData.address.pincode}
-                    onChange={handleEditInputChange}
-                  />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth>
-                    <InputLabel id="country-label">Country</InputLabel>
-                    <Select
-                      labelId="country-label"
-                      name="address.country"
-                      value={editBusinessData.address.country}
-                      onChange={handleEditInputChange}
-                      label="Country"
-                    >
-                      {countries.map((country) => (
-                        <MenuItem key={country.code} value={country.name}>
-                          {country.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-              </Grid>
-            </Grid>
-          </Grid>
+                          {/* Office Address Section */}
+                          <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ mb: 2 }}>
+                              Address Details
+                            </Typography>
+
+                            <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
+                              <Grid container spacing={2}>
+                                {/* Email */}
+                                <Grid item xs={12} sm={6}>
+                                  <TextField
+                                      fullWidth
+                                      label="Email"
+                                      name="primaryEmail"
+                                      value={editBusinessData.address.email}
+                                      onChange={handleEditInputChange}
+                                      />
+                                </Grid>
+
+                                {/* Phone */}
+                                <Grid item xs={12} sm={6}>
+                                  <TextField
+                                    fullWidth
+                                    label="Phone"
+                                    name="phone"
+                                      value={editBusinessData.address.phone}
+                                      onChange={handleEditInputChange}
+                                  />
+                                </Grid>
+
+                                {/* Address Line */}
+                                <Grid item xs={12}>
+                                                  <TextField
+                                                    fullWidth
+                                                    label="Address Line"
+                                                    name="address.addressLine"
+                                                    value={editBusinessData.address.addressLine}
+                                                    onChange={handleEditInputChange}
+                                                  />
+                                                </Grid>
+
+                                {/* City */}
+                                <Grid item xs={12} md={6}>
+                                                  <TextField
+                                                    fullWidth
+                                                    label="City"
+                                                    name="address.city"
+                                                    value={editBusinessData.address.city}
+                                                    onChange={handleEditInputChange}
+                                                  />
+                                 </Grid>
+
+                                {/* State - Only shown if country has states */}
+                                <Grid item xs={12} md={6}>
+                                                  <TextField
+                                                    fullWidth
+                                                    label="State"
+                                                    name="address.state"
+                                                    value={editBusinessData.address.state}
+                                                    onChange={handleEditInputChange}
+                                                  />
+                                                </Grid>
+                                                <Grid item xs={12} md={6}>
+                                                  <TextField
+                                                    fullWidth
+                                                    label="Pincode"
+                                                    name="address.pincode"
+                                                    value={editBusinessData.address.pincode}
+                                                    onChange={handleEditInputChange}
+                                                  />
+                                                </Grid>
+
+
+
+                                {/* Country */}
+                                <Grid item xs={12} md={6}>
+                                                  <FormControl fullWidth>
+                                                    <InputLabel id="country-label">Country</InputLabel>
+                                                    <Select
+                                                      labelId="country-label"
+                                                      name="address.country"
+                                                      value={editBusinessData.address.country}
+                                                      onChange={handleEditInputChange}
+                                                      label="Country"
+                                                    >
+                                                      {countries.map((country) => (
+                                                        <MenuItem key={country.code} value={country.name}>
+                                                          {country.name}
+                                                        </MenuItem>
+                                                      ))}
+                                                    </Select>
+                                                  </FormControl>
+                                                </Grid>
+                              </Grid>
+                            </Box>
+                          </Grid>
+                          </Grid>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
@@ -1020,20 +1058,29 @@ const BusinessDetailsPage = () => {
                                     Address:
                                   </Typography>
                                   <Typography variant="body1">
-                                    {business.address ? (
+                                    {business.address && (
                                       <>
-                                        {business.address.addressLine && `${business.address.addressLine}, `}
-                                        {business.address.city && `${business.address.city}, `}
-                                        {business.address.state && `${business.address.state}`}
-                                        {business.address.pincode && ` - ${business.address.pincode}`}
-                                        {business.address.country && `, ${business.address.country}`}
-                                      </>
-                                    ) : (
-                                      <>
-                                        {business.officeAddress.addressLine && `${business.officeAddress.addressLine}, `}
-                                        {business.officeAddress.city && `${business.officeAddress.city}, `}
-                                        {business.officeAddress.state && `${business.officeAddress.state}`}
-                                        {business.officeAddress.pincode && ` - ${business.officeAddress.pincode}`}
+                                        {business.address.email && (
+                                          <div><b>Email:</b> {business.address.email}</div>
+                                        )}
+                                        {business.address.phone && (
+                                          <div><b>Phone:</b> {business.address.phone}</div>
+                                        )}
+                                        {business.address.addressLine && (
+                                          <div><b>Address Line:</b> {business.address.addressLine}</div>
+                                        )}
+                                        {business.address.city && (
+                                          <div><b>City:</b> {business.address.city}</div>
+                                        )}
+                                        {business.address.state && (
+                                          <div><b>State:</b> {business.address.state}</div>
+                                        )}
+                                        {business.address.pincode && (
+                                          <div><b>PIN:</b> {business.address.pincode}</div>
+                                        )}
+                                        {business.address.country && (
+                                          <div><b>Country:</b> {business.address.country}</div>
+                                        )}
                                       </>
                                     )}
                                   </Typography>
