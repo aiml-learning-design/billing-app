@@ -389,6 +389,11 @@ const ReviewInvoicePage = () => {
         AdditionalDetails: showAdditionalDetails && additionalDetails.size > 0
           ? additionalDetailsObj
           : invoiceData?.billedBy?.businessName || "Acme Corporation",
+        bankDetails: selectedAccount ? {
+          bankName: selectedAccount.bankName,
+          accountNumber: selectedAccount.accountNumber,
+          accountHolderName: selectedAccount.accountHolderName
+        } : null,
         billedBy: {
           businessId: invoiceData?.billedBy?.businessId || "string",
           businessName: invoiceData?.billedBy?.businessName || "string",
@@ -465,7 +470,18 @@ const ReviewInvoicePage = () => {
         localStorage.removeItem('invoiceData');
         localStorage.removeItem('invoiceDisplayPreferences');
         
-        // Don't navigate away - user will see success UI with large buttons
+        // Navigate to YourInvoicePage with the invoice data and display preferences
+        navigate('/invoices/your-invoice', {
+          state: {
+            invoiceData: payload,
+            displayPreferences: {
+              showBankDetails,
+              showQRCode,
+              showAdditionalDetails,
+              additionalDetailsArray: Array.from(additionalDetails.entries())
+            }
+          }
+        });
       } else {
         throw new Error(response?.message || 'Failed to submit invoice');
       }
@@ -638,115 +654,15 @@ const ReviewInvoicePage = () => {
         </Button>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <Button
-            variant="outlined"
-            startIcon={<Print />}
-            onClick={handlePrint}
+            variant="contained"
+            color="primary"
+            onClick={handleSaveAndSubmit}
+            disabled={submitting}
           >
-            Print
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Download />}
-            onClick={handleExportMenuOpen}
-          >
-            Export
-          </Button>
-          <Button
-            variant="outlined"
-            startIcon={<Share />}
-            onClick={handleShareMenuOpen}
-          >
-            Share
+            {submitting ? 'Submitting...' : 'Save and Submit'}
           </Button>
         </Box>
       </Box>
-
-      {/* Export Menu */}
-      <Menu
-        anchorEl={exportMenuAnchor}
-        open={Boolean(exportMenuAnchor)}
-        onClose={handleExportMenuClose}
-      >
-        <MenuItemMUI onClick={handleExportAsPDF}>
-          <ListItemIcon>
-            <FileCopy fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Export as PDF</ListItemText>
-        </MenuItemMUI>
-        <MenuItemMUI onClick={handleExportAsCSV}>
-          <ListItemIcon>
-            <FileCopy fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Export as CSV</ListItemText>
-        </MenuItemMUI>
-      </Menu>
-
-      {/* Share Menu */}
-      <Menu
-        anchorEl={shareMenuAnchor}
-        open={Boolean(shareMenuAnchor)}
-        onClose={handleShareMenuClose}
-      >
-        <Box sx={{ px: 2, py: 1, width: 300 }}>
-          <Typography variant="subtitle1" gutterBottom>
-            Share via Email
-          </Typography>
-          <TextField
-            label="Email Address"
-            value={emailAddress}
-            onChange={handleEmailAddressChange}
-            fullWidth
-            sx={{ mb: 1 }}
-          />
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={handleShareViaEmail}
-            sx={{ mb: 2 }}
-          >
-            Send Email
-          </Button>
-          
-          <Divider sx={{ my: 1 }} />
-          
-          <Typography variant="subtitle1" gutterBottom>
-            Share via Social Media
-          </Typography>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Button
-              variant="outlined"
-              startIcon={<WhatsApp />}
-              onClick={handleShareViaWhatsApp}
-            >
-              WhatsApp
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<Facebook />}
-              onClick={handleShareViaFacebook}
-            >
-              Facebook
-            </Button>
-          </Box>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="outlined"
-              startIcon={<Twitter />}
-              onClick={handleShareViaTwitter}
-            >
-              Twitter/X
-            </Button>
-            <Button
-              variant="outlined"
-              startIcon={<LinkedIn />}
-              onClick={handleShareViaLinkedIn}
-            >
-              LinkedIn
-            </Button>
-          </Box>
-        </Box>
-      </Menu>
 
       {/* Invoice Preview */}
       <Card sx={{ mb: 3 }}>
@@ -1073,7 +989,7 @@ const ReviewInvoicePage = () => {
           size="large"
           startIcon={<Save />}
           onClick={handleSaveAndSubmit}
-          disabled={submitting || submitSuccess || !selectedPaymentAccount || paymentAccounts.length === 0}
+          disabled={submitting || !selectedPaymentAccount || paymentAccounts.length === 0}
           title={!selectedPaymentAccount && paymentAccounts.length > 0 ? 'Please select a payment account' : 
                  paymentAccounts.length === 0 ? 'No payment accounts available' : ''}
         >
@@ -1081,79 +997,6 @@ const ReviewInvoicePage = () => {
         </Button>
       </Box>
 
-      {/* Success Message with Large Buttons */}
-      {submitSuccess && (
-        <Box sx={{ mb: 3, p: 4, bgcolor: '#e8f5e9', borderRadius: 1, border: '1px solid #c8e6c9' }}>
-          <Typography variant="h5" gutterBottom color="success.main" sx={{ fontWeight: 'bold', mb: 2 }}>
-            Invoice Generated Successfully
-          </Typography>
-          <Typography variant="body1" paragraph sx={{ mb: 3 }}>
-            Your invoice has been saved and submitted successfully. You can now export, share, or print your invoice.
-          </Typography>
-          
-          {/* Large Action Buttons */}
-          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mb: 2 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<Print sx={{ fontSize: 28 }} />}
-              onClick={handlePrint}
-              sx={{ 
-                py: 2, 
-                px: 4, 
-                fontSize: '1.1rem', 
-                fontWeight: 'bold',
-                minWidth: '180px'
-              }}
-            >
-              Print
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<Download sx={{ fontSize: 28 }} />}
-              onClick={handleExportMenuOpen}
-              sx={{ 
-                py: 2, 
-                px: 4, 
-                fontSize: '1.1rem', 
-                fontWeight: 'bold',
-                minWidth: '180px'
-              }}
-            >
-              Export
-            </Button>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              startIcon={<Share sx={{ fontSize: 28 }} />}
-              onClick={handleShareMenuOpen}
-              sx={{ 
-                py: 2, 
-                px: 4, 
-                fontSize: '1.1rem', 
-                fontWeight: 'bold',
-                minWidth: '180px'
-              }}
-            >
-              Share
-            </Button>
-          </Box>
-          
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => navigate('/dashboard')}
-            >
-              Return to Dashboard
-            </Button>
-          </Box>
-        </Box>
-      )}
 
       {/* Error Message */}
       {submitError && (
