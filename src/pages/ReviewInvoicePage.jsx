@@ -383,7 +383,7 @@ const ReviewInvoicePage = () => {
       
       const payload = {
         companyName: invoiceData?.billedBy?.businessName || "Acme Corporation",
-        invoiceNumber: invoiceData?.invoiceNumber || "INV-2025-0001",
+        invoiceNumber: invoiceData?.invoiceNumber,
         invoiceDate: invoiceData?.invoiceDate || new Date().toISOString(),
         dueDate: invoiceData?.dueDate || new Date(new Date().setDate(new Date().getDate() + 10)).toISOString(),
         AdditionalDetails: showAdditionalDetails && additionalDetails.size > 0
