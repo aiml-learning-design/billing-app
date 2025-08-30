@@ -585,7 +585,7 @@ const BusinessDetailsPage = () => {
         try {
           // Upload the logo first
          // const logoResponse = await api.post('/api/v1/media/upload', formData, {
-          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editBusinessData.businessId}&assetType=BUSINESS_LOGO`, formData, {
+          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editBusinessData.businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`, formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -602,34 +602,34 @@ const BusinessDetailsPage = () => {
       }
 
       // Log the payload to verify data
-      console.log('Updating business with data:', businessData);
-
-      // Call API to update business
-      const response = await api.put('/api/vendor/business/update/'+businessData.businessId, businessData);
-
-      // Update the business in the list
-      const updatedVendor = response.data;
-      console.log('Business updated:', updatedVendor);
-
-      // Update the business in allBusinesses
-      setAllBusinesses(prevBusinesses => {
-        return prevBusinesses.map(business => {
-          if (business.businessId === updatedVendor.businessId ||
-              business.business_id === updatedVendor.businessId) {
-            return updatedVendor;
-          }
-          return business;
-        });
-      });
-
-      setAlert({
-        open: true,
-        message: 'Business updated successfully',
-        severity: 'success'
-      });
-
-      // Close the edit dialog
-      setOpenEditDialog(false);
+//       console.log('Updating business with data:', businessData);
+//
+//       // Call API to update business
+//       const response = await api.put('/api/vendor/business/update/'+businessData.businessId, businessData);
+//
+//       // Update the business in the list
+//       const updatedVendor = response.data;
+//       console.log('Business updated:', updatedVendor);
+//
+//       // Update the business in allBusinesses
+//       setAllBusinesses(prevBusinesses => {
+//         return prevBusinesses.map(business => {
+//           if (business.businessId === updatedVendor.businessId ||
+//               business.business_id === updatedVendor.businessId) {
+//             return updatedVendor;
+//           }
+//           return business;
+//         });
+//       });
+//
+//       setAlert({
+//         open: true,
+//         message: 'Business updated successfully',
+//         severity: 'success'
+//       });
+//
+//       // Close the edit dialog
+//       setOpenEditDialog(false);
     } catch (error) {
       console.error('Error updating business:', error);
       setAlert({
