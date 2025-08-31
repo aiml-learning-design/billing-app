@@ -391,7 +391,7 @@ const ClientDetailsPage = () => {
     setEditClientData(clientData);
     
     // Fetch client logo
-    fetchClientLogo(clientData.businessId);
+//    fetchClientLogo(clientData.businessId);
     
     // Open the edit dialog
     setOpenEditDialog(true);
@@ -439,60 +439,71 @@ const ClientDetailsPage = () => {
   
   // Function to preload client logos
   const preloadClientLogos = async (businesses) => {
-    if (!businesses || businesses.length === 0) return;
-    
-    console.log('Preloading client logos for businesses:', businesses);
-    
-    // Get the authentication token from localStorage
-    const token = localStorage.getItem('token');
-    
-    // Create a new object to store logo URLs
-    const logoUrls = {};
-    
-    // Use Promise.all to wait for all logo fetches to complete
-    await Promise.all(businesses.map(async (business) => {
-      const businessId = business.businessId || business.business_id;
-      if (!businessId) return;
-      
-      // Make a direct API call to load the logo
-      const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`;
-      
-      console.log(`Preloading logo for business ${businessId} from URL: ${logoUrl}`);
-      
-      try {
-        // Make an authenticated fetch request
-        console.log(`Adding authorization header for ${businessId}: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
-        
-        const response = await fetch(logoUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}` // Add authorization header
-          }
-        });
-        
-        console.log(`Fetch response for logo ${businessId}:`, response.status, response.statusText);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+      if (!businesses || businesses.length === 0) return;
+
+      console.log('Preloading client logos for businesses:', businesses);
+
+      // Get the authentication token from localStorage
+      const token = localStorage.getItem('token');
+
+      // Create a new object to store logo URLs
+      const logoUrls = {};
+
+      // Use Promise.all to wait for all logo fetches to complete
+      await Promise.all(businesses.map(async (business) => {
+        const businessId = business.businessId || business.business_id;
+        if (!businessId) return;
+
+        // Make a direct API call to load the logo
+        const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`;
+
+        console.log(`Preloading logo for business ${businessId} from URL: ${logoUrl}`);
+
+        try {
+                    const response = await fetch(logoUrl, {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    });
+
+                    console.log(
+                      `Fetch response for logo ${businessId}:`,
+                      response.status,
+                      response.statusText
+                    );
+
+                    if (!response.ok) {
+                      throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+                    }
+
+                    // ---- OPTION 1: If backend returns JSON with base64 ----
+                    if (response.headers.get("content-type")?.includes("application/json")) {
+                      const json = await response.json();
+                      const base64Data = typeof json.data?.assetData === "string"
+                        ? json.data.assetData
+                        : (json.data?.assetData || []).join("");
+                     if (!base64Data) return;
+                      logoUrls[businessId] = `data:${json.data?.contentType};base64,${base64Data}`;
+                      console.log(`Created base64 logo for business ${businessId}`);
+                    }
+                    // ---- OPTION 2: If backend returns raw image (Blob) ----
+                    else {
+                      const blob = await response.blob();
+                      if (blob.size > 0) {
+                        const objectUrl = URL.createObjectURL(blob);
+                        logoUrls[businessId] = objectUrl;
+                        console.log(`Created blob URL for business ${businessId}: ${objectUrl}`);
+                      }
+                    }
+                  } catch (error) {
+          console.error(`Fetch error for logo ${businessId}:`, error);
         }
-        
-        // Create a blob URL from the response
-        const blob = await response.blob();
-        console.log(`Received logo data for business ${businessId}, size: ${blob.size} bytes`);
-        
-        if (blob.size > 0) {
-          const objectUrl = URL.createObjectURL(blob);
-          logoUrls[businessId] = objectUrl;
-          console.log(`Created blob URL for business ${businessId}: ${objectUrl}`);
-        }
-      } catch (error) {
-        console.error(`Fetch error for logo ${businessId}:`, error);
-      }
-    }));
-    
-    // Update the state with all logo URLs
-    setClientLogoUrls(logoUrls);
-    console.log('Updated client logo URLs:', logoUrls);
-  };
+      }));
+
+      // Update the state with all logo URLs
+      setClientLogoUrls(logoUrls);
+      console.log('Updated client logo URLs:', logoUrls);
+    };
   
   // Function to handle input changes in the edit form
   const handleEditInputChange = (e) => {
@@ -572,35 +583,36 @@ const ClientDetailsPage = () => {
       };
       
       // Handle logo upload if a logo was selected
-      if (editClientData.logo && editClientData.logo instanceof File) {
-        // Create a FormData object for file upload
-        const formData = new FormData();
-        formData.append('logo', editClientData.logo);
-        formData.append('businessId', editClientData.businessId);
-        
-        try {
-          // Upload the logo first
-          const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-          
-          // If logo upload was successful, add the logo URL to the client data
-          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
-            clientData.logoUrl = logoResponse.data.logoUrl;
-          }
-        } catch (logoError) {
-          console.error('Error uploading logo:', logoError);
-          // Continue with client update even if logo upload fails
-        }
-      }
-      
+//       if (editClientData.logo && editClientData.logo instanceof File) {
+//         // Create a FormData object for file upload
+//         const formData = new FormData();
+//         formData.append('file', editClientData.logo);
+//         formData.append('businessId', editClientData.businessId);
+//
+//         try {
+//           // Upload the logo first
+//          // const logoResponse = await api.post('/api/v1/media/upload', formData, {
+//           const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editClientData.businessId}&assetType=CLIENT_LOGO&assetName=ClientLogo`, formData, {
+//             headers: {
+//               'Content-Type': 'multipart/form-data'
+//             }
+//           });
+//
+//           // If logo upload was successful, add the logo URL to the business data
+//           if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+//             businessData.logoUrl = logoResponse.data.logoUrl;
+//           }
+//         } catch (logoError) {
+//           console.error('Error uploading logo:', logoError);
+//           // Continue with business update even if logo upload fails
+//         }
+//       }
+//
       // Log the payload to verify data
       console.log('Updating client with data:', clientData);
       
       // Call API to update client
-      const response = await api.post('/api/client/business/update', clientData);
+      const response = await api.post('/api/client/business/update'+businessData.businessId, clientData);
       
       // Update the client in the list
       const updatedClient = response.data;
@@ -686,7 +698,7 @@ const ClientDetailsPage = () => {
                   <CircularProgress size={40} />
                 ) : clientLogo ? (
                   <img 
-                    src={clientLogo} 
+                    src={clientLogoUrls[editClientData.businessId]}
                     alt="Client Logo" 
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                     onError={(e) => {
@@ -940,7 +952,7 @@ const ClientDetailsPage = () => {
                                 }}
                               >
                                 <img 
-                                  src={clientLogoUrls[businessId] || `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`}
+                                  src={clientLogoUrls[businessId]}
                                   alt=""
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                   onError={(e) => {

@@ -395,7 +395,7 @@ const BusinessDetailsPage = () => {
     setEditBusinessData(businessData);
 
     // Fetch business logo
-    fetchBusinessLogo(businessData.businessId);
+  //  fetchBusinessLogo(businessData.businessId);
 
     // Open the edit dialog
     setOpenEditDialog(true);
@@ -612,35 +612,35 @@ const BusinessDetailsPage = () => {
         }
       }
 
-      // Log the payload to verify data
-//       console.log('Updating business with data:', businessData);
-//
-//       // Call API to update business
-//       const response = await api.put('/api/vendor/business/update/'+businessData.businessId, businessData);
-//
-//       // Update the business in the list
-//       const updatedVendor = response.data;
-//       console.log('Business updated:', updatedVendor);
-//
-//       // Update the business in allBusinesses
-//       setAllBusinesses(prevBusinesses => {
-//         return prevBusinesses.map(business => {
-//           if (business.businessId === updatedVendor.businessId ||
-//               business.business_id === updatedVendor.businessId) {
-//             return updatedVendor;
-//           }
-//           return business;
-//         });
-//       });
-//
-//       setAlert({
-//         open: true,
-//         message: 'Business updated successfully',
-//         severity: 'success'
-//       });
-//
-//       // Close the edit dialog
-//       setOpenEditDialog(false);
+    //  Log the payload to verify data
+      console.log('Updating business with data:', businessData);
+
+      // Call API to update business
+      const response = await api.put('/api/vendor/business/update/'+businessData.businessId, businessData);
+
+      // Update the business in the list
+      const updatedVendor = response.data;
+      console.log('Business updated:', updatedVendor);
+
+      // Update the business in allBusinesses
+      setAllBusinesses(prevBusinesses => {
+        return prevBusinesses.map(business => {
+          if (business.businessId === updatedVendor.businessId ||
+              business.business_id === updatedVendor.businessId) {
+            return updatedVendor;
+          }
+          return business;
+        });
+      });
+
+      setAlert({
+        open: true,
+        message: 'Business updated successfully',
+        severity: 'success'
+      });
+
+      // Close the edit dialog
+      setOpenEditDialog(false);
     } catch (error) {
       console.error('Error updating business:', error);
       setAlert({
@@ -658,8 +658,6 @@ const BusinessDetailsPage = () => {
     setAlert(prev => ({ ...prev, open: false }));
   };
 
-
-  const firstLogo = Object.values(businessLogoUrls)[0];
 
   return (
     <Box sx={{ p: 3 }}>
