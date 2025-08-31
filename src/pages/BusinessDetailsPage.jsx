@@ -464,31 +464,42 @@ const BusinessDetailsPage = () => {
       console.log(`Preloading logo for business ${businessId} from URL: ${logoUrl}`);
 
       try {
-        // Make an authenticated fetch request
-        console.log(`Adding authorization header for ${businessId}: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
+                  const response = await fetch(logoUrl, {
+                    headers: {
+                      Authorization: `Bearer ${token}`,
+                    },
+                  });
 
-        const response = await fetch(logoUrl, {
-          headers: {
-            'Authorization': `Bearer ${token}` // Add authorization header
-          }
-        });
+                  console.log(
+                    `Fetch response for logo ${businessId}:`,
+                    response.status,
+                    response.statusText
+                  );
 
-        console.log(`Fetch response for logo ${businessId}:`, response.status, response.statusText);
+                  if (!response.ok) {
+                    throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
+                  }
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
-        }
-
-        // Create a blob URL from the response
-        const blob = await response.blob();
-        console.log(`Received logo data for business ${businessId}, size: ${blob.size} bytes`);
-
-        if (blob.size > 0) {
-          const objectUrl = URL.createObjectURL(blob);
-          logoUrls[businessId] = objectUrl;
-          console.log(`Created blob URL for business ${businessId}: ${objectUrl}`);
-        }
-      } catch (error) {
+                  // ---- OPTION 1: If backend returns JSON with base64 ----
+                  if (response.headers.get("content-type")?.includes("application/json")) {
+                    const json = await response.json();
+                    const base64Data = typeof json.data?.assetData === "string"
+                      ? json.data.assetData
+                      : (json.data?.assetData || []).join("");
+                   if (!base64Data) return;
+                    logoUrls[businessId] = `data:${json.data?.contentType};base64,${base64Data}`;
+                    console.log(`Created base64 logo for business ${businessId}`);
+                  }
+                  // ---- OPTION 2: If backend returns raw image (Blob) ----
+                  else {
+                    const blob = await response.blob();
+                    if (blob.size > 0) {
+                      const objectUrl = URL.createObjectURL(blob);
+                      logoUrls[businessId] = objectUrl;
+                      console.log(`Created blob URL for business ${businessId}: ${objectUrl}`);
+                    }
+                  }
+                } catch (error) {
         console.error(`Fetch error for logo ${businessId}:`, error);
       }
     }));
@@ -647,6 +658,9 @@ const BusinessDetailsPage = () => {
     setAlert(prev => ({ ...prev, open: false }));
   };
 
+
+  const firstLogo = Object.values(businessLogoUrls)[0];
+
   return (
     <Box sx={{ p: 3 }}>
       {/* Alert for success/error messages */}
@@ -691,7 +705,7 @@ const BusinessDetailsPage = () => {
                   <CircularProgress size={40} />
                 ) : businessLogo ? (
                   <img
-                    src={businessLogo}
+                    src={businessLogoUrls[editBusinessData.businessId]}
                     alt="Business Logo"
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={(e) => {
