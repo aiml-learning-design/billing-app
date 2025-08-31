@@ -99,7 +99,21 @@ const InvoiceSummaryPage = () => {
     // Try to get invoice data from location state
     if (location.state && location.state.invoiceData) {
       console.log('InvoiceSummaryPage: Found invoiceData in location state:', location.state.invoiceData);
-      setInvoiceData(location.state.invoiceData);
+      console.log('InvoiceSummaryPage: Source of data:', location.state.source || 'unknown');
+      
+      // If the data is coming from NewInvoice.jsx, we know it's complete and valid
+      if (location.state.source === 'newInvoice') {
+        console.log('InvoiceSummaryPage: Data is from NewInvoice.jsx, using as is');
+        setInvoiceData(location.state.invoiceData);
+        
+        // Also update localStorage for future reference
+        localStorage.setItem('invoiceData', JSON.stringify(location.state.invoiceData));
+      } else {
+        // For data from other sources, we still use it but log a warning
+        console.log('InvoiceSummaryPage: Data is from another source, using with caution');
+        setInvoiceData(location.state.invoiceData);
+      }
+      
       setLoading(false);
     } else {
       console.log('InvoiceSummaryPage: No invoiceData in location state, checking localStorage');
@@ -511,67 +525,72 @@ const InvoiceSummaryPage = () => {
   // We now handle setting noInvoiceData in the useEffect hook
   // No need to set it here in the render function
   
-  // Final safety check to ensure all required nested objects exist
-  // This prevents errors if the data structure is incomplete
-  if (invoiceData) {
-    console.log('InvoiceSummaryPage: Performing final safety check on invoice data');
+  // Check if we need to perform safety checks on the invoice data
+  // Only do this for data not coming from NewInvoice.jsx
+  const [dataIncomplete, setDataIncomplete] = useState(false);
+  
+  useEffect(() => {
+    if (invoiceData && location.state && location.state.source !== 'newInvoice') {
+      console.log('InvoiceSummaryPage: Performing safety check on invoice data not from NewInvoice.jsx');
+      let isIncomplete = false;
+      
+      // Check if any essential fields are missing
+      if (!invoiceData.billedBy || 
+          !invoiceData.billedTo || 
+          !invoiceData.purchasedOrderRequest ||
+          !invoiceData.purchasedOrderRequest?.itemDetailsRequest) {
+        isIncomplete = true;
+      }
+      
+      setDataIncomplete(isIncomplete);
+    } else if (invoiceData && location.state && location.state.source === 'newInvoice') {
+      // For data from NewInvoice.jsx, we trust it's complete
+      console.log('InvoiceSummaryPage: Skipping safety checks for data from NewInvoice.jsx');
+      setDataIncomplete(false);
+    }
+  }, [invoiceData, location.state]);
+  
+  // For data validation and structure checking
+  if (invoiceData && !loading && location.state?.source !== 'newInvoice') {
+    console.log('InvoiceSummaryPage: Validating data structure for non-NewInvoice data');
     
-    // Ensure billedBy exists
+    // These checks only run for data NOT from NewInvoice.jsx
+    // We're not adding placeholder data, just ensuring the structure exists to prevent rendering errors
+    
+    // Ensure billedBy exists with minimal structure
     if (!invoiceData.billedBy) {
-      console.log('InvoiceSummaryPage: Adding missing billedBy object');
-      invoiceData.billedBy = {
-        businessName: 'Your Business',
-        officeAddress: { country: 'United States of America (USA)' }
-      };
+      console.log('InvoiceSummaryPage: Missing billedBy object, creating minimal structure');
+      invoiceData.billedBy = {};
     }
     
-    // Ensure billedBy.officeAddress exists
+    // Ensure billedBy.officeAddress exists with minimal structure
     if (invoiceData.billedBy && !invoiceData.billedBy.officeAddress) {
-      console.log('InvoiceSummaryPage: Adding missing billedBy.officeAddress object');
-      invoiceData.billedBy.officeAddress = { country: 'United States of America (USA)' };
+      console.log('InvoiceSummaryPage: Missing billedBy.officeAddress object, creating minimal structure');
+      invoiceData.billedBy.officeAddress = {};
     }
     
-    // Ensure billedTo exists
+    // Ensure billedTo exists with minimal structure
     if (!invoiceData.billedTo) {
-      console.log('InvoiceSummaryPage: Adding missing billedTo object');
-      invoiceData.billedTo = {
-        businessName: 'Client Name',
-        officeAddress: { country: 'United States of America (USA)' }
-      };
+      console.log('InvoiceSummaryPage: Missing billedTo object, creating minimal structure');
+      invoiceData.billedTo = {};
     }
     
-    // Ensure billedTo.officeAddress exists
+    // Ensure billedTo.officeAddress exists with minimal structure
     if (invoiceData.billedTo && !invoiceData.billedTo.officeAddress) {
-      console.log('InvoiceSummaryPage: Adding missing billedTo.officeAddress object');
-      invoiceData.billedTo.officeAddress = { country: 'United States of America (USA)' };
+      console.log('InvoiceSummaryPage: Missing billedTo.officeAddress object, creating minimal structure');
+      invoiceData.billedTo.officeAddress = {};
     }
     
-    // Ensure purchasedOrderRequest exists
+    // Ensure purchasedOrderRequest exists with minimal structure
     if (!invoiceData.purchasedOrderRequest) {
-      console.log('InvoiceSummaryPage: Adding missing purchasedOrderRequest object');
-      invoiceData.purchasedOrderRequest = {
-        itemDetailsRequest: [
-          { id: 1, itemName: 'Sample Item', quantity: 1, price: 1, amount: 1 }
-        ]
-      };
+      console.log('InvoiceSummaryPage: Missing purchasedOrderRequest object, creating minimal structure');
+      invoiceData.purchasedOrderRequest = { itemDetailsRequest: [] };
     }
     
     // Ensure purchasedOrderRequest.itemDetailsRequest exists and is an array
     if (invoiceData.purchasedOrderRequest && !Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest)) {
-      console.log('InvoiceSummaryPage: Adding missing or fixing itemDetailsRequest array');
-      invoiceData.purchasedOrderRequest.itemDetailsRequest = [
-        { id: 1, itemName: 'Sample Item', quantity: 1, price: 1, amount: 1 }
-      ];
-    }
-    
-    // If itemDetailsRequest is an empty array, add a sample item
-    if (invoiceData.purchasedOrderRequest && 
-        Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest) && 
-        invoiceData.purchasedOrderRequest.itemDetailsRequest.length === 0) {
-      console.log('InvoiceSummaryPage: Adding sample item to empty itemDetailsRequest array');
-      invoiceData.purchasedOrderRequest.itemDetailsRequest.push(
-        { id: 1, itemName: 'Sample Item', quantity: 1, price: 1, amount: 1 }
-      );
+      console.log('InvoiceSummaryPage: itemDetailsRequest is not an array, fixing structure');
+      invoiceData.purchasedOrderRequest.itemDetailsRequest = [];
     }
   }
 
@@ -749,6 +768,15 @@ const InvoiceSummaryPage = () => {
           Invoice Summary Page
         </Typography>
         <Typography variant="body1" paragraph>
+          {dataIncomplete ? (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              Some invoice data appears to be incomplete. For the best experience, please consider going back to the invoice creation page to provide complete information.
+            </Alert>
+          ) : location.state?.source === 'newInvoice' ? (
+            <Typography variant="body2" color="success.main">
+              Your invoice data has been successfully loaded from the invoice creation page.
+            </Typography>
+          ) : null}
         </Typography>
         <Box sx={{ display: 'flex', justifyContent: 'flex-start', mt: 1 }}>
           <Button 

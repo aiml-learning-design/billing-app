@@ -8,7 +8,8 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
 import { API_CONFIG, AUTH_CONFIG } from '../config/config';
 import {
-  Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel, Button
+  Box, Typography, Grid, CircularProgress, Chip, Stepper, Step, StepLabel, Button,
+  Alert, Snackbar
 } from '@mui/material';
 
 // Import the components we created
@@ -130,6 +131,10 @@ const NewInvoice = () => {
   // State for invoice type (PRODUCT, SERVICE, ONE_TIME)
   const [invoiceFor, setInvoiceFor] = useState('ONE_TIME');
   const [isRecurring, setIsRecurring] = useState(false);
+  
+  // State for API error handling
+  const [apiError, setApiError] = useState(null);
+  const [showErrorSnackbar, setShowErrorSnackbar] = useState(false);
 
   // Function to fetch all businesses from the API
   const fetchAllBusinesses = async () => {
@@ -656,25 +661,60 @@ const NewInvoice = () => {
   const handleSaveAndContinue = async () => {
     console.log('handleSaveAndContinue: Function called');
     try {
+      // Reset any previous errors
+      setApiError(null);
+      setShowErrorSnackbar(false);
+      
+      // Collect validation errors
+      let errors = [];
+      
+      // Validate client selection
+      console.log('Validating client selection. selectedClient:', selectedClient);
+      console.log('clients array length:', clients.length);
+      console.log('Selected client object:', clients.find(c => c.client_id === selectedClient));
+      
+      if (!selectedClient) {
+        console.log('No client selected, adding error');
+        errors.push("Please provide your client details");
+      } else {
+        console.log('Client selected, validation passed');
+      }
+      
+      // Validate item details
+      const hasValidItems = items.some(item => 
+        item.name && item.quantity && item.rate
+      );
+      
+      if (!hasValidItems) {
+        errors.push("Please provide item details");
+      }
+      
+      // If there are errors, display them and stop execution
+      if (errors.length > 0) {
+        console.log('Validation errors found:', errors);
+        
+        // Format errors with numbering
+        const formattedErrors = errors.map((error, index) => 
+          `${index + 1}. ${error}`
+        ).join(". ");
+        
+        console.log('Formatted error message:', formattedErrors);
+        setApiError(formattedErrors);
+        setShowErrorSnackbar(true);
+        return; // Stop execution if validation fails
+      }
+      
+      console.log('Validation passed, proceeding with form submission');
+      
       // Use the helper function to create the invoice payload
       const invoiceData = createInvoicePayload('PENDING');
       
       // Log the payload to see what's being sent to the API
       console.log('Invoice payload being sent to API:', JSON.stringify(invoiceData, null, 2));
       
-      // TEMPORARY FIX: Skip API calls and navigate directly to the invoice summary page
-      console.log('TEMPORARY FIX: Skipping API calls and navigating directly');
-      
-      // Store invoice data in localStorage
+      // Store invoice data in localStorage as a fallback
       localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
-      console.log('TEMPORARY FIX: Saved invoiceData to localStorage');
-      
-      // Use window.location for direct navigation instead of react-router navigate
-      console.log('TEMPORARY FIX: Using window.location for direct navigation');
-      window.location.href = '/invoices/summary/new';
-      
-      // The code below is commented out temporarily for testing
-      /*
+      console.log('Saved invoiceData to localStorage as fallback');
       // Verify that purchasedOrderRequest and itemDetailsRequest are present and correctly structured
       if (invoiceData.purchasedOrderRequest && Array.isArray(invoiceData.purchasedOrderRequest.itemDetailsRequest)) {
         console.log('purchasedOrderRequest.itemDetailsRequest is present and is an array with', 
@@ -690,6 +730,7 @@ const NewInvoice = () => {
         console.log('purchasedOrderRequest:', invoiceData.purchasedOrderRequest);
       }
 
+      /* The code below is commented out temporarily for testing
       // Try both approaches: using the api service and using axios directly
       
       // 1. First try using the api service with explicit content type
@@ -803,15 +844,31 @@ const NewInvoice = () => {
       console.error('Error details:', err.response ? err.response.data : err.message);
       
       // Log more details about the error
+      let errorMessage = 'Failed to save invoice. Please try again.';
       if (err.response) {
         console.error('Response status:', err.response.status);
         console.error('Response headers:', err.response.headers);
         console.error('Response data:', JSON.stringify(err.response.data, null, 2));
+        
+        // Extract error message from response if available
+        if (err.response.data && err.response.data.message) {
+          errorMessage = err.response.data.message;
+        } else if (err.response.data && typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        } else if (err.response.statusText) {
+          errorMessage = `Error: ${err.response.status} ${err.response.statusText}`;
+        }
       } else if (err.request) {
         console.error('No response received. Request details:', err.request);
+        errorMessage = 'No response received from server. Please check your connection and try again.';
       } else {
         console.error('Error setting up request:', err.message);
+        errorMessage = err.message || 'An unexpected error occurred. Please try again.';
       }
+      
+      // Set the error message and show the error snackbar
+      setApiError(errorMessage);
+      setShowErrorSnackbar(true);
     }
   };
 
@@ -841,8 +898,29 @@ const NewInvoice = () => {
 
   const steps = ['Add Invoice Details', 'Design & Share (optional)'];
 
+  // Function to handle closing the error snackbar
+  const handleCloseErrorSnackbar = () => {
+    setShowErrorSnackbar(false);
+  };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
+      {/* Error Snackbar */}
+      <Snackbar
+        open={showErrorSnackbar}
+        autoHideDuration={6000}
+        onClose={handleCloseErrorSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={handleCloseErrorSnackbar} 
+          severity="error" 
+          sx={{ width: '100%' }}
+        >
+          {apiError}
+        </Alert>
+      </Snackbar>
+      
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 'bold' }}>
           New Invoice

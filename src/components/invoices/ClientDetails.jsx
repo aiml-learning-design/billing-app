@@ -139,7 +139,40 @@ const ClientDetails = ({
   const [cachedSearchTerm, setCachedSearchTerm] = useState('');
   
   // Get the selected client data
-  const selectedClientData = clientOptions.find(c => c.client_id === selectedClient);
+  // If selectedClient is truthy but not found in clientOptions, it might be because
+  // clientOptions hasn't been loaded yet or the client ID is invalid
+  const selectedClientData = selectedClient 
+    ? clientOptions.find(c => c.client_id === selectedClient) || null
+    : null;
+  
+  // Debug useEffect to log selectedClient and selectedClientData changes
+  useEffect(() => {
+    console.log('selectedClient changed:', selectedClient);
+    console.log('selectedClientData:', selectedClientData);
+    console.log('clientOptions length:', clientOptions.length);
+    
+    // If selectedClient is truthy but selectedClientData is null, it means the client wasn't found in clientOptions
+    if (selectedClient && !selectedClientData && clientOptions.length > 0) {
+      console.warn('Selected client not found in clientOptions:', selectedClient);
+    }
+    
+    // Synchronize inputValue with selected client when it changes
+    if (selectedClientData) {
+      const displayName = selectedClientData.clientName || selectedClientData.businessName || '';
+      if (displayName && displayName !== inputValue) {
+        console.log('Synchronizing inputValue with selected client:', displayName);
+        setInputValue(displayName);
+      }
+    } else if (selectedClient && !selectedClientData) {
+      // If we have a selectedClient but no selectedClientData, try to find the client in the original clients array
+      const clientFromOriginal = clients.find(c => c.client_id === selectedClient);
+      if (clientFromOriginal) {
+        const displayName = clientFromOriginal.clientName || clientFromOriginal.businessName || '';
+        console.log('Found client in original clients array, updating inputValue:', displayName);
+        setInputValue(displayName);
+      }
+    }
+  }, [selectedClient, selectedClientData, clientOptions.length, inputValue, clients]);
   
   // Function to filter clients locally based on search term (used in no-API mode)
   const filterClients = (searchTerm) => {
@@ -148,7 +181,9 @@ const ClientDetails = ({
     }
     
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return clients.filter(client => {
+    
+    // Get filtered clients based on search term
+    const filteredClients = clients.filter(client => {
       const clientName = (client.clientName || '').toLowerCase();
       const businessName = (client.businessName || '').toLowerCase();
       const email = (client.email || '').toLowerCase();
@@ -157,6 +192,17 @@ const ClientDetails = ({
              businessName.includes(lowerCaseSearchTerm) || 
              email.includes(lowerCaseSearchTerm);
     });
+    
+    // If we have a selected client, make sure it's included in the results
+    if (selectedClient) {
+      const selectedClientObj = clients.find(c => c.client_id === selectedClient);
+      if (selectedClientObj && !filteredClients.some(c => c.client_id === selectedClient)) {
+        console.log('Adding selected client to filtered results:', selectedClientObj.clientName || selectedClientObj.businessName);
+        return [selectedClientObj, ...filteredClients];
+      }
+    }
+    
+    return filteredClients;
   };
   
   // Function to fetch clients based on search term (used in API mode)
@@ -218,9 +264,37 @@ const ClientDetails = ({
         }
         
         console.log('Setting client options:', clients);
+        
+        // If we have a selected client, make sure it's included in the results
+        if (selectedClient) {
+          // First check if the selected client is already in the fetched results
+          const selectedClientInResults = clients.some(c => c.client_id === selectedClient);
+          
+          if (!selectedClientInResults) {
+            // Try to find the selected client in the current clientOptions
+            const currentSelectedClient = clientOptions.find(c => c.client_id === selectedClient);
+            
+            if (currentSelectedClient) {
+              console.log('Adding selected client to API results:', currentSelectedClient.clientName || currentSelectedClient.businessName);
+              clients = [currentSelectedClient, ...clients];
+            }
+          }
+        }
+        
         setClientOptions(clients);
       } else {
         console.warn('No clients found or invalid response');
+        
+        // Even if no clients are found, preserve the selected client if it exists
+        if (selectedClient) {
+          const currentSelectedClient = clientOptions.find(c => c.client_id === selectedClient);
+          if (currentSelectedClient) {
+            console.log('Preserving only the selected client in options');
+            setClientOptions([currentSelectedClient]);
+            return;
+          }
+        }
+        
         setClientOptions([]);
       }
     } catch (error) {
@@ -250,9 +324,45 @@ const ClientDetails = ({
   // Effect to initialize client options with provided clients
   useEffect(() => {
     if (clients.length > 0) {
-      setClientOptions(clients);
+      // If we have a selected client, make sure it's included in the options
+      if (selectedClient) {
+        // Check if the selected client is in the new clients array
+        const selectedClientInNewClients = clients.some(c => c.client_id === selectedClient);
+        
+        if (selectedClientInNewClients) {
+          // If the selected client is in the new clients array, just use the new clients
+          console.log('Selected client found in new clients array');
+          setClientOptions(clients);
+        } else {
+          // If the selected client is not in the new clients array, try to find it in the current options
+          const currentSelectedClient = clientOptions.find(c => c.client_id === selectedClient);
+          
+          if (currentSelectedClient) {
+            // If found in current options, add it to the new clients array
+            console.log('Adding selected client to new clients array:', currentSelectedClient.clientName || currentSelectedClient.businessName);
+            setClientOptions([currentSelectedClient, ...clients]);
+          } else {
+            // If not found anywhere, just use the new clients
+            console.log('Selected client not found in current options, using new clients only');
+            setClientOptions(clients);
+          }
+        }
+      } else {
+        // If no client is selected, just use the new clients
+        setClientOptions(clients);
+        
+        // If no client is selected but clients are available, select the first client
+        if (!selectedClient && setSelectedClient) {
+          console.log('No client selected but clients are available. Auto-selecting first client.');
+          const firstClient = clients[0];
+          if (firstClient && firstClient.client_id) {
+            console.log('Auto-selecting client:', firstClient.clientName || firstClient.businessName);
+            setSelectedClient(firstClient.client_id);
+          }
+        }
+      }
     }
-  }, [clients]);
+  }, [clients, selectedClient, setSelectedClient, clientOptions]);
   
   // Preload client data when component mounts (only in API mode)
   useEffect(() => {
@@ -915,8 +1025,21 @@ const ClientDetails = ({
           <Autocomplete
             value={selectedClientData}
             onChange={(event, newValue) => {
+              console.log('Client selection changed:', newValue);
               if (newValue && setSelectedClient) {
+                console.log('Setting selected client to:', newValue.client_id);
                 setSelectedClient(newValue.client_id);
+                
+                // Update inputValue to match the selected client's name
+                const displayName = newValue.clientName || newValue.businessName || '';
+                if (displayName && displayName !== inputValue) {
+                  console.log('Updating inputValue to match selected client:', displayName);
+                  setInputValue(displayName);
+                }
+              } else if (setSelectedClient) {
+                // If newValue is null or undefined, reset the selectedClient state
+                console.log('Resetting selected client');
+                setSelectedClient('');
               }
             }}
             inputValue={inputValue}
@@ -943,14 +1066,55 @@ const ClientDetails = ({
               }
             }}
             onClose={() => setOpen(false)}
+            onBlur={(event) => {
+              console.log('Autocomplete blur event');
+              
+              // If we have a selected client but the input is empty, restore the selected client's name
+              if (selectedClient && !inputValue && selectedClientData) {
+                const displayName = selectedClientData.clientName || selectedClientData.businessName || '';
+                console.log('Restoring inputValue on blur:', displayName);
+                setInputValue(displayName);
+              }
+              
+              // If we have an inputValue but no selected client, try to find a matching client
+              if (inputValue && !selectedClient) {
+                const matchingClient = clientOptions.find(c => 
+                  (c.clientName && c.clientName.toLowerCase() === inputValue.toLowerCase()) || 
+                  (c.businessName && c.businessName.toLowerCase() === inputValue.toLowerCase())
+                );
+                
+                if (matchingClient) {
+                  console.log('Found matching client on blur:', matchingClient.clientName || matchingClient.businessName);
+                  setSelectedClient(matchingClient.client_id);
+                }
+              }
+            }}
             options={clientOptions}
             loading={loading}
             getOptionLabel={(option) => option.clientName || option.businessName || ''}
-            isOptionEqualToValue={(option, value) => option.client_id === value.client_id}
+            isOptionEqualToValue={(option, value) => {
+              // Handle the case when value is null
+              if (!value) return false;
+              return option.client_id === value.client_id;
+            }}
             filterOptions={(options, state) => {
+              // If there are no options or no search input, return all options
+              if (options.length === 0 || !state.inputValue) {
+                return options;
+              }
+              
+              // Filter options based on search input
+              const filtered = options.filter(option => {
+                const clientName = (option.clientName || '').toLowerCase();
+                const businessName = (option.businessName || '').toLowerCase();
+                const searchTerm = state.inputValue.toLowerCase();
+                
+                return clientName.includes(searchTerm) || businessName.includes(searchTerm);
+              });
+              
               // Filter out the currently selected client from dropdown options
               // to prevent duplication in the dropdown
-              return options.filter(option => 
+              return filtered.filter(option => 
                 !selectedClientData || option.client_id !== selectedClientData.client_id
               );
             }}
