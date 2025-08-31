@@ -28,6 +28,7 @@ const InvoiceSummaryPage = () => {
   const location = useLocation();
   const [invoiceData, setInvoiceData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [noInvoiceData, setNoInvoiceData] = useState(false);
   const [activeStep, setActiveStep] = useState(1); // Start at step 2 (Add Bank Details)
   
   // Late fee dialog state
@@ -87,6 +88,9 @@ const InvoiceSummaryPage = () => {
     console.log('InvoiceSummaryPage: Location state:', location.state);
     console.log('InvoiceSummaryPage: URL pathname:', location.pathname);
     
+    // Reset states at the beginning
+    setNoInvoiceData(false);
+    
     // Check if this is a direct navigation to a specific invoice
     const pathParts = location.pathname.split('/');
     const invoiceId = pathParts[pathParts.length - 1];
@@ -117,6 +121,7 @@ const InvoiceSummaryPage = () => {
           setInvoiceData(parsedData);
         } catch (error) {
           console.error('Error parsing invoice data from localStorage:', error);
+          setNoInvoiceData(true);
         }
       } else {
         console.log('InvoiceSummaryPage: No invoiceData found in localStorage');
@@ -132,6 +137,10 @@ const InvoiceSummaryPage = () => {
           };
           setInvoiceData(minimalData);
           localStorage.setItem('invoiceData', JSON.stringify(minimalData));
+        } else {
+          // No invoice data found anywhere
+          console.log('InvoiceSummaryPage: No invoice data available, setting noInvoiceData flag');
+          setNoInvoiceData(true);
         }
       }
       setLoading(false);
@@ -499,38 +508,8 @@ const InvoiceSummaryPage = () => {
   console.log('InvoiceSummaryPage: Loading state:', loading);
   console.log('InvoiceSummaryPage: Invoice data state:', invoiceData);
 
-  // Create a fallback invoice data object if invoiceData is null or undefined
-  if (!invoiceData && !loading) {
-    console.log('InvoiceSummaryPage: Creating fallback invoice data');
-    // Create a minimal fallback invoice data object with default values
-    const fallbackInvoiceData = {
-      invoiceNumber: 'A00002',
-      invoiceDate: new Date().toISOString(),
-      dueDate: new Date(new Date().setDate(new Date().getDate() + 14)).toISOString(),
-      billedBy: {
-        businessName: 'Your Business',
-        officeAddress: { country: 'United States of America (USA)' }
-      },
-      billedTo: {
-        businessName: 'Client Name',
-        officeAddress: { country: 'United States of America (USA)' }
-      },
-      purchasedOrderRequest: {
-        itemDetailsRequest: [
-          { id: 1, itemName: 'Sample Item', quantity: 1, price: 1, amount: 1 }
-        ]
-      },
-      total: '1.00'
-    };
-    
-    // Set the fallback data to the state
-    setInvoiceData(fallbackInvoiceData);
-    
-    // Also store it in localStorage for future reference
-    localStorage.setItem('invoiceData', JSON.stringify(fallbackInvoiceData));
-    
-    console.log('InvoiceSummaryPage: Set fallback invoice data:', fallbackInvoiceData);
-  }
+  // We now handle setting noInvoiceData in the useEffect hook
+  // No need to set it here in the render function
   
   // Final safety check to ensure all required nested objects exist
   // This prevents errors if the data structure is incomplete
@@ -601,6 +580,32 @@ const InvoiceSummaryPage = () => {
     return (
       <Box display="flex" justifyContent="center" alignItems="center" minHeight="80vh">
         <Typography>Loading invoice data...</Typography>
+      </Box>
+    );
+  }
+  
+  // Display a user-friendly message when there's no invoice data
+  if (noInvoiceData) {
+    console.log('InvoiceSummaryPage: Rendering no invoice data message');
+    return (
+      <Box sx={{ p: 3, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+        <Paper elevation={3} sx={{ p: 4, maxWidth: 600, width: '100%', textAlign: 'center' }}>
+          <Typography variant="h5" color="primary" gutterBottom>
+            No Invoice Data Available
+          </Typography>
+          <Typography variant="body1" paragraph>
+            Please create a new invoice to get started. You can add invoice details, select payment accounts, and customize your invoice.
+          </Typography>
+          <Button
+            variant="contained"
+            color="primary"
+            size="large"
+            onClick={() => navigate('/invoices/new-invoice')}
+            sx={{ mt: 2 }}
+          >
+            Create New Invoice
+          </Button>
+        </Paper>
       </Box>
     );
   }
