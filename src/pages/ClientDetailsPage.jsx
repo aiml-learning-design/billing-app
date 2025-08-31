@@ -582,37 +582,37 @@ const ClientDetailsPage = () => {
         address: editClientData.address
       };
       
-      // Handle logo upload if a logo was selected
-//       if (editClientData.logo && editClientData.logo instanceof File) {
-//         // Create a FormData object for file upload
-//         const formData = new FormData();
-//         formData.append('file', editClientData.logo);
-//         formData.append('businessId', editClientData.businessId);
-//
-//         try {
-//           // Upload the logo first
-//          // const logoResponse = await api.post('/api/v1/media/upload', formData, {
-//           const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editClientData.businessId}&assetType=CLIENT_LOGO&assetName=ClientLogo`, formData, {
-//             headers: {
-//               'Content-Type': 'multipart/form-data'
-//             }
-//           });
-//
-//           // If logo upload was successful, add the logo URL to the business data
-//           if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
-//             businessData.logoUrl = logoResponse.data.logoUrl;
-//           }
-//         } catch (logoError) {
-//           console.error('Error uploading logo:', logoError);
-//           // Continue with business update even if logo upload fails
-//         }
-//       }
-//
+    //  Handle logo upload if a logo was selected
+      if (editClientData.logo && editClientData.logo instanceof File) {
+        // Create a FormData object for file upload
+        const formData = new FormData();
+        formData.append('file', editClientData.logo);
+        formData.append('businessId', editClientData.businessId);
+
+        try {
+          // Upload the logo first
+         // const logoResponse = await api.post('/api/v1/media/upload', formData, {
+          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editClientData.businessId}&assetType=CLIENT_LOGO&assetName=ClientLogo`, formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          });
+
+          // If logo upload was successful, add the logo URL to the business data
+          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+            clientData.logoUrl = logoResponse.data.logoUrl;
+          }
+        } catch (logoError) {
+          console.error('Error uploading logo:', logoError);
+          // Continue with business update even if logo upload fails
+        }
+      }
+
       // Log the payload to verify data
       console.log('Updating client with data:', clientData);
       
       // Call API to update client
-      const response = await api.post('/api/client/business/update'+businessData.businessId, clientData);
+      const response = await api.put('/api/client/business/update/'+clientData.businessId, clientData);
       
       // Update the client in the list
       const updatedClient = response.data;
