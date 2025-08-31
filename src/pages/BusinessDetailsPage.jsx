@@ -579,7 +579,7 @@ const BusinessDetailsPage = () => {
       if (editBusinessData.logo && editBusinessData.logo instanceof File) {
         // Create a FormData object for file upload
         const formData = new FormData();
-        formData.append('logo', editBusinessData.logo);
+        formData.append('file', editBusinessData.logo);
         formData.append('businessId', editBusinessData.businessId);
 
         try {
