@@ -65,6 +65,16 @@ const ReviewInvoicePage = () => {
         setInvoiceData(location.state.invoiceData);
       }
       
+      // Check for payment account in location state
+      if (location.state.paymentAccount) {
+        console.log('ReviewInvoicePage: Found paymentAccount in location state', location.state.paymentAccount);
+        // Set the selected payment account from the passed data
+        setSelectedPaymentAccount(location.state.paymentAccount.id);
+        
+        // Add the payment account to the list
+        setPaymentAccounts([location.state.paymentAccount]);
+      }
+      
       // Check for display preferences in location state
       if (location.state.displayPreferences) {
         console.log('ReviewInvoicePage: Found displayPreferences in location state', location.state.displayPreferences);
@@ -278,11 +288,6 @@ const ReviewInvoicePage = () => {
     }
   }, [showQRCode]);
 
-  // Handle payment account change
-  const handlePaymentAccountChange = (event) => {
-    setSelectedPaymentAccount(event.target.value);
-  };
-
   // Handle email address change
   const handleEmailAddressChange = (event) => {
     setEmailAddress(event.target.value);
@@ -363,9 +368,15 @@ const ReviewInvoicePage = () => {
   const handleSaveAndSubmit = async () => {
     console.log('ReviewInvoicePage: Save and submit');
     
+    // Validate that a payment account is available
+    if (paymentAccounts.length === 0) {
+      setSubmitError('No payment account available. Please go back and select a payment account.');
+      return;
+    }
+    
     // Validate that a payment account is selected
-    if (!selectedPaymentAccount && paymentAccounts.length > 0) {
-      setSubmitError('Please select a payment account before submitting the invoice.');
+    if (!selectedPaymentAccount) {
+      setSubmitError('No payment account selected. Please go back and select a payment account.');
       return;
     }
     
@@ -373,8 +384,12 @@ const ReviewInvoicePage = () => {
     setSubmitError(null);
     
     try {
-      // Prepare the payload according to the required structure
+      // Get the selected account from the paymentAccounts array
       const selectedAccount = paymentAccounts.find(account => account.id === selectedPaymentAccount);
+      
+      if (!selectedAccount) {
+        throw new Error('Selected payment account not found. Please go back and select a valid payment account.');
+      }
       
       // Convert additionalDetails Map to an object if it exists and is shown
       const additionalDetailsObj = showAdditionalDetails && additionalDetails.size > 0
@@ -496,7 +511,27 @@ const ReviewInvoicePage = () => {
   // Handle back button click
   const handleBack = () => {
     console.log('ReviewInvoicePage: Back button clicked');
-    navigate(-1); // Navigate back to the previous page (InvoiceSummaryPage)
+    
+    // Save current state to localStorage before navigating back
+    if (invoiceData) {
+      localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
+    }
+    
+    // Convert additionalDetails Map to an array of [key, value] pairs for storage
+    if (additionalDetails.size > 0) {
+      const additionalDetailsArray = Array.from(additionalDetails.entries());
+      
+      // Save display preferences to localStorage
+      localStorage.setItem('invoiceDisplayPreferences', JSON.stringify({
+        showBankDetails,
+        showQRCode,
+        showAdditionalDetails,
+        additionalDetailsArray
+      }));
+    }
+    
+    // Navigate back to the invoice summary page
+    navigate('/invoices/summary');
   };
 
   if (loading) {
@@ -556,53 +591,66 @@ const ReviewInvoicePage = () => {
         </Box>
       </Box>
 
-      {/* Payment Account Selection */}
+      {/* Payment Account Display */}
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Typography variant="h6" fontWeight="bold" gutterBottom>
-            Select Payment Account
+            Payment Account
           </Typography>
           
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>
-              <Typography>Loading payment accounts...</Typography>
+              <Typography>Loading payment account...</Typography>
             </Box>
           ) : paymentAccounts.length === 0 ? (
             <Box sx={{ p: 2, bgcolor: '#fff8f5', borderRadius: 1, mb: 2 }}>
               <Typography color="error" gutterBottom>
-                No payment accounts found.
+                No payment account selected.
               </Typography>
               <Typography variant="body2">
-                Please add a bank account in the Payment Accounts page before proceeding.
+                Please go back to the previous step to select a payment account.
               </Typography>
               <Button 
                 variant="outlined" 
                 color="primary" 
                 size="small" 
                 sx={{ mt: 1 }}
-                onClick={() => navigate('/payment-accounts')}
+                onClick={() => navigate(-1)}
               >
-                Go to Payment Accounts
+                Go Back
               </Button>
             </Box>
           ) : (
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel id="payment-account-label">Payment Account</InputLabel>
-              <Select
-                labelId="payment-account-label"
-                id="payment-account"
-                value={selectedPaymentAccount}
-                onChange={handlePaymentAccountChange}
-                label="Payment Account"
-              >
-                {paymentAccounts.map((account) => (
-                  <MenuItem key={account.id} value={account.id}>
-                    {account.bankName} - {account.accountNumber} ({account.accountHolderName})
-                    {account.isPrimaryAccount && " (Primary)"}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1, mb: 2 }}>
+              {(() => {
+                const account = paymentAccounts.find(acc => acc.id === selectedPaymentAccount);
+                return account ? (
+                  <>
+                    <Typography variant="subtitle1" fontWeight="medium" gutterBottom>
+                      Selected Payment Account:
+                    </Typography>
+                    <Typography variant="body1" fontWeight="medium">
+                      {account.bankName}
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {account.accountHolderName}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Acc. No: {account.accountNumber}
+                    </Typography>
+                    {account.ifscCode && (
+                      <Typography variant="body2" color="text.secondary">
+                        IFSC: {account.ifscCode}
+                      </Typography>
+                    )}
+                  </>
+                ) : (
+                  <Typography color="error">
+                    Error: Selected account not found
+                  </Typography>
+                );
+              })()}
+            </Box>
           )}
           
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>

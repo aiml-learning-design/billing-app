@@ -15,6 +15,7 @@ import {
 } from '@mui/icons-material';
 import InvoiceLogo from '../assets/INVOICE.png';
 import InvoktaLogo from '../assets/invokta_invoice.png';
+import api from '../services/api';
 
 /**
  * InvoiceSummaryPage component for displaying the invoice summary after saving
@@ -59,6 +60,20 @@ const InvoiceSummaryPage = () => {
   const [newDetailKey, setNewDetailKey] = useState('');
   const [newDetailValue, setNewDetailValue] = useState('');
   const [editingDetailKey, setEditingDetailKey] = useState(null);
+  
+  // Payment account state
+  const [paymentAccounts, setPaymentAccounts] = useState([]);
+  const [selectedPaymentAccount, setSelectedPaymentAccount] = useState('');
+  const [newPaymentAccountDialogOpen, setNewPaymentAccountDialogOpen] = useState(false);
+  const [newPaymentAccount, setNewPaymentAccount] = useState({
+    bankName: '',
+    accountNumber: '',
+    accountHolderName: '',
+    ifscCode: '',
+    isPrimaryAccount: false
+  });
+  const [paymentAccountFormErrors, setPaymentAccountFormErrors] = useState({});
+  const [savingPaymentAccount, setSavingPaymentAccount] = useState(false);
 
   // Get the current date for the footer
   const currentDate = new Date();
@@ -156,6 +171,177 @@ const InvoiceSummaryPage = () => {
     
     fetchBusinessLogo();
   }, [invoiceData]);
+
+  // Fetch payment accounts when component mounts
+  useEffect(() => {
+    const fetchPaymentAccounts = async () => {
+      try {
+        console.log('InvoiceSummaryPage: Fetching payment accounts');
+        // Make API call to fetch bank accounts using the API service
+        const response = await api.get('/api/banks/all');
+        
+        if (response && response.success) {
+          // Extract the bank accounts from the response data
+          const bankAccounts = response.data || [];
+          
+          // Map the API response to the format expected by the dropdown
+          const formattedAccounts = bankAccounts.map(account => ({
+            id: account.bankDetailsId,
+            bankName: account.bankName,
+            accountNumber: account.accountNumber,
+            accountHolderName: account.accountHolderName,
+            ifscCode: account.ifscCode,
+            isPrimaryAccount: account.primaryAccount
+          }));
+          
+          console.log('InvoiceSummaryPage: Fetched payment accounts:', formattedAccounts);
+          setPaymentAccounts(formattedAccounts);
+          
+          // Set the primary account as the default selected account
+          const primaryAccount = formattedAccounts.find(account => account.isPrimaryAccount);
+          if (primaryAccount) {
+            console.log('InvoiceSummaryPage: Setting primary account:', primaryAccount);
+            setSelectedPaymentAccount(primaryAccount.id);
+          } else if (formattedAccounts.length > 0) {
+            console.log('InvoiceSummaryPage: Setting first account as default:', formattedAccounts[0]);
+            setSelectedPaymentAccount(formattedAccounts[0].id);
+          }
+        } else {
+          console.error('Failed to fetch bank accounts:', response?.message || 'Unknown error');
+          // Use empty array if API call fails
+          setPaymentAccounts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching payment accounts:', error);
+        // Use empty array if API call fails
+        setPaymentAccounts([]);
+      }
+    };
+    
+    fetchPaymentAccounts();
+  }, []);
+
+  // Handle payment account selection
+  const handlePaymentAccountChange = (event) => {
+    setSelectedPaymentAccount(event.target.value);
+  };
+
+  // Handle opening the new payment account dialog
+  const handleOpenNewPaymentAccountDialog = () => {
+    setNewPaymentAccount({
+      bankName: '',
+      accountNumber: '',
+      accountHolderName: '',
+      ifscCode: '',
+      isPrimaryAccount: false
+    });
+    setPaymentAccountFormErrors({});
+    setNewPaymentAccountDialogOpen(true);
+  };
+
+  // Handle closing the new payment account dialog
+  const handleNewPaymentAccountDialogClose = () => {
+    setNewPaymentAccountDialogOpen(false);
+  };
+
+  // Handle changes to the new payment account form
+  const handleNewPaymentAccountChange = (event) => {
+    const { name, value, checked, type } = event.target;
+    setNewPaymentAccount(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+    
+    // Clear error for this field if it exists
+    if (paymentAccountFormErrors[name]) {
+      setPaymentAccountFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  // Validate the new payment account form
+  const validatePaymentAccountForm = () => {
+    const errors = {};
+    
+    if (!newPaymentAccount.bankName.trim()) {
+      errors.bankName = 'Bank name is required';
+    }
+    
+    if (!newPaymentAccount.accountNumber.trim()) {
+      errors.accountNumber = 'Account number is required';
+    }
+    
+    if (!newPaymentAccount.accountHolderName.trim()) {
+      errors.accountHolderName = 'Account holder name is required';
+    }
+    
+    if (!newPaymentAccount.ifscCode.trim()) {
+      errors.ifscCode = 'IFSC code is required';
+    }
+    
+    return errors;
+  };
+
+  // Handle submitting the new payment account form
+  const handleNewPaymentAccountSubmit = async () => {
+    // Validate form
+    const errors = validatePaymentAccountForm();
+    
+    if (Object.keys(errors).length > 0) {
+      setPaymentAccountFormErrors(errors);
+      return;
+    }
+    
+    setSavingPaymentAccount(true);
+    
+    try {
+      // Prepare data for API
+      const paymentAccountData = {
+        bankName: newPaymentAccount.bankName,
+        accountNumber: newPaymentAccount.accountNumber,
+        accountHolderName: newPaymentAccount.accountHolderName,
+        ifscCode: newPaymentAccount.ifscCode,
+        primaryAccount: newPaymentAccount.isPrimaryAccount
+      };
+      
+      // Make API call to create new payment account using the API service
+      console.log('InvoiceSummaryPage: Creating new payment account:', paymentAccountData);
+      const response = await api.post('/api/banks/add', paymentAccountData);
+      
+      if (response && response.success) {
+        console.log('InvoiceSummaryPage: Payment account created successfully:', response.data);
+        // Add the new account to the list
+        const newAccount = {
+          id: response.data.bankDetailsId,
+          bankName: response.data.bankName,
+          accountNumber: response.data.accountNumber,
+          accountHolderName: response.data.accountHolderName,
+          ifscCode: response.data.ifscCode,
+          isPrimaryAccount: response.data.primaryAccount
+        };
+        
+        setPaymentAccounts(prev => [...prev, newAccount]);
+        
+        // Select the new account
+        setSelectedPaymentAccount(newAccount.id);
+        
+        // Close the dialog
+        setNewPaymentAccountDialogOpen(false);
+      } else {
+        console.error('InvoiceSummaryPage: Failed to create payment account:', response?.message);
+        throw new Error(response?.message || 'Failed to create payment account');
+      }
+    } catch (error) {
+      console.error('Error creating payment account:', error);
+      setPaymentAccountFormErrors({
+        submit: error.message || 'Failed to create payment account. Please try again.'
+      });
+    } finally {
+      setSavingPaymentAccount(false);
+    }
+  };
 
   // Fetch QR code data when showQRCode is toggled on
   useEffect(() => {
@@ -628,6 +814,95 @@ const InvoiceSummaryPage = () => {
         </Box>
       </Box>
 
+      {/* Payment Account Selection */}
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Payment Account
+          </Typography>
+          <Chip label={paymentAccounts.length > 0 ? "Enabled" : "No Accounts"} 
+                color={paymentAccounts.length > 0 ? "success" : "default"} 
+                size="small" />
+          
+          <Box sx={{ mt: 2 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              Select Payment Account
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              This account will be displayed on your invoice for receiving payments
+            </Typography>
+          </Box>
+          
+          {paymentAccounts.length === 0 ? (
+            <Box sx={{ p: 2, bgcolor: '#fff8f5', borderRadius: 1, mb: 2 }}>
+              <Typography color="error" gutterBottom>
+                No payment accounts found.
+              </Typography>
+              <Typography variant="body2">
+                Please add a bank account before proceeding.
+              </Typography>
+            </Box>
+          ) : (
+            <Box sx={{ mt: 2 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel id="payment-account-label">Payment Account</InputLabel>
+                <Select
+                  labelId="payment-account-label"
+                  id="payment-account"
+                  value={selectedPaymentAccount}
+                  onChange={handlePaymentAccountChange}
+                  label="Payment Account"
+                >
+                  {paymentAccounts.map((account) => (
+                    <MenuItem key={account.id} value={account.id}>
+                      {account.bankName} - {account.accountNumber} ({account.accountHolderName})
+                      {account.isPrimaryAccount && " (Primary)"}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              
+              {selectedPaymentAccount && (
+                <Box sx={{ p: 2, bgcolor: '#f5f5f5', borderRadius: 1, mb: 2 }}>
+                  {(() => {
+                    const account = paymentAccounts.find(acc => acc.id === selectedPaymentAccount);
+                    return account ? (
+                      <>
+                        <Typography variant="body1" fontWeight="medium">
+                          {account.bankName}
+                        </Typography>
+                        <Typography variant="body2" fontWeight="medium">
+                          {account.accountHolderName}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Acc. No: {account.accountNumber}
+                        </Typography>
+                        {account.ifscCode && (
+                          <Typography variant="body2" color="text.secondary">
+                            IFSC: {account.ifscCode}
+                          </Typography>
+                        )}
+                      </>
+                    ) : null;
+                  })()}
+                </Box>
+              )}
+            </Box>
+          )}
+          
+          <Button
+            variant="contained"
+            color="primary"
+            fullWidth
+            startIcon={<Add />}
+            onClick={handleOpenNewPaymentAccountDialog}
+            sx={{ mt: 1 }}
+          >
+            Add New Payment Account
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Action Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Button
@@ -814,7 +1089,7 @@ const InvoiceSummaryPage = () => {
                           </Typography>
                           <Box>
                             <Typography variant="body1" fontWeight="medium">
-                              {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
+                              {invoiceData?.billedTo?.businessName}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
                               {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
@@ -993,7 +1268,7 @@ const InvoiceSummaryPage = () => {
                       {invoiceData?.billedBy?.businessName || 'asdfgh'}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
-                      {invoiceData?.billedBy?.officeAddress?.country || 'United States of America (USA)'}
+                      {invoiceData?.billedBy?.officeAddress?.country}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1014,10 +1289,10 @@ const InvoiceSummaryPage = () => {
                       For
                     </Typography>
                     <Typography variant="h6" fontWeight="medium" sx={{ fontSize: '1.2rem', my: 2 }}>
-                      {invoiceData?.billedTo?.businessName || 'client name dheeraj'}
+                      {invoiceData?.billedTo?.businessName}
                     </Typography>
                     <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1rem' }}>
-                      {invoiceData?.billedTo?.officeAddress?.country || 'United States of America (USA)'}
+                      {invoiceData?.billedTo?.officeAddress?.country}
                     </Typography>
                   </Paper>
                 </Grid>
@@ -1618,53 +1893,6 @@ const InvoiceSummaryPage = () => {
                 </Box>
               </Box>
               
-              {/* Bank Details Configuration */}
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-                  Bank Details
-                </Typography>
-                <Chip label="Enabled" color="success" size="small" />
-                
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Show Bank Account Details
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    NEFT, IMPS, CASH
-                  </Typography>
-                </Box>
-                
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Bank Account
-                  </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="body1" fontWeight="medium">
-                      dfjbhdfa
-                    </Typography>
-                    <Button
-                      variant="text"
-                      color="primary"
-                      size="small"
-                    >
-                      Edit
-                    </Button>
-                  </Box>
-                  <Typography variant="body2" fontWeight="medium">
-                    Dheeraj
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Acc. No: 523461431
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    sx={{ mt: 1 }}
-                  >
-                    Select Another Bank Account
-                  </Button>
-                </Box>
-              </Box>
               
               {/* Online Payment Options */}
               <Box sx={{ mb: 3 }}>
@@ -1731,6 +1959,16 @@ const InvoiceSummaryPage = () => {
           size="large"
           onClick={() => {
             console.log('InvoiceSummaryPage: Next button clicked');
+            
+            // Check if a payment account is selected when accounts are available
+            if (paymentAccounts.length > 0 && !selectedPaymentAccount) {
+              alert('Please select a payment account before proceeding.');
+              return;
+            }
+            
+            // Get the selected payment account details
+            const selectedAccount = paymentAccounts.find(acc => acc.id === selectedPaymentAccount);
+            
             // Save current invoice data to localStorage
             localStorage.setItem('invoiceData', JSON.stringify(invoiceData));
             // Convert additionalDetails Map to an array of [key, value] pairs for storage
@@ -1741,7 +1979,9 @@ const InvoiceSummaryPage = () => {
               showBankDetails,
               showQRCode,
               showAdditionalDetails,
-              additionalDetailsArray
+              additionalDetailsArray,
+              selectedPaymentAccount,
+              selectedPaymentAccountDetails: selectedAccount
             }));
             
             // Navigate to review page with invoice data and display preferences
@@ -1755,7 +1995,15 @@ const InvoiceSummaryPage = () => {
                   // Pass additionalDetails as an array of [key, value] pairs
                   // This will be converted back to a Map in ReviewInvoicePage
                   additionalDetailsArray
-                }
+                },
+                paymentAccount: selectedAccount ? {
+                  id: selectedAccount.id,
+                  bankName: selectedAccount.bankName,
+                  accountNumber: selectedAccount.accountNumber,
+                  accountHolderName: selectedAccount.accountHolderName,
+                  ifscCode: selectedAccount.ifscCode,
+                  isPrimaryAccount: selectedAccount.isPrimaryAccount
+                } : null
               } 
             });
           }}
