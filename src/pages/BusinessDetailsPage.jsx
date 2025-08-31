@@ -991,7 +991,7 @@ const BusinessDetailsPage = () => {
                                 }}
                               >
                                 <img
-                                  src={businessLogoUrls[businessId] || `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO`}
+                                  src={businessLogoUrls[businessId]}
                                   alt=""
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                   onError={(e) => {
