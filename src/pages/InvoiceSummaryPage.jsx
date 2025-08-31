@@ -1373,51 +1373,85 @@ const InvoiceSummaryPage = () => {
                       Bank Details
                     </Typography>
                     
-                    <Grid container spacing={2} direction="column">
-                      <Grid item xs={12}>
-                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
-                            Account Name
-                          </Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            Dheeraj
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
-                            Account Number
-                          </Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            523461431
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
-                            IBAN
-                          </Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            jdfjha
-                          </Typography>
-                        </Box>
-                      </Grid>
-                      
-                      <Grid item xs={12}>
-                        <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
-                          <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
-                            Bank
-                          </Typography>
-                          <Typography variant="body1" fontWeight="medium">
-                            dfjbhdfa
-                          </Typography>
-                        </Box>
-                      </Grid>
-                    </Grid>
+                    {selectedPaymentAccount && paymentAccounts.length > 0 ? (
+                      (() => {
+                        // Find the selected account from the paymentAccounts array
+                        const account = paymentAccounts.find(acc => acc.id === selectedPaymentAccount);
+                        
+                        if (!account) {
+                          return (
+                            <Box sx={{ p: 2, bgcolor: '#fff8f5', borderRadius: 1 }}>
+                              <Typography color="error">
+                                Selected account not found. Please select a different account.
+                              </Typography>
+                            </Box>
+                          );
+                        }
+                        
+                        return (
+                          <Grid container spacing={2} direction="column">
+                            {/* Account Holder Name */}
+                            <Grid item xs={12}>
+                              <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                                  Account Name
+                                </Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {account.accountHolderName || 'Not provided'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            
+                            {/* Account Number */}
+                            <Grid item xs={12}>
+                              <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                                  Account Number
+                                </Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {account.accountNumber || 'Not provided'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                            
+                            {/* IFSC Code (instead of IBAN) */}
+                            {account.ifscCode && (
+                              <Grid item xs={12}>
+                                <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                                  <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                                    IFSC Code
+                                  </Typography>
+                                  <Typography variant="body1" fontWeight="medium">
+                                    {account.ifscCode}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            )}
+                            
+                            {/* Bank Name */}
+                            <Grid item xs={12}>
+                              <Box sx={{ p: 1, display: 'flex', alignItems: 'center' }}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ width: '150px', flexShrink: 0 }}>
+                                  Bank
+                                </Typography>
+                                <Typography variant="body1" fontWeight="medium">
+                                  {account.bankName || 'Not provided'}
+                                </Typography>
+                              </Box>
+                            </Grid>
+                          </Grid>
+                        );
+                      })()
+                    ) : (
+                      <Box sx={{ p: 2, bgcolor: '#fff8f5', borderRadius: 1 }}>
+                        <Typography color="error" gutterBottom>
+                          No payment account selected.
+                        </Typography>
+                        <Typography variant="body2">
+                          Please select a payment account from the dropdown above to display bank details.
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                 )}
                 
