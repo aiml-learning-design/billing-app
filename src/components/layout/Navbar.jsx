@@ -58,7 +58,7 @@ const Navbar = () => {
           <Button
             color="inherit"
             component={RouterLink}
-            to="/business"
+            to="/business-details"
             startIcon={<Business />}
           >
             Business
