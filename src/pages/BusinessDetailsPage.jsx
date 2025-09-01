@@ -1001,17 +1001,28 @@ const BusinessDetailsPage = () => {
         </DialogActions>
       </Dialog>
 
+
+      {/* Page Header with Navigation Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
           Business Details
         </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Business />}
-          onClick={() => navigate('/dashboard')}
-        >
-          Back to Dashboard
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Business />}
+            onClick={() => navigate('/dashboard')}
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Receipt />}
+            onClick={() => navigate('/invoices/new-invoice')}
+          >
+            Back to Invoice
+          </Button>
+        </Box>
       </Box>
 
       {loading ? (

@@ -48,63 +48,62 @@ const ClientDetailsPage = () => {
   };
 
   // Function to confirm and execute business deletion
-      const confirmDeleteClient = async () => {
-        if (!businessToDelete) return;
+  const confirmDeleteClient = async () => {
+    if (!businessToDelete) return;
 
-        try {
-          setDeleting(true);
-          const businessId = businessToDelete.businessId || businessToDelete.business_id;
+    try {
+      setDeleting(true);
+      const businessId = businessToDelete.businessId || businessToDelete.business_id;
 
-          console.log(`Deleting business with ID: ${businessId}`);
+      console.log(`Deleting business with ID: ${businessId}`);
 
-          // Call the delete API
-          const response = await api.delete(`/api/client/business/delete/${businessId}`);
+      // Call the delete API
+      const response = await api.delete(`/api/client/business/delete/${businessId}`);
 
-          if (response.success) {
-            setAlert({
-              open: true,
-              message: 'Business deleted successfully',
-              severity: 'success'
-            });
+      if (response.success) {
+        setAlert({
+          open: true,
+          message: 'Business deleted successfully',
+          severity: 'success'
+        });
 
-            // Remove the deleted business from the list
-            setAllBusinesses(prevBusinesses =>
-              prevBusinesses.filter(business =>
-                (business.businessId || business.business_id) !== businessId
-              )
-            );
+        // Remove the deleted business from the list
+        setAllBusinesses(prevBusinesses =>
+          prevBusinesses.filter(business =>
+            (business.businessId || business.business_id) !== businessId
+          )
+        );
 
-            // Update total elements count
-            setTotalElements(prev => prev - 1);
+        // Update total elements count
+        setTotalElements(prev => prev - 1);
 
-            // If we're on a page that might now be empty, adjust the page
-            if (allBusinesses.length === 1 && page > 0) {
-              setPage(page - 1);
-            }
-          } else {
-            throw new Error(response.message || 'Failed to delete business');
-          }
-        } catch (error) {
-          console.error('Error deleting business:', error);
-          setAlert({
-            open: true,
-            message: 'Failed to delete business: ' + (error.response?.data?.message || error.message),
-            severity: 'error'
-          });
-        } finally {
-          setDeleting(false);
-          setOpenDeleteDialog(false);
-          setBusinessToDelete(null);
+        // If we're on a page that might now be empty, adjust the page
+        if (allBusinesses.length === 1 && page > 0) {
+          setPage(page - 1);
         }
-      };
-
-    // Function to cancel business deletion
-    const cancelDeleteClient = () => {
+      } else {
+        throw new Error(response.message || 'Failed to delete business');
+      }
+    } catch (error) {
+      console.error('Error deleting business:', error);
+      setAlert({
+        open: true,
+        message: 'Failed to delete business: ' + (error.response?.data?.message || error.message),
+        severity: 'error'
+      });
+    } finally {
+      setDeleting(false);
       setOpenDeleteDialog(false);
       setBusinessToDelete(null);
-    };
+    }
+  };
 
-  
+  // Function to cancel business deletion
+  const cancelDeleteClient = () => {
+    setOpenDeleteDialog(false);
+    setBusinessToDelete(null);
+  };
+
   // Refs to prevent duplicate API calls
   const apiCallRef = useRef({
     inProgress: false,
@@ -112,17 +111,17 @@ const ClientDetailsPage = () => {
     lastSize: -1,
     callCount: 0
   });
-  
+
   // State to track which business cards are expanded
   const [expandedBusinesses, setExpandedBusinesses] = useState(new Set());
-  
+
   // State to track if the Business Details section is expanded
   // Set to true by default so client logos are loaded when the page loads
   const [businessSectionExpanded, setBusinessSectionExpanded] = useState(true);
-  
+
   // State to store client logo URLs
   const [clientLogoUrls, setClientLogoUrls] = useState({});
-  
+
   // Edit dialog states
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [editClientData, setEditClientData] = useState({
@@ -146,10 +145,10 @@ const ClientDetailsPage = () => {
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [clientLogo, setClientLogo] = useState(null);
   const [logoLoading, setLogoLoading] = useState(false);
-  
+
   // File input reference for logo upload
   const fileInputRef = useRef(null);
-  
+
   // Helper function to get businesses from user data
   const getBusinessesFromUser = (userData) => {
     // Check different possible locations for businesses data
@@ -172,27 +171,27 @@ const ClientDetailsPage = () => {
   // Set selected business when user data is loaded or from localStorage
   useEffect(() => {
     console.log('ClientDetails: User data changed', user);
-    
+
     // First try to get business details from localStorage (for newly created businesses)
     const storedBusinessDetails = localStorage.getItem('businessDetails');
     const userBusinesses = getBusinessesFromUser(user);
-    
+
     console.log('User businesses:', userBusinesses);
-    
+
     if (storedBusinessDetails) {
       try {
         const parsedBusinessDetails = JSON.parse(storedBusinessDetails);
         console.log('Found stored business details:', parsedBusinessDetails);
         setBusinessDetails(parsedBusinessDetails);
-        
+
         // If user data is also available, update the selected business
         if (userBusinesses) {
           // Find the business in userBusinesses that matches the stored business ID
           const matchingBusiness = userBusinesses.find(
-            b => b.business_id === parsedBusinessDetails.businessId || 
+            b => b.business_id === parsedBusinessDetails.businessId ||
                  b.businessId === parsedBusinessDetails.businessId
           );
-          
+
           // If found, use it; otherwise use the first business
           setSelectedBusiness(matchingBusiness || userBusinesses[0]);
         }
@@ -217,7 +216,7 @@ const ClientDetailsPage = () => {
       setPage(totalPages - 1);
     }
   }, [totalPages, page]);
-  
+
   // Effect to preload client logos when allBusinesses changes
   useEffect(() => {
     if (allBusinesses.length > 0) {
@@ -229,63 +228,63 @@ const ClientDetailsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       // Check if we're already making this exact API call
-      if (apiCallRef.current.inProgress && 
-          apiCallRef.current.lastPage === page && 
+      if (apiCallRef.current.inProgress &&
+          apiCallRef.current.lastPage === page &&
           apiCallRef.current.lastSize === size) {
         console.log('Skipping duplicate API call - call already in progress with same parameters');
         return;
       }
-      
+
       // Check if we've already made this exact API call
-      if (apiCallRef.current.lastPage === page && 
-          apiCallRef.current.lastSize === size && 
+      if (apiCallRef.current.lastPage === page &&
+          apiCallRef.current.lastSize === size &&
           apiCallRef.current.callCount > 0) {
         console.log('Skipping duplicate API call - already called with same parameters');
         return;
       }
-      
+
       // Mark that we're starting an API call
       apiCallRef.current.inProgress = true;
       apiCallRef.current.lastPage = page;
       apiCallRef.current.lastSize = size;
       apiCallRef.current.callCount++;
-      
+
       console.log('API call count:', apiCallRef.current.callCount);
-      
+
       setLoading(true);
       setError(null);
       try {
         console.log('Fetching client details from API with pagination', { page, size });
-        
+
         // Use the client API endpoint
         const endpoint = API_CONFIG.ENDPOINTS.BUSINESS.GET_CLIENT_DETAILS;
-        
+
         console.log('Using endpoint:', endpoint);
-        
+
         const businessResponse = await api.get(`${endpoint}?page=${page}&size=${size}`);
-        
+
         console.log('Client details response:', businessResponse);
-        
+
         // Check if the response is successful and contains data
         if (businessResponse.success && businessResponse.data) {
           try {
             // Extract paginated data
             const paginatedData = businessResponse.data;
             console.log('Paginated data:', paginatedData);
-            
+
             // Check if the response has the expected Page structure
             if (paginatedData && typeof paginatedData === 'object') {
               let businesses = [];
               let totalPagesValue = 0;
               let totalElementsValue = 0;
-              
+
               // Case 1: Standard Spring Data Page object
               if (Array.isArray(paginatedData.content)) {
                 console.log('Found standard Page structure with content array');
                 businesses = paginatedData.content;
                 totalPagesValue = paginatedData.totalPages || 0;
                 totalElementsValue = paginatedData.totalElements || 0;
-              } 
+              }
               // Case 2: Direct array of businesses
               else if (Array.isArray(paginatedData)) {
                 console.log('Found direct array of businesses');
@@ -314,14 +313,14 @@ const ClientDetailsPage = () => {
                 totalPagesValue = 0;
                 totalElementsValue = 0;
               }
-              
+
               console.log('Setting all businesses:', businesses);
               console.log('Pagination metadata:', { totalPages: totalPagesValue, totalElements: totalElementsValue });
-              
+
               setAllBusinesses(businesses);
               setTotalPages(totalPagesValue);
               setTotalElements(totalElementsValue);
-              
+
               // If there are businesses, set the first one as selected
               if (Array.isArray(businesses) && businesses.length > 0) {
                 console.log('Setting selected business to first business:', businesses[0]);
@@ -347,7 +346,7 @@ const ClientDetailsPage = () => {
         }
       } catch (err) {
         console.error('Client details loading error:', err);
-        
+
         // Log more detailed error information
         console.error('Error details:', {
           name: err.name,
@@ -360,15 +359,15 @@ const ClientDetailsPage = () => {
           } : 'No response data',
           request: err.request ? 'Request exists but no response received' : 'No request data'
         });
-        
+
         // Set a more descriptive error message
         let errorMessage = 'Failed to load client details';
-        
+
         if (err.response) {
           // The request was made and the server responded with a status code
           // that falls out of the range of 2xx
           errorMessage += `: Server responded with ${err.response.status} - ${err.response.statusText || 'Unknown status'}`;
-          
+
           // Try to extract more specific error message from response data
           if (err.response.data) {
             if (typeof err.response.data === 'string') {
@@ -386,7 +385,7 @@ const ClientDetailsPage = () => {
           // Something happened in setting up the request that triggered an Error
           errorMessage += `: ${err.message || 'Unknown error'}`;
         }
-        
+
         setError(errorMessage);
       } finally {
         // Mark that the API call is no longer in progress
@@ -396,20 +395,20 @@ const ClientDetailsPage = () => {
     };
     fetchData();
   }, [page, size]); // Re-fetch when page or size changes
-  
+
   // Handle page change for pagination
   const handlePageChange = (event, newPage) => {
     // MUI Pagination is 1-indexed, but our API is 0-indexed
     setPage(newPage - 1);
   };
-  
+
   // Handle size change for pagination
   const handleSizeChange = (event) => {
     const newSize = parseInt(event.target.value, 10);
     setSize(newSize);
     setPage(0); // Reset to first page when changing page size
   };
-  
+
   // Toggle expansion state of a business card
   const toggleBusinessExpansion = (businessId) => {
     setExpandedBusinesses(prevExpanded => {
@@ -422,7 +421,7 @@ const ClientDetailsPage = () => {
       return newExpanded;
     });
   };
-  
+
   // Toggle expansion state of the Business Details section
   const toggleBusinessSectionExpansion = () => {
     setBusinessSectionExpanded(!businessSectionExpanded);
@@ -433,11 +432,11 @@ const ClientDetailsPage = () => {
     // Navigate to business setup page with client context
     navigate('/business-setup?context=client');
   };
-  
+
   // Function to handle editing a client
   const handleEditClient = (client) => {
     console.log('Editing client:', client);
-    
+
     // Prepare client data for editing
     const clientData = {
       businessId: client.businessId || client.business_id,
@@ -456,47 +455,47 @@ const ClientDetailsPage = () => {
       },
       logo: null
     };
-    
+
     // Set the edit client data
     setEditClientData(clientData);
-    
+
     // Fetch client logo
 //    fetchClientLogo(clientData.businessId);
-    
+
     // Open the edit dialog
     setOpenEditDialog(true);
   };
-  
+
   // Function to fetch client logo
   const fetchClientLogo = async (businessId) => {
     if (!businessId) return;
-    
+
     try {
       setLogoLoading(true);
-      
+
       // Get the authentication token from localStorage
       const token = localStorage.getItem('token');
-      
+
       // Construct the URL for fetching the logo
       const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=CLIENT_LOGO`;
-      
+
       // Make an authenticated request to fetch the logo
       console.log(`Adding authorization header for fetchClientLogo: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
-      
+
       const response = await fetch(logoUrl, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
       }
-      
+
       // Create a blob URL from the response
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
-      
+
       // Set the logo URL to the blob URL
       setClientLogo(objectUrl);
     } catch (error) {
@@ -506,7 +505,7 @@ const ClientDetailsPage = () => {
       setLogoLoading(false);
     }
   };
-  
+
   // Function to preload client logos
   const preloadClientLogos = async (businesses) => {
       if (!businesses || businesses.length === 0) return;
@@ -574,11 +573,11 @@ const ClientDetailsPage = () => {
       setClientLogoUrls(logoUrls);
       console.log('Updated client logo URLs:', logoUrls);
     };
-  
+
   // Function to handle input changes in the edit form
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     // Handle nested address fields
     if (name.startsWith('address.')) {
       const addressField = name.split('.')[1];
@@ -597,12 +596,12 @@ const ClientDetailsPage = () => {
       }));
     }
   };
-  
+
   // Function to handle logo file selection
   const handleLogoChange = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-    
+
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png'];
     if (!validTypes.includes(file.type)) {
@@ -613,7 +612,7 @@ const ClientDetailsPage = () => {
       });
       return;
     }
-    
+
     // Validate file size (10MB max)
     const maxSize = 10 * 1024 * 1024; // 10MB in bytes
     if (file.size > maxSize) {
@@ -624,22 +623,22 @@ const ClientDetailsPage = () => {
       });
       return;
     }
-    
+
     // Set the logo file
     setEditClientData(prev => ({
       ...prev,
       logo: file
     }));
-    
+
     // Create a local URL for preview
     setClientLogo(URL.createObjectURL(file));
   };
-  
+
   // Function to handle updating a client
   const handleUpdateClient = async () => {
     try {
       setSaving(true);
-      
+
       // Prepare data for API
       const clientData = {
         businessId: editClientData.businessId,
@@ -651,7 +650,7 @@ const ClientDetailsPage = () => {
         phone: editClientData.phone,
         address: editClientData.address
       };
-      
+
     //  Handle logo upload if a logo was selected
       if (editClientData.logo && editClientData.logo instanceof File) {
         // Create a FormData object for file upload
@@ -680,31 +679,31 @@ const ClientDetailsPage = () => {
 
       // Log the payload to verify data
       console.log('Updating client with data:', clientData);
-      
+
       // Call API to update client
       const response = await api.put('/api/client/business/update/'+clientData.businessId, clientData);
-      
+
       // Update the client in the list
       const updatedClient = response.data;
       console.log('Client updated:', updatedClient);
-      
+
       // Update the client in allBusinesses
       setAllBusinesses(prevBusinesses => {
         return prevBusinesses.map(business => {
-          if (business.businessId === updatedClient.businessId || 
+          if (business.businessId === updatedClient.businessId ||
               business.business_id === updatedClient.businessId) {
             return updatedClient;
           }
           return business;
         });
       });
-      
+
       setAlert({
         open: true,
         message: 'Client updated successfully',
         severity: 'success'
       });
-      
+
       // Close the edit dialog
       setOpenEditDialog(false);
     } catch (error) {
@@ -718,7 +717,7 @@ const ClientDetailsPage = () => {
       setSaving(false);
     }
   };
-  
+
   // Handle alert close
   const handleAlertClose = () => {
     setAlert(prev => ({ ...prev, open: false }));
@@ -738,45 +737,45 @@ const ClientDetailsPage = () => {
         </Alert>
       </Snackbar>
 
-          {/* Delete Confirmation Dialog */}
-          <Dialog
-            open={openDeleteDialog}
-            onClose={cancelDeleteClient}
-            aria-labelledby="delete-dialog-title"
-            aria-describedby="delete-dialog-description"
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={openDeleteDialog}
+        onClose={cancelDeleteClient}
+        aria-labelledby="delete-dialog-title"
+        aria-describedby="delete-dialog-description"
+      >
+        <DialogTitle id="delete-dialog-title">
+          <center> Confirm Delete </center>
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="delete-dialog-description">
+            <center><strong style={{ color: '#8B0000' }}>Are you sure you want to DELETE </strong></center>
+            <center><strong>➤ {businessToDelete?.businessName} </strong></center>
+            <br />
+            <em style={{ fontSize: '0.875rem', color: '#555' }}>
+              Once deleted, this business cannot be retrieved.
+            </em>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={cancelDeleteClient} disabled={deleting}>
+            No, Cancel
+          </Button>
+          <Button
+            onClick={confirmDeleteClient}
+            disabled={deleting}
+            color="error"
+            variant="contained"
+            autoFocus
           >
-            <DialogTitle id="delete-dialog-title">
-             <center> Confirm Delete </center>
-            </DialogTitle>
-            <DialogContent>
-              <DialogContentText id="delete-dialog-description">
-                <center><strong style={{ color: '#8B0000' }}>Are you sure you want to DELETE </strong></center>
-                 <center><strong>➤ {businessToDelete?.businessName} </strong></center>
-<br />
-                <em style={{ fontSize: '0.875rem', color: '#555' }}>
-                    Once deleted, this business cannot be retrieved.
-                  </em>
-              </DialogContentText>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={cancelDeleteClient} disabled={deleting}>
-                No, Cancel
-              </Button>
-              <Button
-                onClick={confirmDeleteClient}
-                disabled={deleting}
-                color="error"
-                variant="contained"
-                autoFocus
-              >
-                {deleting ? <CircularProgress size={20} /> : 'Yes, Delete'}
-              </Button>
-            </DialogActions>
-          </Dialog>
-      
+            {deleting ? <CircularProgress size={20} /> : 'Yes, Delete'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Edit Client Dialog */}
-      <Dialog 
-        open={openEditDialog} 
+      <Dialog
+        open={openEditDialog}
         onClose={() => setOpenEditDialog(false)}
         maxWidth="md"
         fullWidth
@@ -803,10 +802,10 @@ const ClientDetailsPage = () => {
                 {logoLoading ? (
                   <CircularProgress size={40} />
                 ) : clientLogo ? (
-                  <img 
+                  <img
                     src={clientLogoUrls[editClientData.businessId]}
-                    alt="Client Logo" 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    alt="Client Logo"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     onError={(e) => {
                       console.error('Error loading logo');
                       e.target.src = 'https://via.placeholder.com/150?text=No+Logo';
@@ -832,7 +831,7 @@ const ClientDetailsPage = () => {
                 Upload Logo
               </Button>
             </Grid>
-            
+
             {/* Client Details Form */}
             <Grid item xs={12} md={8}>
               <Grid container spacing={2}>
@@ -885,7 +884,7 @@ const ClientDetailsPage = () => {
                 </Grid>
               </Grid>
             </Grid>
-            
+
             {/* Address Section */}
             <Grid item xs={12}>
               <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
@@ -952,8 +951,8 @@ const ClientDetailsPage = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEditDialog(false)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleUpdateClient}
             disabled={saving}
             startIcon={saving ? <CircularProgress size={20} /> : <Save />}
@@ -962,18 +961,28 @@ const ClientDetailsPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      
+
+      {/* Page Header with Navigation Buttons */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
           Client Details
         </Typography>
-        <Button 
-          variant="outlined" 
-          startIcon={<Business />}
-          onClick={() => navigate('/dashboard')}
-        >
-          Back to Dashboard
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Business />}
+            onClick={() => navigate('/dashboard')}
+          >
+            Back to Dashboard
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Receipt />}
+            onClick={() => navigate('/invoices/new-invoice')}
+          >
+            Back to Invoice
+          </Button>
+        </Box>
       </Box>
 
       {loading ? (
@@ -990,15 +999,15 @@ const ClientDetailsPage = () => {
             <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
               Your Clients
             </Typography>
-            <IconButton 
+            <IconButton
               onClick={toggleBusinessSectionExpansion}
               aria-expanded={businessSectionExpanded}
               aria-label="toggle client details"
-              sx={{ 
-                color: '#000000', 
+              sx={{
+                color: '#000000',
                 bgcolor: 'rgba(0, 0, 0, 0.08)',
                 border: '1px solid rgba(0, 0, 0, 0.2)',
-                '&:hover': { 
+                '&:hover': {
                   bgcolor: 'rgba(0, 0, 0, 0.15)',
                   border: '1px solid rgba(0, 0, 0, 0.3)'
                 },
@@ -1036,7 +1045,7 @@ const ClientDetailsPage = () => {
                 {allBusinesses.map((business, index) => {
                   const businessId = business.businessId || business.business_id;
                   const isExpanded = expandedBusinesses.has(businessId);
-                  
+
                   return (
                     <Grid item xs={12} md={6} key={index}>
                       <Card sx={{ height: '100%' }}>
@@ -1057,7 +1066,7 @@ const ClientDetailsPage = () => {
                                   overflow: 'hidden'
                                 }}
                               >
-                                <img 
+                                <img
                                   src={clientLogoUrls[businessId]}
                                   alt=""
                                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -1075,7 +1084,7 @@ const ClientDetailsPage = () => {
                                 {business.businessName}
                               </Typography>
                             </Box>
-                            <IconButton 
+                            <IconButton
                               onClick={() => toggleBusinessExpansion(businessId)}
                               aria-expanded={isExpanded}
                               aria-label="show more"
@@ -1083,7 +1092,7 @@ const ClientDetailsPage = () => {
                               {isExpanded ? <ExpandLess /> : <ExpandMore />}
                             </IconButton>
                           </Box>
-                          
+
                           {/* Always show minimal info */}
                           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                             <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
@@ -1093,7 +1102,7 @@ const ClientDetailsPage = () => {
                               {business.gstin || business.panNumber || business.pan || "Not provided"}
                             </Typography>
                           </Box>
-                          
+
                           {/* Collapsible detailed info */}
                           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mt: 2 }}>
@@ -1107,7 +1116,7 @@ const ClientDetailsPage = () => {
                                   </Typography>
                                 </Box>
                               )}
-                              
+
                               {business.email && (
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
@@ -1118,7 +1127,7 @@ const ClientDetailsPage = () => {
                                   </Typography>
                                 </Box>
                               )}
-                              
+
                               {business.phone && (
                                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                                   <Typography variant="body2" color="text.secondary" sx={{ minWidth: 100 }}>
@@ -1129,7 +1138,7 @@ const ClientDetailsPage = () => {
                                   </Typography>
                                 </Box>
                               )}
-                              
+
                               {/* Display address from business.address (new structure) or business.officeAddress (old structure) */}
                               {(business.address || business.officeAddress) && (
                                 <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
@@ -1137,32 +1146,32 @@ const ClientDetailsPage = () => {
                                     Address:
                                   </Typography>
                                   <Typography variant="body1">
-                          {business.address && (
-                            <>
-                              {business.address.email && (
-                                <div><b>Email:</b> {business.address.email}</div>
-                              )}
-                              {business.address.phone && (
-                                <div><b>Phone:</b> {business.address.phone}</div>
-                              )}
-                              {business.address.addressLine && (
-                                <div><b>Address Line:</b> {business.address.addressLine}</div>
-                              )}
-                              {business.address.city && (
-                                <div><b>City:</b> {business.address.city}</div>
-                              )}
-                              {business.address.state && (
-                                <div><b>State:</b> {business.address.state}</div>
-                              )}
-                              {business.address.pincode && (
-                                <div><b>PIN:</b> {business.address.pincode}</div>
-                              )}
-                              {business.address.country && (
-                                <div><b>Country:</b> {business.address.country}</div>
-                              )}
-                            </>
-                          )}
-                        </Typography>
+                                    {business.address && (
+                                      <>
+                                        {business.address.email && (
+                                          <div><b>Email:</b> {business.address.email}</div>
+                                        )}
+                                        {business.address.phone && (
+                                          <div><b>Phone:</b> {business.address.phone}</div>
+                                        )}
+                                        {business.address.addressLine && (
+                                          <div><b>Address Line:</b> {business.address.addressLine}</div>
+                                        )}
+                                        {business.address.city && (
+                                          <div><b>City:</b> {business.address.city}</div>
+                                        )}
+                                        {business.address.state && (
+                                          <div><b>State:</b> {business.address.state}</div>
+                                        )}
+                                        {business.address.pincode && (
+                                          <div><b>PIN:</b> {business.address.pincode}</div>
+                                        )}
+                                        {business.address.country && (
+                                          <div><b>Country:</b> {business.address.country}</div>
+                                        )}
+                                      </>
+                                    )}
+                                  </Typography>
                                 </Box>
                               )}
                             </Box>
@@ -1178,14 +1187,14 @@ const ClientDetailsPage = () => {
                           </Button>
                           <Button
                             variant="outlined"
-                              sx={{ mt: 2 , flex: 1}}
-                              color="error"
-                              startIcon={<Delete />}
-                              onClick={() => handleDeleteClient(business)}
-                            >
-                              Delete Business
-                            </Button>
-                            </Box>
+                            sx={{ mt: 2 , flex: 1}}
+                            color="error"
+                            startIcon={<Delete />}
+                            onClick={() => handleDeleteClient(business)}
+                          >
+                            Delete Business
+                          </Button>
+                        </Box>
                         </CardContent>
                       </Card>
                     </Grid>
