@@ -21,7 +21,8 @@
     "react-router-dom": "^7.6.3",
     "react-scripts": "^0.0.0",
     "react-select": "^5.10.2",
-    "yup": "^1.6.1"
+    "yup": "^1.6.1",
+    "libphonenumber-js": "^1.11.14"
   },
   "scripts": {
     "start": "react-scripts start",

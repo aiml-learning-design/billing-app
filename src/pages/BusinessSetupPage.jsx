@@ -198,9 +198,13 @@ const BusinessSetup = () => {
 
           setSuccessMessage('Business setup successful! Redirecting to dashboard...');
 
-          setTimeout(() => {
+        setTimeout(() => {
+          if (businessSetUpContext === 'vendor') {
             navigate('/business-details');
-          }, 1500);
+          } else if (businessSetUpContext === 'client') {
+            navigate('/client-details');
+          }
+        }, 1000);
         } else {
           throw new Error('Error creating business');
         }

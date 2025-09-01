@@ -5,13 +5,13 @@ import {
   ListItemIcon, ListItemText, Paper, Avatar, FormControl, Select,
   MenuItem, Pagination, Stack, IconButton, Collapse, Dialog, DialogTitle,
   DialogContent, DialogActions, TextField, OutlinedInput, InputLabel,
-  FormHelperText, InputAdornment, Snackbar
+  FormHelperText, InputAdornment, Snackbar, DialogContentText
 } from '@mui/material';
 import {
   Receipt, Description, MonetizationOn,
   Business, ListAlt, Add, Store, Person,
   Email, Phone, LocationOn, ExpandMore, ExpandLess,
-  Save, CloudUpload, Edit
+  Save, CloudUpload, Edit, Delete,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -28,12 +28,82 @@ const ClientDetailsPage = () => {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [businessDetails, setBusinessDetails] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
+
+  // Delete dialog states
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [businessToDelete, setBusinessToDelete] = useState(null);
   
   // Pagination states
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+
+  // Function to handle delete business confirmation
+  const handleDeleteClient = (business) => {
+    console.log('Preparing to delete business:', business);
+    setBusinessToDelete(business);
+    setOpenDeleteDialog(true);
+  };
+
+  // Function to confirm and execute business deletion
+      const confirmDeleteClient = async () => {
+        if (!businessToDelete) return;
+
+        try {
+          setDeleting(true);
+          const businessId = businessToDelete.businessId || businessToDelete.business_id;
+
+          console.log(`Deleting business with ID: ${businessId}`);
+
+          // Call the delete API
+          const response = await api.delete(`/api/client/business/delete/${businessId}`);
+
+          if (response.success) {
+            setAlert({
+              open: true,
+              message: 'Business deleted successfully',
+              severity: 'success'
+            });
+
+            // Remove the deleted business from the list
+            setAllBusinesses(prevBusinesses =>
+              prevBusinesses.filter(business =>
+                (business.businessId || business.business_id) !== businessId
+              )
+            );
+
+            // Update total elements count
+            setTotalElements(prev => prev - 1);
+
+            // If we're on a page that might now be empty, adjust the page
+            if (allBusinesses.length === 1 && page > 0) {
+              setPage(page - 1);
+            }
+          } else {
+            throw new Error(response.message || 'Failed to delete business');
+          }
+        } catch (error) {
+          console.error('Error deleting business:', error);
+          setAlert({
+            open: true,
+            message: 'Failed to delete business: ' + (error.response?.data?.message || error.message),
+            severity: 'error'
+          });
+        } finally {
+          setDeleting(false);
+          setOpenDeleteDialog(false);
+          setBusinessToDelete(null);
+        }
+      };
+
+    // Function to cancel business deletion
+    const cancelDeleteClient = () => {
+      setOpenDeleteDialog(false);
+      setBusinessToDelete(null);
+    };
+
   
   // Refs to prevent duplicate API calls
   const apiCallRef = useRef({
@@ -667,6 +737,42 @@ const ClientDetailsPage = () => {
           {alert.message}
         </Alert>
       </Snackbar>
+
+          {/* Delete Confirmation Dialog */}
+          <Dialog
+            open={openDeleteDialog}
+            onClose={cancelDeleteClient}
+            aria-labelledby="delete-dialog-title"
+            aria-describedby="delete-dialog-description"
+          >
+            <DialogTitle id="delete-dialog-title">
+             <center> Confirm Delete </center>
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="delete-dialog-description">
+                <center><strong style={{ color: '#8B0000' }}>Are you sure you want to DELETE </strong></center>
+                 <center><strong>➤ {businessToDelete?.businessName} </strong></center>
+<br />
+                <em style={{ fontSize: '0.875rem', color: '#555' }}>
+                    Once deleted, this business cannot be retrieved.
+                  </em>
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={cancelDeleteClient} disabled={deleting}>
+                No, Cancel
+              </Button>
+              <Button
+                onClick={confirmDeleteClient}
+                disabled={deleting}
+                color="error"
+                variant="contained"
+                autoFocus
+              >
+                {deleting ? <CircularProgress size={20} /> : 'Yes, Delete'}
+              </Button>
+            </DialogActions>
+          </Dialog>
       
       {/* Edit Client Dialog */}
       <Dialog 
@@ -1061,7 +1167,7 @@ const ClientDetailsPage = () => {
                               )}
                             </Box>
                           </Collapse>
-                          
+                         <Box sx={{ display: 'flex', gap: 2, mt: 2 }}>
                           <Button
                             variant="contained"
                             sx={{ mt: 2 }}
@@ -1070,6 +1176,16 @@ const ClientDetailsPage = () => {
                           >
                             Edit Client
                           </Button>
+                          <Button
+                            variant="outlined"
+                              sx={{ mt: 2 , flex: 1}}
+                              color="error"
+                              startIcon={<Delete />}
+                              onClick={() => handleDeleteClient(business)}
+                            >
+                              Delete Business
+                            </Button>
+                            </Box>
                         </CardContent>
                       </Card>
                     </Grid>
