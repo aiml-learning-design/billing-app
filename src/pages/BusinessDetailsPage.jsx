@@ -368,7 +368,7 @@ const BusinessDetailsPage = () => {
   // Function to handle adding a new business
   const handleAddBusiness = () => {
     // Navigate to business setup page with business context
-    navigate('/business-setup?context=business');
+    navigate('/business-setup?context=vendor');
   };
 
   // Function to handle editing a business
@@ -755,7 +755,7 @@ const BusinessDetailsPage = () => {
               <DialogContent>
                 <DialogContentText id="delete-dialog-description">
                   <center><strong style={{ color: '#8B0000' }}>Are you sure you want to DELETE </strong></center>
-                   <center><strong>➤    {businessToDelete?.businessName} </strong></center>
+                   <center><strong>➤ {businessToDelete?.businessName} </strong></center>
 <br />
                   <em style={{ fontSize: '0.875rem', color: '#555' }}>
                       Once deleted, this business cannot be retrieved.

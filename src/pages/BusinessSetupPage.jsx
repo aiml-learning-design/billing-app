@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSearchParams } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -21,7 +20,6 @@ import {
   IconButton,
   CircularProgress,
   Snackbar,
-  Divider,
   Card,
   CardContent,
   Avatar
@@ -32,6 +30,56 @@ import countries from '../utils/countries';
 import countryStates from '../utils/countryStates';
 import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
+
+// Validation schema
+const getValidationSchema = (selectedCountry) => {
+  return Yup.object().shape({
+    businessName: Yup.string().required('Business name is required'),
+    website: Yup.string().url('Invalid URL format'),
+    gstin: Yup.string()
+      .test('gstin-format', 'Invalid GSTIN format', (value) => {
+        if (!value) return true; // Optional field
+        // GSTIN validation logic (15 alphanumeric characters)
+        const gstinRegex = /^[0-9A-Z]{15}$/;
+        return gstinRegex.test(value);
+      }),
+    pan: Yup.string()
+      .matches(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN format'),
+    primaryEmail: Yup.string().email('Invalid email'),
+    phone: Yup.string()
+      .test('phone-validation', 'Invalid phone number', function(value) {
+        const { country } = this.parent;
+        if (!value) return false;
+
+        // Country-specific phone validation
+        if (country === 'India') {
+          return /^[6-9][0-9]{9}$/.test(value); // Indian phone numbers
+        } else if (country === 'United States' || country === 'Canada') {
+          return /^[2-9][0-9]{9}$/.test(value); // US/Canada format
+        }
+        // Add more country-specific validations as needed
+        return value.length >= 8; // Default minimum length
+      })
+      .required('Phone is required'),
+    addressLine: Yup.string(),
+    city: Yup.string(),
+    state: Yup.string().when('country', {
+      is: (country) => country && countryStates[country] && countryStates[country].hasStates,
+      then: () => Yup.string(),
+      otherwise: () => Yup.string().notRequired(),
+    }),
+    pincode: Yup.string(),
+    country: Yup.string().required('Country is required'),
+    additionalDetails: Yup.array().of(
+      Yup.object().shape({
+        key: Yup.string().required('Key is required'),
+        value: Yup.string().required('Value is required')
+      })
+    )
+  });
+};
+
+// Helper functions
 const generateBusinessId = () => {
   const bytes = new Uint8Array(12);
   window.crypto.getRandomValues(bytes);
@@ -39,52 +87,31 @@ const generateBusinessId = () => {
     .map(byte => byte.toString(16).padStart(2, '0'))
     .join('');
 };
-// Main validation schema
-const validationSchema = Yup.object().shape({
-  businessName: Yup.string().required('Business name is required'),
-  website: Yup.string().url('Invalid URL format'),
-  // Office address validation
-  primaryEmail: Yup.string().email('Invalid email').required('Email is required'),
-  phone: Yup.string()
-    .matches(/^[0-9]{10}$/, 'Phone must be 10 digits')
-    .required('Phone is required'),
-  addressLine: Yup.string().required('Address is required'),
-  city: Yup.string().required('City is required'),
-  state: Yup.string().when('country', {
-    is: (country) => country && countryStates[country] && countryStates[country].hasStates,
-    then: () => Yup.string().required('State is required'),
-    otherwise: () => Yup.string().notRequired(),
-  }),
-  pincode: Yup.string(), // Optional field
-  country: Yup.string().required('Country is required'),
-  // Additional details validation
-  additionalDetails: Yup.array().of(
-    Yup.object().shape({
-      key: Yup.string().required('Key is required'),
-      value: Yup.string().required('Value is required')
-    })
-  )
-});
 
-const BusinessSetupPage = () => {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
-    const [countryCode, setCountryCode] = useState('in');
-    const [selectedCountry, setSelectedCountry] = useState('India');
-    const [geoLocationLoading, setGeoLocationLoading] = useState(true);
-    const [successMessage, setSuccessMessage] = useState(null);
-    const [pincodeLoading, setPincodeLoading] = useState(false);
-    const [pincodeError, setPincodeError] = useState(null);
-    const [pincodeSuccess, setPincodeSuccess] = useState(false);
-       const [logoFile, setLogoFile] = useState(null);
-        const [logoPreview, setLogoPreview] = useState(null);
-        const [logoUploading, setLogoUploading] = useState(false);
-        const [businessId, setBusinessId] = useState(generateBusinessId());
-    const navigate = useNavigate();
+const getCountryCode = (countryName) => {
+  const country = countries.find(c => c.name === countryName);
+  return country ? country.code.toLowerCase() : 'in';
+};
 
-    const businessSetUpContext = searchParams.get('context');
+const BusinessSetup = () => {
+  const [searchParams] = useSearchParams();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [countryCode, setCountryCode] = useState('in');
+  const [geoLocationLoading, setGeoLocationLoading] = useState(true);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeError, setPincodeError] = useState(null);
+  const [pincodeSuccess, setPincodeSuccess] = useState(false);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [businessId] = useState(generateBusinessId());
+  const navigate = useNavigate();
 
+  const businessSetUpContext = searchParams.get('context') || 'vendor';
+
+  // Formik initialization
   const formik = useFormik({
     initialValues: {
       businessName: '',
@@ -100,42 +127,36 @@ const BusinessSetupPage = () => {
       country: '',
       additionalDetails: []
     },
-    validationSchema,
+    validationSchema: getValidationSchema(),
     onSubmit: async (values) => {
       try {
         setLoading(true);
         setError(null);
 
         let logoUrl = null;
-                if (logoFile) {
-                  try {
-                    setLogoUploading(true);
-                    const formData = new FormData();
-                    formData.append('file', logoFile);
+        if (logoFile) {
+          try {
+            setLogoUploading(true);
+            const formData = new FormData();
+            formData.append('file', logoFile);
 
-                    const logoResponse = await api.post(
-                      `/api/v1/media/upload?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`,
-                      formData,
-                      {
-                        headers: {
-                          'Content-Type': 'multipart/form-data'
-                        }
-                      }
-                    );
+            const logoResponse = await api.post(
+              `/api/v1/media/upload?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`,
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
 
-                    if (logoResponse.success) {
-                      logoUrl = logoResponse.data.url;
-                    }
-                  } catch (logoError) {
-                    console.error('Error uploading logo:', logoError);
-                    // Continue with business creation even if logo upload fails
-                  } finally {
-                    setLogoUploading(false);
-                  }
-                }
+            if (logoResponse.success) {
+              logoUrl = logoResponse.data.url;
+            }
+          } catch (logoError) {
+            console.error('Error uploading logo:', logoError);
+          } finally {
+            setLogoUploading(false);
+          }
+        }
 
-        // Format the payload to match the BusinessDetailsRequest structure
-        // Create the office address object first
+        // Format the payload
         const address = {
           email: values.primaryEmail,
           phone: values.phone,
@@ -144,54 +165,39 @@ const BusinessSetupPage = () => {
           pincode: values.pincode,
           country: values.country
         };
-        
-        // Only include state field if the country has states
+
         if (values.country && countryStates[values.country] && countryStates[values.country].hasStates) {
           address.state = values.state;
         }
-        
+
         const payload = {
-          businessId: businessId,  // This will be generated by the backend
+          businessId,
           businessName: values.businessName,
           gstin: values.gstin,
           pan: values.pan,
           email: values.primaryEmail,
           phone: values.phone,
-          address: address,
+          address,
           additionalDetails: values.additionalDetails.length > 0 ? values.additionalDetails : undefined,
-          // logoUrl: logoUrl // Include logo URL if uploaded
-
+          logoUrl
         };
 
-        
-        // Log the payload to verify state is only included for countries with states
-        console.log('Country:', values.country);
-        console.log('Country has states:', values.country && countryStates[values.country] && countryStates[values.country].hasStates);
-        console.log('Additional Details:', values.additionalDetails);
-        console.log('Payload:', payload);
+        // Make API call
+        const response = await api.post(`/api/${businessSetUpContext}/business/add`, payload);
 
-        // Make API call with the API service
-        const contextType = businessSetUpContext == 'vendor' ? 'vendor'
-         : businessSetUpContext == 'client' ? 'client'
-         : 'vendor';
-        const response = await api.post(`/api/${contextType}/business/add`, payload);
-        if(!response.success) {
-            setError('Error creating business');
+        if (!response.success) {
+          throw new Error('Error creating business');
         }
-        const businessDetails = response.data
-        // Store business details in localStorage for use in Dashboard
+
+        const businessDetails = response.data;
+
+        // Store business details
         if (businessDetails && businessDetails.businessId) {
-          // Save the business details to localStorage
           localStorage.setItem('businessDetails', JSON.stringify(businessDetails));
-          
-          // Set flag to indicate business setup is completed
           localStorage.setItem('businessSetupCompleted', 'true');
-          
-          // Show success message briefly before redirecting
-          setError(null); // Clear any existing error
+
           setSuccessMessage('Business setup successful! Redirecting to dashboard...');
-          
-          // Navigate to the dashboard page after a short delay
+
           setTimeout(() => {
             navigate('/dashboard');
           }, 1500);
@@ -200,16 +206,12 @@ const BusinessSetupPage = () => {
         }
       } catch (error) {
         console.error('Error creating business:', error);
-        
-        // Only set error if it's an API response error, not a client-side error
+
         if (error.response) {
-          // Server responded with an error status
           setError(error.response.data?.message || 'Error from server');
         } else if (error.request) {
-          // Request was made but no response received
           setError('No response from server. Please check your connection.');
         } else {
-          // Something else happened in setting up the request
           setError(error.message || 'Error creating business');
         }
       } finally {
@@ -218,122 +220,74 @@ const BusinessSetupPage = () => {
     },
   });
 
-    // Handle logo file selection
-    const handleLogoChange = (event) => {
-      const file = event.target.files[0];
-      if (file) {
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-          setError('Please select an image file');
-          return;
-        }
-
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          setError('File size must be less than 5MB');
-          return;
-        }
-
-        setLogoFile(file);
-
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          setLogoPreview(e.target.result);
-        };
-        reader.readAsDataURL(file);
+  // Handle logo file selection
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        setError('Please select an image file');
+        return;
       }
-    };
 
-    // Remove logo
-    const handleRemoveLogo = () => {
-      setLogoFile(null);
-      setLogoPreview(null);
-    };
-  
-  // Fetch user's location and set country defaults after formik is initialized
-  useEffect(() => {
-    const fetchLocationData = async () => {
-      try {
-        setGeoLocationLoading(true);
-        const response = await axios.get('https://ipapi.co/json/');
-        const userData = response.data;
-        console.log("Location data from ipapi.co:", userData);
-
-        // Set UAE as default for testing
-        if (userData?.country_code === 'AE' || userData?.country_name === 'United Arab Emirates') {
-          console.log("UAE detected, setting as default country");
-          const uaeCountry = countries.find(c => c.code === 'AE');
-          if (uaeCountry) {
-            setSelectedCountry(uaeCountry.name);
-            setCountryCode('ae');
-            formik.setFieldValue('country', uaeCountry.name);
-            return;
-          }
-        }
-
-        const countryNames = countries.map(c => c.name);
-
-        if (userData?.country_name && countryNames.includes(userData.country_name)) {
-          console.log(`Setting country to ${userData.country_name}`);
-          setSelectedCountry(userData.country_name);
-          const detectedCountryCode = userData.country_code.toLowerCase();
-          setCountryCode(detectedCountryCode);
-
-          // Update country with the detected country
-          formik.setFieldValue('country', userData.country_name);
-        } else if (userData?.country_code) {
-          // Try to find country by code if name doesn't match
-          const countryByCode = countries.find(c => c.code === userData.country_code.toUpperCase());
-          if (countryByCode) {
-            console.log(`Found country by code: ${countryByCode.name}`);
-            setSelectedCountry(countryByCode.name);
-            setCountryCode(userData.country_code.toLowerCase());
-            formik.setFieldValue('country', countryByCode.name);
-          } else {
-            // Default to UAE for this specific issue
-            const defaultCountry = countries.find(c => c.code === 'AE') || countries.find(c => c.name === 'United Arab Emirates');
-            console.log(`No matching country found, defaulting to ${defaultCountry.name}`);
-            setSelectedCountry(defaultCountry.name);
-            setCountryCode(defaultCountry.code.toLowerCase());
-            formik.setFieldValue('country', defaultCountry.name);
-          }
-        } else {
-          // Default to UAE for this specific issue
-          const defaultCountry = countries.find(c => c.code === 'AE') || countries.find(c => c.name === 'United Arab Emirates');
-          console.log(`No country data, defaulting to ${defaultCountry.name}`);
-          setSelectedCountry(defaultCountry.name);
-          setCountryCode(defaultCountry.code.toLowerCase());
-          formik.setFieldValue('country', defaultCountry.name);
-        }
-      } catch (error) {
-        console.error("Failed to fetch location data", error);
-        // Default to UAE for this specific issue
-        const defaultCountry = countries.find(c => c.code === 'AE') || countries.find(c => c.name === 'United Arab Emirates');
-        console.log(`Error fetching location, defaulting to ${defaultCountry.name}`);
-        setSelectedCountry(defaultCountry.name);
-        setCountryCode(defaultCountry.code.toLowerCase());
-        formik.setFieldValue('country', defaultCountry.name);
-      } finally {
-        setGeoLocationLoading(false);
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB');
+        return;
       }
-    };
 
-    fetchLocationData();
+      setLogoFile(file);
+
+      const reader = new FileReader();
+      reader.onload = (e) => setLogoPreview(e.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove logo
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
+  // Fetch user's location
+  const fetchLocationData = useCallback(async () => {
+    try {
+      setGeoLocationLoading(true);
+      const response = await axios.get('https://ipapi.co/json/');
+      const userData = response.data;
+
+      // Set UAE as default for testing or based on location
+      const defaultCountry = countries.find(c => c.code === 'AE') || countries.find(c => c.name === 'United Arab Emirates');
+      let targetCountry = defaultCountry;
+
+      if (userData?.country_name && countries.some(c => c.name === userData.country_name)) {
+        const detectedCountry = countries.find(c => c.name === userData.country_name);
+        if (detectedCountry) targetCountry = detectedCountry;
+      } else if (userData?.country_code) {
+        const countryByCode = countries.find(c => c.code === userData.country_code.toUpperCase());
+        if (countryByCode) targetCountry = countryByCode;
+      }
+
+      formik.setFieldValue('country', targetCountry.name);
+      setCountryCode(targetCountry.code.toLowerCase());
+    } catch (error) {
+      console.error("Failed to fetch location data", error);
+      const defaultCountry = countries.find(c => c.code === 'AE') || countries.find(c => c.name === 'United Arab Emirates');
+      formik.setFieldValue('country', defaultCountry.name);
+      setCountryCode(defaultCountry.code.toLowerCase());
+    } finally {
+      setGeoLocationLoading(false);
+    }
   }, [formik.setFieldValue]);
+
+  useEffect(() => {
+    fetchLocationData();
+  }, [fetchLocationData]);
 
   // Handle pincode lookup
   const handlePincodeLookup = async (pincode) => {
-    // Validate pincode format based on country
     if (!pincode) return;
-
-    // Reset success state
     setPincodeSuccess(false);
 
-    console.log(`Looking up pincode: ${pincode} for country code: ${countryCode}`);
-
-    // Different countries have different pincode formats
-    // For simplicity, we'll just check minimum length
     const minLength = countryCode === 'us' ? 5 :
                       countryCode === 'ca' ? 6 :
                       countryCode === 'gb' ? 5 :
@@ -346,28 +300,11 @@ const BusinessSetupPage = () => {
       setPincodeLoading(true);
       setPincodeError(null);
 
-      // Use the country code to determine which API endpoint to use
-      // Default to 'ae' (UAE) if no country code is set
       const countryCodeForApi = countryCode || 'ae';
+      let formattedPincode = pincode.replace(/\s/g, '');
 
-      console.log(`Using country code for API: ${countryCodeForApi}`);
-
-      // Format the pincode based on country requirements
-      let formattedPincode = pincode;
-
-      // Special handling for certain countries
-      if (countryCodeForApi === 'ca') {
-        // Canadian postal codes are in format A1A 1A1, but API needs them without spaces
-        formattedPincode = pincode.replace(/\s/g, '');
-      } else if (countryCodeForApi === 'gb') {
-        // UK postcodes may need special handling
-        formattedPincode = pincode.replace(/\s/g, '');
-      } else if (countryCodeForApi === 'ae') {
-        // UAE postcodes are typically 5 digits
-        formattedPincode = pincode.replace(/\s/g, '');
-
-        // Special handling for UAE postcodes
-        // If zippopotam.us doesn't support UAE, we can use a hardcoded mapping for common UAE postcodes
+      // Special handling for UAE postcodes
+      if (countryCodeForApi === 'ae') {
         const uaePostcodes = {
           '00000': { city: 'Abu Dhabi', state: '' },
           '11111': { city: 'Dubai', state: '' },
@@ -376,98 +313,57 @@ const BusinessSetupPage = () => {
           '44444': { city: 'Umm Al Quwain', state: '' },
           '55555': { city: 'Ras Al Khaimah', state: '' },
           '66666': { city: 'Fujairah', state: '' },
-          // Add more UAE postcodes as needed
         };
 
-        // Check if we have a hardcoded mapping for this UAE postcode
         if (uaePostcodes[formattedPincode]) {
-          console.log(`Found hardcoded mapping for UAE postcode: ${formattedPincode}`);
           const uaePlace = uaePostcodes[formattedPincode];
-
-          // Update city
           formik.setFieldValue('city', uaePlace.city);
 
-          // Update country to UAE
           const uaeCountry = countries.find(c => c.code === 'AE');
           if (uaeCountry) {
             formik.setFieldValue('country', uaeCountry.name);
-            setSelectedCountry(uaeCountry.name);
             setCountryCode('ae');
           }
 
-          // Set success state
           setPincodeSuccess(true);
-          setTimeout(() => {
-            setPincodeSuccess(false);
-          }, 3000);
-
+          setTimeout(() => setPincodeSuccess(false), 3000);
           setPincodeLoading(false);
           return;
         }
       }
 
-      // Call the zippopotam.us API to get location data based on pincode
-      console.log(`Calling API: https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
+      // Call the zippopotam.us API
       const response = await axios.get(`https://api.zippopotam.us/${countryCodeForApi}/${formattedPincode}`);
-
-      console.log('API response:', response.data);
 
       if (response.data && response.data.places && response.data.places.length > 0) {
         const place = response.data.places[0];
         let fieldsUpdated = false;
 
-        // Update city
         if (place['place name']) {
-          console.log(`Setting city to: ${place['place name']}`);
           formik.setFieldValue('city', place['place name']);
           fieldsUpdated = true;
         }
 
-        // Get the country name from the response or use the current one
         let countryName = response.data.country;
-        console.log(`Country from API: ${countryName}`);
-
-        // If the API returned a country name that doesn't match our data structure,
-        // try to find a matching country in our list
         if (countryName && !countryStates[countryName]) {
-          console.log(`Country name doesn't match our data structure: ${countryName}`);
-          // Try to find a matching country by name similarity
           const matchingCountry = Object.keys(countryStates).find(c =>
             c.toLowerCase() === countryName.toLowerCase() ||
             c.toLowerCase().includes(countryName.toLowerCase()) ||
             countryName.toLowerCase().includes(c.toLowerCase())
           );
 
-          if (matchingCountry) {
-            console.log(`Found matching country: ${matchingCountry}`);
-            countryName = matchingCountry;
-          }
+          if (matchingCountry) countryName = matchingCountry;
         }
 
-        // If we have a valid country name, update the form
         if (countryName && countryStates[countryName]) {
-          // Update country
-          console.log(`Setting country to: ${countryName}`);
           formik.setFieldValue('country', countryName);
-          setSelectedCountry(countryName);
+          setCountryCode(getCountryCode(countryName));
           fieldsUpdated = true;
 
-          // Find the matching country in our countries list to get the code
-          const countryObj = countries.find(c => c.name === countryName);
-          if (countryObj) {
-            console.log(`Setting country code to: ${countryObj.code.toLowerCase()}`);
-            setCountryCode(countryObj.code.toLowerCase());
-          }
-
-          // Update state if the country has states
           if (countryStates[countryName] && countryStates[countryName].hasStates) {
-            // Try to find the state in our list
             const stateName = place['state'] || place['state abbreviation'];
             if (stateName) {
-              console.log(`State from API: ${stateName}`);
               const statesList = countryStates[countryName].states;
-
-              // Find the closest matching state name
               const matchingState = statesList.find(s =>
                 s.toLowerCase() === stateName.toLowerCase() ||
                 s.toLowerCase().includes(stateName.toLowerCase()) ||
@@ -475,7 +371,6 @@ const BusinessSetupPage = () => {
               );
 
               if (matchingState) {
-                console.log(`Setting state to: ${matchingState}`);
                 formik.setFieldValue('state', matchingState);
                 fieldsUpdated = true;
               }
@@ -483,51 +378,27 @@ const BusinessSetupPage = () => {
           }
         }
 
-        // Set success state if any fields were updated
         if (fieldsUpdated) {
-          console.log('Fields updated successfully');
           setPincodeSuccess(true);
-          // Auto-hide success message after 3 seconds
-          setTimeout(() => {
-            setPincodeSuccess(false);
-          }, 3000);
+          setTimeout(() => setPincodeSuccess(false), 3000);
         } else {
-          console.log('Found location but could not update fields');
-          // Providing a helpful message instead of an error
-          setPincodeError('Location found but details could not be auto-filled. You can enter them manually.');
+          setPincodeError('Location found but details could not be auto-filled.');
         }
-      } else {
-        console.log('No location found for this pincode/zipcode');
-        // Not showing error for not found pincodes as pincode is optional
       }
     } catch (error) {
       console.error('Error looking up pincode:', error);
-
-      // Provide more specific error messages based on the error
-      if (error.response) {
-        if (error.response.status === 404) {
-          console.log('Pincode/zipcode not found');
-          // Not showing error for not found pincodes as pincode is optional
-        } else {
-          console.log(`API error: ${error.response.status}`);
-          // Providing a helpful message instead of an error
-          setPincodeError(`Unable to lookup pincode (API error). You can enter address details manually.`);
-        }
+      if (error.response?.status === 404) {
+        // Not showing error for not found pincodes
       } else if (error.request) {
-        console.log('Network error');
-        // Providing a helpful message instead of an error
-        setPincodeError('Network issue while looking up pincode. You can enter address details manually.');
+        setPincodeError('Network issue while looking up pincode.');
       } else {
-        console.log('Failed to lookup pincode');
-        // Providing a helpful message instead of an error
-        setPincodeError('Unable to lookup pincode. You can enter address details manually.');
+        setPincodeError('Unable to lookup pincode.');
       }
     } finally {
       setPincodeLoading(false);
     }
   };
-  
-  // Handle closing the success message
+
   const handleCloseSuccess = () => {
     setSuccessMessage(null);
   };
@@ -542,14 +413,13 @@ const BusinessSetupPage = () => {
           <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary" sx={{ mb: 4 }}>
             This helps us personalize your experience
           </Typography>
-          
+
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
             </Alert>
           )}
-          
-          {/* Success message Snackbar */}
+
           <Snackbar
             open={!!successMessage}
             autoHideDuration={6000}
@@ -563,67 +433,68 @@ const BusinessSetupPage = () => {
 
           <form onSubmit={formik.handleSubmit}>
             <Grid container spacing={3}>
-                {/* Logo Upload Section */}
-                              <Grid item xs={12}>
-                                <Card variant="outlined">
-                                  <CardContent>
-                                    <Typography variant="h6" gutterBottom>
-                                      Company Logo
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                                      {logoPreview ? (
-                                        <Avatar
-                                          src={logoPreview}
-                                          sx={{ width: 80, height: 80 }}
-                                          variant="rounded"
-                                        />
-                                      ) : (
-                                        <Avatar
-                                          sx={{ width: 80, height: 80, bgcolor: 'grey.200' }}
-                                          variant="rounded"
-                                        >
-                                          <CloudUploadIcon />
-                                        </Avatar>
-                                      )}
-                                      <Box>
-                                        <Button
-                                          variant="outlined"
-                                          component="label"
-                                          startIcon={<CloudUploadIcon />}
-                                          disabled={logoUploading}
-                                        >
-                                          Upload Logo
-                                          <input
-                                            type="file"
-                                            hidden
-                                            accept="image/*"
-                                            onChange={handleLogoChange}
-                                          />
-                                        </Button>
-                                        {logoPreview && (
-                                          <Button
-                                            variant="text"
-                                            color="error"
-                                            onClick={handleRemoveLogo}
-                                            sx={{ ml: 1 }}
-                                          >
-                                            Remove
-                                          </Button>
-                                        )}
-                                      </Box>
-                                    </Box>
-                                    <Typography variant="body2" color="text.secondary">
-                                      Upload your company logo (max 5MB, JPG/PNG)
-                                    </Typography>
-                                    {logoUploading && (
-                                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                                        <CircularProgress size={20} sx={{ mr: 1 }} />
-                                        <Typography variant="body2">Uploading logo...</Typography>
-                                      </Box>
-                                    )}
-                                  </CardContent>
-                                </Card>
-                              </Grid>
+              {/* Logo Upload Section */}
+              <Grid item xs={12}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Company Logo
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                      {logoPreview ? (
+                        <Avatar
+                          src={logoPreview}
+                          sx={{ width: 80, height: 80 }}
+                          variant="rounded"
+                        />
+                      ) : (
+                        <Avatar
+                          sx={{ width: 80, height: 80, bgcolor: 'grey.200' }}
+                          variant="rounded"
+                        >
+                          <CloudUploadIcon />
+                        </Avatar>
+                      )}
+                      <Box>
+                        <Button
+                          variant="outlined"
+                          component="label"
+                          startIcon={<CloudUploadIcon />}
+                          disabled={logoUploading}
+                        >
+                          Upload Logo
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            onChange={handleLogoChange}
+                          />
+                        </Button>
+                        {logoPreview && (
+                          <Button
+                            variant="text"
+                            color="error"
+                            onClick={handleRemoveLogo}
+                            sx={{ ml: 1 }}
+                          >
+                            Remove
+                          </Button>
+                        )}
+                      </Box>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary">
+                      Upload your company logo (max 5MB, JPG/PNG)
+                    </Typography>
+                    {logoUploading && (
+                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                        <CircularProgress size={20} sx={{ mr: 1 }} />
+                        <Typography variant="body2">Uploading logo...</Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+
               {/* Business Name */}
               <Grid item xs={12}>
                 <TextField
@@ -632,9 +503,10 @@ const BusinessSetupPage = () => {
                   name="businessName"
                   value={formik.values.businessName}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   error={formik.touched.businessName && Boolean(formik.errors.businessName)}
                   helperText={
-                    (formik.touched.businessName && formik.errors.businessName) || 
+                    (formik.touched.businessName && formik.errors.businessName) ||
                     "Official Name used across Accounting documents and reports."
                   }
                   required
@@ -649,9 +521,10 @@ const BusinessSetupPage = () => {
                   name="website"
                   value={formik.values.website}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   error={formik.touched.website && Boolean(formik.errors.website)}
                   helperText={
-                    (formik.touched.website && formik.errors.website) || 
+                    (formik.touched.website && formik.errors.website) ||
                     "Add your business or work website."
                   }
                   placeholder="Your Work Website"
@@ -666,12 +539,12 @@ const BusinessSetupPage = () => {
                   name="gstin"
                   value={formik.values.gstin}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   error={formik.touched.gstin && Boolean(formik.errors.gstin)}
                   helperText={
-                    (formik.touched.gstin && formik.errors.gstin) || 
+                    (formik.touched.gstin && formik.errors.gstin) ||
                     "Enter your 15-digit Goods and Services Tax Identification Number"
                   }
-                  required
                 />
               </Grid>
 
@@ -683,12 +556,12 @@ const BusinessSetupPage = () => {
                   name="pan"
                   value={formik.values.pan}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                   error={formik.touched.pan && Boolean(formik.errors.pan)}
                   helperText={
-                    (formik.touched.pan && formik.errors.pan) || 
+                    (formik.touched.pan && formik.errors.pan) ||
                     "Enter your 10-character Permanent Account Number"
                   }
-                  required
                 />
               </Grid>
 
@@ -697,7 +570,7 @@ const BusinessSetupPage = () => {
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Office Address
                 </Typography>
-                
+
                 <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                   <Grid container spacing={2}>
                     {/* Email */}
@@ -708,12 +581,12 @@ const BusinessSetupPage = () => {
                         name="primaryEmail"
                         value={formik.values.primaryEmail}
                         onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         error={formik.touched.primaryEmail && Boolean(formik.errors.primaryEmail)}
                         helperText={formik.touched.primaryEmail && formik.errors.primaryEmail}
-                        required
                       />
                     </Grid>
-                    
+
                     {/* Phone */}
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -722,15 +595,16 @@ const BusinessSetupPage = () => {
                         name="phone"
                         value={formik.values.phone}
                         onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         error={formik.touched.phone && Boolean(formik.errors.phone)}
                         helperText={
-                          (formik.touched.phone && formik.errors.phone) || 
+                          (formik.touched.phone && formik.errors.phone) ||
                           "10-digit phone number without spaces or special characters"
                         }
                         required
                       />
                     </Grid>
-                    
+
                     {/* Address Line */}
                     <Grid item xs={12}>
                       <TextField
@@ -739,12 +613,12 @@ const BusinessSetupPage = () => {
                         name="addressLine"
                         value={formik.values.addressLine}
                         onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         error={formik.touched.addressLine && Boolean(formik.errors.addressLine)}
                         helperText={formik.touched.addressLine && formik.errors.addressLine}
-                        required
                       />
                     </Grid>
-                    
+
                     {/* City */}
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -753,25 +627,25 @@ const BusinessSetupPage = () => {
                         name="city"
                         value={formik.values.city}
                         onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
                         error={formik.touched.city && Boolean(formik.errors.city)}
                         helperText={formik.touched.city && formik.errors.city}
-                        required
                       />
                     </Grid>
-                    
+
                     {/* State - Only shown if country has states */}
                     {formik.values.country && countryStates[formik.values.country] && countryStates[formik.values.country].hasStates && (
                       <Grid item xs={12} sm={6}>
-                        <FormControl 
+                        <FormControl
                           fullWidth
                           error={formik.touched.state && Boolean(formik.errors.state)}
-                          required
                         >
                           <InputLabel>State</InputLabel>
                           <Select
                             name="state"
                             value={formik.values.state}
                             onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
                             label="State"
                           >
                             {countryStates[formik.values.country]?.states?.map((state) => (
@@ -788,7 +662,7 @@ const BusinessSetupPage = () => {
                         </FormControl>
                       </Grid>
                     )}
-                    
+
                     {/* Pincode */}
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -798,25 +672,20 @@ const BusinessSetupPage = () => {
                         value={formik.values.pincode}
                         onChange={(e) => {
                           formik.handleChange(e);
-                          // Reset success state when pincode changes
-                          if (pincodeSuccess) {
-                            setPincodeSuccess(false);
-                          }
-                          // Only trigger lookup if pincode is of sufficient length
+                          if (pincodeSuccess) setPincodeSuccess(false);
                           if (e.target.value.length >= 5) {
                             handlePincodeLookup(e.target.value);
                           }
                         }}
                         onBlur={(e) => {
                           formik.handleBlur(e);
-                          // Also trigger on blur to catch cases where user pastes the pincode
                           if (e.target.value.length >= 5) {
                             handlePincodeLookup(e.target.value);
                           }
                         }}
                         error={formik.touched.pincode && Boolean(formik.errors.pincode) || Boolean(pincodeError)}
                         helperText={
-                          (formik.touched.pincode && formik.errors.pincode) || 
+                          (formik.touched.pincode && formik.errors.pincode) ||
                           pincodeError ||
                           (pincodeSuccess ? "✓ Location found and fields updated!" : "Enter pincode to auto-fill city, state, and country")
                         }
@@ -843,13 +712,12 @@ const BusinessSetupPage = () => {
                             color: pincodeSuccess ? 'success.main' : undefined,
                           }
                         }}
-                        // Pincode is optional
                       />
                     </Grid>
-                    
+
                     {/* Country */}
                     <Grid item xs={12} sm={6}>
-                      <FormControl 
+                      <FormControl
                         fullWidth
                         error={formik.touched.country && Boolean(formik.errors.country)}
                         required
@@ -860,12 +728,9 @@ const BusinessSetupPage = () => {
                           value={formik.values.country}
                           onChange={(e) => {
                             formik.setFieldValue('country', e.target.value);
-                            setSelectedCountry(e.target.value);
-                            const country = countries.find(c => c.name === e.target.value);
-                            if (country) {
-                              setCountryCode(country.code.toLowerCase());
-                            }
+                            setCountryCode(getCountryCode(e.target.value));
                           }}
+                          onBlur={formik.handleBlur}
                           label="Country"
                         >
                           {countries.map((country) => (
@@ -905,17 +770,16 @@ const BusinessSetupPage = () => {
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                   Add any custom information about your business as key-value pairs
                 </Typography>
-                
+
                 <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
-                  {/* Display existing key-value pairs */}
                   {formik.values.additionalDetails.length > 0 ? (
                     <Box sx={{ mb: 2 }}>
                       {formik.values.additionalDetails.map((detail, index) => (
-                        <Box 
-                          key={index} 
-                          sx={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
+                        <Box
+                          key={index}
+                          sx={{
+                            display: 'flex',
+                            alignItems: 'center',
                             mb: 2,
                             p: 1,
                             borderRadius: 1,
@@ -930,12 +794,13 @@ const BusinessSetupPage = () => {
                                 name={`additionalDetails[${index}].key`}
                                 value={detail.key}
                                 onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
                                 error={
-                                  formik.touched.additionalDetails?.[index]?.key && 
+                                  formik.touched.additionalDetails?.[index]?.key &&
                                   Boolean(formik.errors.additionalDetails?.[index]?.key)
                                 }
                                 helperText={
-                                  formik.touched.additionalDetails?.[index]?.key && 
+                                  formik.touched.additionalDetails?.[index]?.key &&
                                   formik.errors.additionalDetails?.[index]?.key
                                 }
                                 size="small"
@@ -948,19 +813,20 @@ const BusinessSetupPage = () => {
                                 name={`additionalDetails[${index}].value`}
                                 value={detail.value}
                                 onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
                                 error={
-                                  formik.touched.additionalDetails?.[index]?.value && 
+                                  formik.touched.additionalDetails?.[index]?.value &&
                                   Boolean(formik.errors.additionalDetails?.[index]?.value)
                                 }
                                 helperText={
-                                  formik.touched.additionalDetails?.[index]?.value && 
+                                  formik.touched.additionalDetails?.[index]?.value &&
                                   formik.errors.additionalDetails?.[index]?.value
                                 }
                                 size="small"
                               />
                             </Grid>
                             <Grid item xs={2}>
-                              <IconButton 
+                              <IconButton
                                 color="error"
                                 onClick={() => {
                                   const newDetails = [...formik.values.additionalDetails];
@@ -982,8 +848,7 @@ const BusinessSetupPage = () => {
                       </Typography>
                     </Box>
                   )}
-                  
-                  {/* Button to add new key-value pair */}
+
                   <Button
                     variant="outlined"
                     startIcon={<AddIcon />}
@@ -1022,4 +887,4 @@ const BusinessSetupPage = () => {
   );
 };
 
-export default BusinessSetupPage;
+export default BusinessSetup;
