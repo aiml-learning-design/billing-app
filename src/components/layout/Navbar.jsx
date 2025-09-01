@@ -13,7 +13,7 @@ import {
   MenuItem,
   Divider
 } from '@mui/material';
-import { Dashboard, Business, ListAlt, AccountCircle, ExitToApp, Edit } from '@mui/icons-material';
+import { Dashboard, Business, ListAlt, AccountCircle, ExitToApp, Edit, People, Person } from '@mui/icons-material';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -37,7 +37,7 @@ const Navbar = () => {
   if (!user) return null;
 
   return (
-    <AppBar position="static" elevation={0} sx={{ 
+    <AppBar position="static" elevation={0} sx={{
       background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
       boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)'
     }}>
@@ -66,10 +66,26 @@ const Navbar = () => {
           <Button
             color="inherit"
             component={RouterLink}
+            to="/client-details"
+            startIcon={<People />}
+          >
+            Clients
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
             to="/invoices"
             startIcon={<ListAlt />}
           >
             Invoices
+          </Button>
+          <Button
+            color="inherit"
+            component={RouterLink}
+            to="/profile"
+            startIcon={<Person />}
+          >
+            Profile
           </Button>
         </Box>
 
@@ -83,8 +99,8 @@ const Navbar = () => {
           color="inherit"
           sx={{ ml: 2 }}
         >
-          <Avatar 
-            src={user.pictureUrl} 
+          <Avatar
+            src={user.pictureUrl}
             sx={{ width: 32, height: 32 }}
           >
             {user.full_name ? user.full_name.charAt(0).toUpperCase() : 'U'}
@@ -107,14 +123,12 @@ const Navbar = () => {
         >
           <Box sx={{ p: 2 }}>
             <Typography variant="subtitle1" fontWeight="bold">{user.full_name || 'User'}</Typography>
+            <Typography variant="body2" color="text.secondary">{user.email}</Typography>
           </Box>
           <Divider />
           <MenuItem onClick={() => { handleClose(); navigate('/profile'); }}>
-            <AccountCircle sx={{ mr: 1 }} /> 
-            <Box>
-              <Typography variant="body2">Profile</Typography>
-              <Typography variant="caption" color="text.secondary">{user.email}</Typography>
-            </Box>
+            <AccountCircle sx={{ mr: 1 }} />
+            View Profile
           </MenuItem>
           <MenuItem onClick={() => { handleClose(); navigate('/profile?edit=true'); }}>
             <Edit sx={{ mr: 1 }} /> Edit Profile
