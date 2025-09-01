@@ -199,7 +199,7 @@ const BusinessSetup = () => {
           setSuccessMessage('Business setup successful! Redirecting to dashboard...');
 
           setTimeout(() => {
-            navigate('/dashboard');
+            navigate('/business-details');
           }, 1500);
         } else {
           throw new Error('Error creating business');
@@ -432,15 +432,15 @@ const BusinessSetup = () => {
           </Snackbar>
 
           <form onSubmit={formik.handleSubmit}>
-            <Grid container spacing={3}>
-              {/* Logo Upload Section */}
+            <Grid container spacing={2}>
+              {/* Logo Upload Section - Top Row */}
               <Grid item xs={12}>
                 <Card variant="outlined">
-                  <CardContent>
+                  <CardContent sx={{ textAlign: 'center' }}>
                     <Typography variant="h6" gutterBottom>
                       Company Logo
                     </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
                       {logoPreview ? (
                         <Avatar
                           src={logoPreview}
@@ -461,6 +461,10 @@ const BusinessSetup = () => {
                           component="label"
                           startIcon={<CloudUploadIcon />}
                           disabled={logoUploading}
+                          sx={{
+                            width: '300px', // Widen the upload button
+                            justifyContent: 'flex-start'
+                          }}
                         >
                           Upload Logo
                           <input
@@ -486,7 +490,7 @@ const BusinessSetup = () => {
                       Upload your company logo (max 5MB, JPG/PNG)
                     </Typography>
                     {logoUploading && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
                         <CircularProgress size={20} sx={{ mr: 1 }} />
                         <Typography variant="body2">Uploading logo...</Typography>
                       </Box>
@@ -510,6 +514,12 @@ const BusinessSetup = () => {
                     "Official Name used across Accounting documents and reports."
                   }
                   required
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '40px' // Reduce height by ~60% (from default ~56px)
+                    }
+                  }}
                 />
               </Grid>
 
@@ -528,10 +538,16 @@ const BusinessSetup = () => {
                     "Add your business or work website."
                   }
                   placeholder="Your Work Website"
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '40px' // Reduce height by ~60%
+                    }
+                  }}
                 />
               </Grid>
 
-              {/* GSTIN */}
+              {/* GSTIN and PAN in a 2-column row */}
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -545,10 +561,15 @@ const BusinessSetup = () => {
                     (formik.touched.gstin && formik.errors.gstin) ||
                     "Enter your 15-digit Goods and Services Tax Identification Number"
                   }
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '40px' // Reduce height by ~60%
+                    }
+                  }}
                 />
               </Grid>
 
-              {/* PAN */}
               <Grid item xs={12} sm={6}>
                 <TextField
                   fullWidth
@@ -562,6 +583,12 @@ const BusinessSetup = () => {
                     (formik.touched.pan && formik.errors.pan) ||
                     "Enter your 10-character Permanent Account Number"
                   }
+                  size="small"
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      height: '40px' // Reduce height by ~60%
+                    }
+                  }}
                 />
               </Grid>
 
@@ -573,7 +600,7 @@ const BusinessSetup = () => {
 
                 <Box sx={{ mb: 3, p: 2, border: '1px solid #e0e0e0', borderRadius: 1 }}>
                   <Grid container spacing={2}>
-                    {/* Email */}
+                    {/* Email and Phone in a 2-column row */}
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -584,10 +611,15 @@ const BusinessSetup = () => {
                         onBlur={formik.handleBlur}
                         error={formik.touched.primaryEmail && Boolean(formik.errors.primaryEmail)}
                         helperText={formik.touched.primaryEmail && formik.errors.primaryEmail}
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '40px' // Reduce height by ~60%
+                          }
+                        }}
                       />
                     </Grid>
 
-                    {/* Phone */}
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -602,6 +634,12 @@ const BusinessSetup = () => {
                           "10-digit phone number without spaces or special characters"
                         }
                         required
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '40px' // Reduce height by ~60%
+                          }
+                        }}
                       />
                     </Grid>
 
@@ -616,10 +654,16 @@ const BusinessSetup = () => {
                         onBlur={formik.handleBlur}
                         error={formik.touched.addressLine && Boolean(formik.errors.addressLine)}
                         helperText={formik.touched.addressLine && formik.errors.addressLine}
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '40px' // Reduce height by ~60%
+                          }
+                        }}
                       />
                     </Grid>
 
-                    {/* City */}
+                    {/* City and Pincode in a 2-column row */}
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -630,40 +674,15 @@ const BusinessSetup = () => {
                         onBlur={formik.handleBlur}
                         error={formik.touched.city && Boolean(formik.errors.city)}
                         helperText={formik.touched.city && formik.errors.city}
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '40px' // Reduce height by ~60%
+                          }
+                        }}
                       />
                     </Grid>
 
-                    {/* State - Only shown if country has states */}
-                    {formik.values.country && countryStates[formik.values.country] && countryStates[formik.values.country].hasStates && (
-                      <Grid item xs={12} sm={6}>
-                        <FormControl
-                          fullWidth
-                          error={formik.touched.state && Boolean(formik.errors.state)}
-                        >
-                          <InputLabel>State</InputLabel>
-                          <Select
-                            name="state"
-                            value={formik.values.state}
-                            onChange={formik.handleChange}
-                            onBlur={formik.handleBlur}
-                            label="State"
-                          >
-                            {countryStates[formik.values.country]?.states?.map((state) => (
-                              <MenuItem key={state} value={state}>
-                                {state}
-                              </MenuItem>
-                            ))}
-                          </Select>
-                          {formik.touched.state && formik.errors.state && (
-                            <FormHelperText>
-                              {formik.errors.state}
-                            </FormHelperText>
-                          )}
-                        </FormControl>
-                      </Grid>
-                    )}
-
-                    {/* Pincode */}
                     <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -702,8 +721,10 @@ const BusinessSetup = () => {
                             </InputAdornment>
                           ) : null
                         }}
+                        size="small"
                         sx={{
                           '& .MuiOutlinedInput-root': {
+                            height: '40px', // Reduce height by ~60%
                             '& fieldset': {
                               borderColor: pincodeSuccess ? 'success.main' : undefined,
                             },
@@ -715,12 +736,53 @@ const BusinessSetup = () => {
                       />
                     </Grid>
 
-                    {/* Country */}
+                    {/* State and Country in a 2-column row */}
+                    {formik.values.country && countryStates[formik.values.country] && countryStates[formik.values.country].hasStates && (
+                      <Grid item xs={12} sm={6}>
+                        <FormControl
+                          fullWidth
+                          error={formik.touched.state && Boolean(formik.errors.state)}
+                          size="small"
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              height: '40px' // Reduce height by ~60%
+                            }
+                          }}
+                        >
+                          <InputLabel>State</InputLabel>
+                          <Select
+                            name="state"
+                            value={formik.values.state}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            label="State"
+                          >
+                            {countryStates[formik.values.country]?.states?.map((state) => (
+                              <MenuItem key={state} value={state}>
+                                {state}
+                              </MenuItem>
+                            ))}
+                          </Select>
+                          {formik.touched.state && formik.errors.state && (
+                            <FormHelperText>
+                              {formik.errors.state}
+                            </FormHelperText>
+                          )}
+                        </FormControl>
+                      </Grid>
+                    )}
+
                     <Grid item xs={12} sm={6}>
                       <FormControl
                         fullWidth
                         error={formik.touched.country && Boolean(formik.errors.country)}
                         required
+                        size="small"
+                        sx={{
+                          '& .MuiOutlinedInput-root': {
+                            height: '40px' // Reduce height by ~60%
+                          }
+                        }}
                       >
                         <InputLabel>Country</InputLabel>
                         <Select
@@ -804,6 +866,11 @@ const BusinessSetup = () => {
                                   formik.errors.additionalDetails?.[index]?.key
                                 }
                                 size="small"
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    height: '40px' // Reduce height by ~60%
+                                  }
+                                }}
                               />
                             </Grid>
                             <Grid item xs={5}>
@@ -823,6 +890,11 @@ const BusinessSetup = () => {
                                   formik.errors.additionalDetails?.[index]?.value
                                 }
                                 size="small"
+                                sx={{
+                                  '& .MuiOutlinedInput-root': {
+                                    height: '40px' // Reduce height by ~60%
+                                  }
+                                }}
                               />
                             </Grid>
                             <Grid item xs={2}>
