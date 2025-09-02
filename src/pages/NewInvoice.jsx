@@ -673,7 +673,7 @@ const NewInvoice = () => {
       // Validate client selection
       console.log('Validating client selection. selectedClient:', selectedClient);
       console.log('clients array length:', clients.length);
-      console.log('Selected client object:', clients.find(c => c.client_id === selectedClient));
+      console.log('Selected client object:', clients.find(c => c.client_id === selectedClient.client_id));
       
       if (!selectedClient) {
         console.log('No client selected, adding error');
@@ -1052,7 +1052,7 @@ const NewInvoice = () => {
                   setShippingFrom={setShippingFrom}
                   shippingTo={shippingTo}
                   setShippingTo={setShippingTo}
-                  selectedClient={clients.find(c => c.client_id === selectedClient)}
+                  selectedClient={clients.find(c => c.client_id === selectedClient.client_id)}
                 />
 
                 <TransportDetails
@@ -1134,7 +1134,7 @@ const NewInvoice = () => {
               invoiceNumber={invoiceNumber}
               invoiceDate={invoiceDate}
               dueDate={dueDate}
-              selectedClient={clients.find(c => c.client_id === selectedClient)}
+              selectedClient={clients.find(c => c.client_id === selectedClient.client_id)}
               items={items}
               currency={currency}
               onSaveDraft={handleSaveDraft}
