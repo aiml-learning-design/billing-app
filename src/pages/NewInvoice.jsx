@@ -50,7 +50,7 @@ const NewInvoice = () => {
   
   // State for client details
   const [clients, setClients] = useState([]);
-  const [selectedClient, setSelectedClient] = useState('');
+  const [selectedClient, setSelectedClient] = useState(null);
   
   // State for shipping details
   const [showShipping, setShowShipping] = useState(false);
@@ -434,7 +434,9 @@ const NewInvoice = () => {
   // Helper function to create invoice payload with optional fields
   const createInvoicePayload = (status) => {
     // Get the selected client data
-    const selectedClientData = clients.find(c => c.client_id === selectedClient);
+    //const selectedClientData = clients.find(c => c.client_id === selectedClient);
+
+    const selectedClientData = clients.find(c => c.client_id === selectedClient.client_id);
     
     // Create the base invoice data object
     const invoiceData = {

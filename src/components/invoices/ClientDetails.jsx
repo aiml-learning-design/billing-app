@@ -142,7 +142,7 @@ const ClientDetails = ({
   // If selectedClient is truthy but not found in clientOptions, it might be because
   // clientOptions hasn't been loaded yet or the client ID is invalid
   const selectedClientData = selectedClient 
-    ? clientOptions.find(c => c.client_id === selectedClient) || null
+    ? clientOptions.find(c => c.client_id === selectedClient.client_id) || null
     : null;
   
   // Debug useEffect to log selectedClient and selectedClientData changes
@@ -1028,7 +1028,7 @@ const ClientDetails = ({
               console.log('Client selection changed:', newValue);
               if (newValue && setSelectedClient) {
                 console.log('Setting selected client to:', newValue.client_id);
-                setSelectedClient(newValue.client_id);
+                setSelectedClient(newValue);
                 
                 // Update inputValue to match the selected client's name
                 const displayName = newValue.clientName || newValue.businessName || '';
