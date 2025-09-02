@@ -55,7 +55,7 @@ const InvoiceSummary = ({
 
   return (
     <Card sx={{ 
-      width: '100%', 
+      width: '1280px',
       maxWidth: 'none',
       boxShadow: '0 4px 8px rgba(0, 0, 0, 0.12)',
       borderRadius: 1,
