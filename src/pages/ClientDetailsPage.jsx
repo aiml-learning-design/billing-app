@@ -675,7 +675,6 @@ const ClientDetailsPage = () => {
 
               try {
                 // Upload the logo first
-               // const logoResponse = await api.post('/api/v1/media/upload', formData, {
                 const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editClientData.businessId}&assetType=CLIENT_LOGO&assetName=ClientLogo`, formData, {
                   headers: {
                     'Content-Type': 'multipart/form-data'

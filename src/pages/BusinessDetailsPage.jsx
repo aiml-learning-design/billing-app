@@ -655,31 +655,6 @@ const BusinessDetailsPage = () => {
         address: editBusinessData.address
       };
 
-      // Handle logo upload if a logo was selected
-      if (editBusinessData.logo && editBusinessData.logo instanceof File) {
-        // Create a FormData object for file upload
-        const formData = new FormData();
-        formData.append('file', editBusinessData.logo);
-        formData.append('businessId', editBusinessData.businessId);
-
-        try {
-          // Upload the logo first
-         // const logoResponse = await api.post('/api/v1/media/upload', formData, {
-          const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editBusinessData.businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`, formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-
-          // If logo upload was successful, add the logo URL to the business data
-          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
-            businessData.logoUrl = logoResponse.data.logoUrl;
-          }
-        } catch (logoError) {
-          console.error('Error uploading logo:', logoError);
-          // Continue with business update even if logo upload fails
-        }
-      }
 
     //  Log the payload to verify data
       console.log('Updating business with data:', businessData);
@@ -687,9 +662,39 @@ const BusinessDetailsPage = () => {
       // Call API to update business
       const response = await api.put('/api/vendor/business/update/'+businessData.businessId, businessData);
 
+            if (!response.success) {
+              throw new Error('Error creating business');
+            }
+
       // Update the business in the list
       const updatedVendor = response.data;
       console.log('Business updated:', updatedVendor);
+
+           // Handle logo upload if a logo was selected
+            if (editBusinessData.logo && editBusinessData.logo instanceof File) {
+              // Create a FormData object for file upload
+              const formData = new FormData();
+              formData.append('file', editBusinessData.logo);
+              formData.append('businessId', editBusinessData.businessId);
+
+              try {
+                // Upload the logo first
+               // const logoResponse = await api.post('/api/v1/media/upload', formData, {
+                const logoResponse = await api.post(`${API_CONFIG.BASE_URL}/api/v1/media/upload?keyIdentifier=${editBusinessData.businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`, formData, {
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                });
+
+                // If logo upload was successful, add the logo URL to the business data
+                if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+                  businessData.logoUrl = logoResponse.data.logoUrl;
+                }
+              } catch (logoError) {
+                console.error('Error uploading logo:', logoError);
+                // Continue with business update even if logo upload fails
+              }
+            }
 
       // Update the business in allBusinesses
       setAllBusinesses(prevBusinesses => {
