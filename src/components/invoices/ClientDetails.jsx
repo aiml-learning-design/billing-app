@@ -1026,7 +1026,7 @@ const ClientDetails = ({
             value={selectedClientData}
             onChange={(event, newValue) => {
               console.log('Client selection changed:', newValue);
-              if (newValue && setSelectedClient) {
+              if (newValue) {
                 console.log('Setting selected client to:', newValue.client_id);
                 setSelectedClient(newValue);
                 

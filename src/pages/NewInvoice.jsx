@@ -243,6 +243,7 @@ const NewInvoice = () => {
         if (Array.isArray(responseData.content)) {
           console.log('Found standard Page structure with content array');
           clientsData = responseData.content;
+          console.log(clientsData)
         } else if (Array.isArray(responseData)) {
           console.log('Found direct array of clients');
           clientsData = responseData;
@@ -436,7 +437,7 @@ const NewInvoice = () => {
     // Get the selected client data
     //const selectedClientData = clients.find(c => c.client_id === selectedClient);
 
-    const selectedClientData = clients.find(c => c.client_id === selectedClient.client_id);
+    const selectedClientData = clients.find(c => c.client_id === selectedClient);
     
     // Create the base invoice data object
     const invoiceData = {
@@ -673,7 +674,7 @@ const NewInvoice = () => {
       // Validate client selection
       console.log('Validating client selection. selectedClient:', selectedClient);
       console.log('clients array length:', clients.length);
-      console.log('Selected client object:', clients.find(c => c.client_id === selectedClient.client_id));
+      console.log('Selected client object:', clients.find(c => c.client_id === selectedClient));
       
       if (!selectedClient) {
         console.log('No client selected, adding error');
@@ -1035,7 +1036,7 @@ const NewInvoice = () => {
                     // Update the clients state with the new client
                     setClients(prevClients => {
                       // Check if the client already exists
-                      const exists = prevClients.some(client => client.client_id === newClient.client_id);
+                      const exists = prevClients.some(client => client.client_id === newClient);
                       if (!exists) {
                         return [...prevClients, newClient];
                       }
@@ -1052,7 +1053,7 @@ const NewInvoice = () => {
                   setShippingFrom={setShippingFrom}
                   shippingTo={shippingTo}
                   setShippingTo={setShippingTo}
-                  selectedClient={clients.find(c => c.client_id === selectedClient.client_id)}
+                  selectedClient={clients.find(c => c.client_id === selectedClient)}
                 />
 
                 <TransportDetails
@@ -1134,7 +1135,7 @@ const NewInvoice = () => {
               invoiceNumber={invoiceNumber}
               invoiceDate={invoiceDate}
               dueDate={dueDate}
-              selectedClient={clients.find(c => c.client_id === selectedClient.client_id)}
+              selectedClient={clients.find(c => c.client_id === selectedClient)}
               items={items}
               currency={currency}
               onSaveDraft={handleSaveDraft}
