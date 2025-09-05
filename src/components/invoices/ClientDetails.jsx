@@ -8,10 +8,12 @@ import {
   Paper, Tooltip, Switch, FormControlLabel, FormHelperText,
   OutlinedInput
 } from '@mui/material';
+
 import { 
   Add, Person, LocationOn, Email, Phone, Save, Delete as DeleteIcon,
   CloudUpload, ExpandMore, ExpandLess, Business, Category, Label
 } from '@mui/icons-material';
+
 import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import axios from 'axios';
@@ -129,7 +131,7 @@ const ClientDetails = ({
             .join('');
         };
 
-   const [businessId] = useState(generateBusinessId());
+  const [businessId] = useState(generateBusinessId());
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [inputValue, setInputValue] = useState('');
