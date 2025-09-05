@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
-const OAuthCallback = () => {
+const OAuthCallback: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { handleGoogleAuth } = useAuth();
@@ -17,14 +17,13 @@ const OAuthCallback = () => {
     if (authResponse) {
       // Get the processed auth responses from localStorage
       const processedResponses = localStorage.getItem(PROCESSED_AUTH_RESPONSES_KEY);
-      const processedResponsesArray = processedResponses ? JSON.parse(processedResponses) : [];
+      const processedResponsesArray: string[] = processedResponses ? JSON.parse(processedResponses) : [];
 
       // Check if we've already processed this auth response
       if (processedResponsesArray.includes(authResponse)) {
         console.log('OAuthCallback: Auth response already processed, skipping');
         return;
       }
-
 
       // Process the auth response
       handleGoogleAuth(authResponse)
@@ -67,7 +66,7 @@ const OAuthCallback = () => {
     }
     // Remove 'user' from dependency array to prevent duplicate calls
   //}, [searchParams, navigate, handleGoogleAuth]);
-    }, [handleGoogleAuth]);
+    }, [searchParams, navigate, handleGoogleAuth]);
 
   return (
     <Box sx={{ 
