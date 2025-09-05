@@ -133,29 +133,6 @@ const BusinessSetup = () => {
         setLoading(true);
         setError(null);
 
-        let logoUrl = null;
-        if (logoFile) {
-          try {
-            setLogoUploading(true);
-            const formData = new FormData();
-            formData.append('file', logoFile);
-
-            const logoResponse = await api.post(
-              `/api/v1/media/upload?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO&assetName=CompanyLogo`,
-              formData,
-              { headers: { 'Content-Type': 'multipart/form-data' } }
-            );
-
-            if (logoResponse.success) {
-              logoUrl = logoResponse.data.url;
-            }
-          } catch (logoError) {
-            console.error('Error uploading logo:', logoError);
-          } finally {
-            setLogoUploading(false);
-          }
-        }
-
         // Format the payload
         const address = {
           email: values.primaryEmail,
@@ -169,7 +146,7 @@ const BusinessSetup = () => {
         if (values.country && countryStates[values.country] && countryStates[values.country].hasStates) {
           address.state = values.state;
         }
-
+        let logoUrl = null;
         const payload = {
           businessId,
           businessName: values.businessName,
@@ -190,6 +167,39 @@ const BusinessSetup = () => {
         }
 
         const businessDetails = response.data;
+
+        let logoType;
+
+        if (businessSetUpContext === 'vendor') {
+          logoType = 'vendor';
+        } else if (businessSetUpContext === 'BUSINESS_LOGO') {
+          logoType = 'BUSINESS_LOGO';
+        } else {
+          logoType = 'CLIENT_LOGO';
+        }
+
+
+        if (logoFile) {
+          try {
+            setLogoUploading(true);
+            const formData = new FormData();
+            formData.append('file', logoFile);
+
+            const logoResponse = await api.post(
+              `/api/v1/media/upload?keyIdentifier=${businessId}&assetType=${logoType}&assetName=CompanyLogo`,
+              formData,
+              { headers: { 'Content-Type': 'multipart/form-data' } }
+            );
+
+            if (logoResponse.success) {
+              logoUrl = logoResponse.data.url;
+            }
+          } catch (logoError) {
+            console.error('Error uploading logo:', logoError);
+          } finally {
+            setLogoUploading(false);
+          }
+        }
 
         // Store business details
         if (businessDetails && businessDetails.businessId) {
@@ -438,70 +448,82 @@ const BusinessSetup = () => {
           <form onSubmit={formik.handleSubmit}>
             <Grid container spacing={2}>
               {/* Logo Upload Section - Top Row */}
-              <Grid item xs={12}>
-                <Card variant="outlined">
-                  <CardContent sx={{ textAlign: 'center' }}>
-                    <Typography variant="h6" gutterBottom>
-                      Company Logo
-                    </Typography>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, mb: 2 }}>
-                      {logoPreview ? (
-                        <Avatar
-                          src={logoPreview}
-                          sx={{ width: 80, height: 80 }}
-                          variant="rounded"
-                        />
-                      ) : (
-                        <Avatar
-                          sx={{ width: 80, height: 80, bgcolor: 'grey.200' }}
-                          variant="rounded"
-                        >
-                          <CloudUploadIcon />
-                        </Avatar>
-                      )}
-                      <Box>
-                        <Button
-                          variant="outlined"
-                          component="label"
-                          startIcon={<CloudUploadIcon />}
-                          disabled={logoUploading}
-                          sx={{
-                            width: '300px', // Widen the upload button
-                            justifyContent: 'flex-start'
-                          }}
-                        >
-                          Upload Logo
-                          <input
-                            type="file"
-                            hidden
-                            accept="image/*"
-                            onChange={handleLogoChange}
-                          />
-                        </Button>
-                        {logoPreview && (
-                          <Button
-                            variant="text"
-                            color="error"
-                            onClick={handleRemoveLogo}
-                            sx={{ ml: 1 }}
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </Box>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      Upload your company logo (max 5MB, JPG/PNG)
-                    </Typography>
-                    {logoUploading && (
-                      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
-                        <CircularProgress size={20} sx={{ mr: 1 }} />
-                        <Typography variant="body2">Uploading logo...</Typography>
-                      </Box>
-                    )}
-                  </CardContent>
-                </Card>
-              </Grid>
+        <Grid item xs={12}>
+          <Card
+            variant="outlined"
+            sx={{
+              maxWidth: 1290,
+              margin: '0 auto' // This centers the card
+            }}
+          >
+            <CardContent sx={{ textAlign: 'center' }}>
+              <Typography variant="h6" gutterBottom>
+                Company Logo
+              </Typography>
+              <Box sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 2,
+                mb: 2
+              }}>
+                {logoPreview ? (
+                  <Avatar
+                    src={logoPreview}
+                    sx={{ width: 80, height: 80 }}
+                    variant="rounded"
+                  />
+                ) : (
+                  <Avatar
+                    sx={{ width: 80, height: 80, bgcolor: 'grey.200' }}
+                    variant="rounded"
+                  >
+                    <CloudUploadIcon />
+                  </Avatar>
+                )}
+                <Box>
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    startIcon={<CloudUploadIcon />}
+                    disabled={logoUploading}
+                    sx={{
+                      width: '300px',
+                      justifyContent: 'flex-start'
+                    }}
+                  >
+                    Upload Logo
+                    <input
+                      type="file"
+                      hidden
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                    />
+                  </Button>
+                  {logoPreview && (
+                    <Button
+                      variant="text"
+                      color="error"
+                      onClick={handleRemoveLogo}
+                      sx={{ ml: 1 }}
+                    >
+                      Remove
+                    </Button>
+                  )}
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Upload your company logo (max 5MB, JPG/PNG)
+              </Typography>
+              {logoUploading && (
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mt: 1 }}>
+                  <CircularProgress size={20} sx={{ mr: 1 }} />
+                  <Typography variant="body2">Uploading logo...</Typography>
+                </Box>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
 
               {/* Business Name */}
               <Grid item xs={12}>

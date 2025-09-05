@@ -19,6 +19,7 @@ import countries from '../../utils/countries';
 import countryStates from '../../utils/countryStates';
 import { debounce } from 'lodash';
 
+
 // Common industry options
 const industryOptions = [
   'Accounting & Finance',
@@ -67,7 +68,9 @@ const industryOptions = [
  * @param {Function} props.onAddNewClient - Function to handle add new client button click
  * @param {boolean} props.useApiForClientData - Whether to use API calls to fetch client data (default: true)
  */
-const ClientDetails = ({ 
+
+
+const ClientDetails = ({
   clients = [], 
   selectedClient, 
   setSelectedClient,
@@ -77,8 +80,10 @@ const ClientDetails = ({
 }) => {
   const navigate = useNavigate();
   const [openNewDialog, setOpenNewDialog] = useState(false);
+
   const [newClientData, setNewClientData] = useState({
     clientName: '',
+    businessId: '',
     businessName: '',
     industry: '',
     gstin: '',
@@ -116,6 +121,15 @@ const ClientDetails = ({
     label: '',
     options: ['Option 1']
   });
+        const generateBusinessId = () => {
+          const bytes = new Uint8Array(12);
+          window.crypto.getRandomValues(bytes);
+          return Array.from(bytes)
+            .map(byte => byte.toString(16).padStart(2, '0'))
+            .join('');
+        };
+
+   const [businessId] = useState(generateBusinessId());
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [inputValue, setInputValue] = useState('');
@@ -144,6 +158,8 @@ const ClientDetails = ({
   const selectedClientData = selectedClient 
     ? clientOptions.find(c => c.client_id === selectedClient.client_id) || null
     : null;
+
+
   
   // Debug useEffect to log selectedClient and selectedClientData changes
   useEffect(() => {
@@ -471,6 +487,7 @@ const ClientDetails = ({
   // Handle opening the new client dialog
   const handleOpenNewDialog = () => {
     setNewClientData({
+        newClientData: businessId,
       clientName: inputValue || '',
       businessName: inputValue || '',
       gstin: '',
@@ -899,6 +916,7 @@ const ClientDetails = ({
       // Prepare data for API
       const clientData = {
         // Use businessName as the clientName
+        businessId: businessId,
         clientName: newClientData.businessName,
         businessName: newClientData.businessName,
         industry: newClientData.industry,
@@ -926,39 +944,47 @@ const ClientDetails = ({
           : undefined
       };
       
-      // Handle logo upload if a logo was selected
-      if (newClientData.logo) {
-        // Create a FormData object for file upload
-        const formData = new FormData();
-        formData.append('logo', newClientData.logo);
-        
-        try {
-          // Upload the logo first
-          const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
-            headers: {
-              'Content-Type': 'multipart/form-data'
-            }
-          });
-          
-          // If logo upload was successful, add the logo URL to the client data
-          if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
-            clientData.logoUrl = logoResponse.data.logoUrl;
-          }
-        } catch (logoError) {
-          console.error('Error uploading logo:', logoError);
-          // Continue with client creation even if logo upload fails
-        }
-      }
+
       
       // Log the payload to verify additionalDetails are included
       console.log('Creating client with data:', clientData);
       
       // Call API to create new client
       const response = await api.post('/api/client/business/add', clientData);
+       if (!response.success) {
+                    throw new Error('Error creating business');
+                  }
       
       // Add the new client to the list and select it
       const newClient = response.data;
       console.log('New client created:', newClient);
+
+
+
+
+            // Handle logo upload if a logo was selected
+            if (newClientData.logo) {
+              // Create a FormData object for file upload
+              const formData = new FormData();
+              formData.append('logo', newClientData.logo);
+
+              try {
+                // Upload the logo first
+                const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
+                  headers: {
+                    'Content-Type': 'multipart/form-data'
+                  }
+                });
+
+                // If logo upload was successful, add the logo URL to the client data
+                if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
+                  clientData.logoUrl = logoResponse.data.logoUrl;
+                }
+              } catch (logoError) {
+                console.error('Error uploading logo:', logoError);
+                // Continue with client creation even if logo upload fails
+              }
+            }
       
       // Add the new client to the clientOptions state
       setClientOptions(prevOptions => {

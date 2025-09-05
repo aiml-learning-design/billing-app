@@ -96,6 +96,7 @@ const ClientDialog = ({
   const [taxInfoExpanded, setTaxInfoExpanded] = useState(true);
   const [addressExpanded, setAddressExpanded] = useState(true);
   const [additionalDetailsExpanded, setAdditionalDetailsExpanded] = useState(true);
+
   
   // State for custom field dialog
   const [openCustomFieldDialog, setOpenCustomFieldDialog] = useState(false);
@@ -107,6 +108,9 @@ const ClientDialog = ({
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [clientLogo, setClientLogo] = useState(null);
   const [logoLoading, setLogoLoading] = useState(false);
+
+    const [businessId] = useState(generateBusinessId());
+
   
   // File input reference for logo upload
   const fileInputRef = useRef(null);
@@ -114,6 +118,14 @@ const ClientDialog = ({
   // Toggle handlers for collapsible sections
   const toggleTaxInfoSection = () => {
     setTaxInfoExpanded(!taxInfoExpanded);
+  };
+
+  const generateBusinessId = () => {
+    const bytes = new Uint8Array(12);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
   };
   
   const toggleAddressSection = () => {
