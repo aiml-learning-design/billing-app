@@ -16,13 +16,13 @@
     "dayjs": "^1.11.13",
     "formik": "^2.4.6",
     "jwt-decode": "^3.1.2",
+    "libphonenumber-js": "^1.11.14",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-phone-input-2": "^2.15.1",
     "react-router-dom": "^7.6.3",
     "react-select": "^5.10.2",
-    "yup": "^1.6.1",
-    "libphonenumber-js": "^1.11.14"
+    "yup": "^1.6.1"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
@@ -35,7 +35,7 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.5",
     "typescript": "^5.3.3",
-    "vite": "^5.0.11"
+    "vite": "^7.1.4"
   },
   "scripts": {
     "dev": "vite",
