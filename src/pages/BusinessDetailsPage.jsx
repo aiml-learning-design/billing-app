@@ -58,7 +58,6 @@ const BusinessDetailsPage = () => {
   const [editBusinessData, setEditBusinessData] = useState({
     businessId: '',
     businessName: '',
-    businessName: '',
     gstin: '',
     panNumber: '',
     email: '',
@@ -378,8 +377,7 @@ const BusinessDetailsPage = () => {
     // Prepare business data for editing
     const businessData = {
       businessId: business.businessId || business.business_id,
-      businessName: business.businessName || business.businessName,
-      businessName: business.businessName,
+      businessName: business.businessName || business.business_name || '',
       gstin: business.gstin || '',
       panNumber: business.panNumber || business.pan || '',
       email: business.email || '',
@@ -646,8 +644,7 @@ const BusinessDetailsPage = () => {
       // Prepare data for API
       const businessData = {
         businessId: editBusinessData.businessId,
-        businessName: editBusinessData.businessName, // Use businessName as businessName
-        businessName: editBusinessData.businessName,
+        businessName: editBusinessData.businessName, // Business name
         gstin: editBusinessData.gstin,
         panNumber: editBusinessData.panNumber,
         email: editBusinessData.email,

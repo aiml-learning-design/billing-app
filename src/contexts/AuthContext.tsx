@@ -94,6 +94,7 @@ interface AuthProviderProps {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: AuthProviderProps) {
+  console.log('AuthProvider is initializing');
   const [user, setUser] = useState<NormalizedUser | null>(null);
   const [userBusinessDetails, setBusinessDetails] = useState<Business[] | null>(null);
   const [authData, setAuthData] = useState<AuthResponse | null>(null); // Stores complete auth response
@@ -317,14 +318,20 @@ const handleGoogleAuth = async (apiResponse: any): Promise<UserData> => {
 
   // Function to check if backend is available
   const checkBackendAvailability = async (): Promise<boolean> => {
+    console.log('Checking backend availability...');
     try {
+      // Ensure BASE_URL is defined
+      const baseUrl = API_CONFIG.BASE_URL || 'http://localhost:8080';
+      console.log('Using baseUrl:', baseUrl);
+      
       // Make a simple request to check if backend is available
       // Using the user profile endpoint which should be lightweight
       // We don't care about the response, just that the server responds
-      await axios.get(`${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.USER.PROFILE}`, { 
+      await axios.get(`${baseUrl}${API_CONFIG.ENDPOINTS.USER.PROFILE}`, { 
         timeout: 3000, // 3 second timeout
         validateStatus: () => true // Accept any status code as success
       });
+      console.log('Backend is available');
       return true;
     } catch (error) {
       console.error('Backend availability check failed:', (error as Error).message);
@@ -374,6 +381,7 @@ const handleGoogleAuth = async (apiResponse: any): Promise<UserData> => {
 
   // Initialize authentication state
   useEffect(() => {
+    console.log('AuthProvider useEffect is running - initializing authentication');
     const initAuth = async () => {
       setLoading(true);
       const token = localStorage.getItem('token');

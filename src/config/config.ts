@@ -114,7 +114,7 @@ interface UiConfig {
 // API Configuration
 export const API_CONFIG: ApiConfig = {
   // Base URL for API requests
-  BASE_URL: import.meta.env.VITE_API_URL,
+  BASE_URL: import.meta.env.VITE_API_URL || 'http://localhost:8080',
   
   // API Endpoints
   ENDPOINTS: {

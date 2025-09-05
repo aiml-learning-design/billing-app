@@ -16,13 +16,23 @@ export default defineConfig({
   },
   build: {
     outDir: 'build',
-    sourcemap: true
+    sourcemap: true,
+    target: 'es2015', // Target older browsers for better compatibility
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          mui: ['@mui/material', '@mui/icons-material', '@mui/lab', '@mui/x-date-pickers']
+        }
+      }
+    }
   },
   optimizeDeps: {
     esbuildOptions: {
       loader: {
         '.js': 'jsx'
-      }
+      },
+      target: 'es2015' // Target older browsers for better compatibility
     }
   }
 })

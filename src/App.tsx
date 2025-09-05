@@ -31,6 +31,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 const App: React.FC = () => {
+  console.log('App component is rendering');
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <AuthProvider>

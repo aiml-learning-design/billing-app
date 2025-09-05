@@ -40,8 +40,11 @@ interface ApiInstance extends AxiosInstance {
   clearAuthTokens: () => void;
 }
 
+// Ensure BASE_URL is defined
+const baseUrl = API_CONFIG.BASE_URL || 'http://localhost:8080';
+
 const api = axios.create({
-  baseURL: API_CONFIG.BASE_URL,
+  baseURL: baseUrl,
 }) as ApiInstance;
 
 // Check if token is expired
@@ -60,8 +63,11 @@ const refreshToken = async (): Promise<string> => {
     const refreshToken = localStorage.getItem(AUTH_CONFIG.STORAGE_KEYS.REFRESH_TOKEN);
     if (!refreshToken) throw new Error('No refresh token available');
     
+    // Ensure BASE_URL is defined
+    const baseUrl = API_CONFIG.BASE_URL || 'http://localhost:8080';
+    
     const response = await axios.post<ApiResponse<AuthResponse>>(
-      `${API_CONFIG.BASE_URL}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`, 
+      `${baseUrl}${API_CONFIG.ENDPOINTS.AUTH.REFRESH_TOKEN}`, 
       {}, 
       {
         headers: {
