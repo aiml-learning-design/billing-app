@@ -7,27 +7,6 @@ import {
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
 
-/**
- * InvoiceDetails component for handling basic invoice information
- * 
- * @param {Object} props - Component props
- * @param {string} props.invoiceNumber - Invoice number
- * @param {Function} props.setInvoiceNumber - Function to update invoice number
- * @param {string} props.invoicePrefix - Custom prefix for invoice number
- * @param {Function} props.setInvoicePrefix - Function to update invoice prefix
- * @param {string} props.invoiceDelimiter - Delimiter between prefix and number
- * @param {Function} props.setInvoiceDelimiter - Function to update delimiter
- * @param {boolean} props.useCustomPrefix - Whether to use custom prefix
- * @param {Function} props.setUseCustomPrefix - Function to toggle custom prefix
- * @param {Object} props.invoiceDate - Invoice date (dayjs object)
- * @param {Function} props.setInvoiceDate - Function to update invoice date
- * @param {Object} props.dueDate - Due date (dayjs object)
- * @param {Function} props.setDueDate - Function to update due date
- * @param {string} props.currency - Currency code
- * @param {Function} props.setCurrency - Function to update currency
- * @param {string} props.lastInvoiceNumber - Last invoice number (for reference)
- * @param {string} props.lastInvoiceDate - Last invoice date (for reference)
- */
 const InvoiceDetails = ({
   invoiceNumber,
   setInvoiceNumber,
@@ -49,25 +28,44 @@ const InvoiceDetails = ({
   return (
     <Card sx={{ mb: 3 }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Invoice Details
-        </Typography>
+        {/* First row: Invoice Details title centered */}
+        <Grid container justifyContent="center" sx={{ mb: 2 }}>
+          <Grid item>
+            <Typography variant="h6" gutterBottom>
+              Invoice Details
+            </Typography>
+          </Grid>
+        </Grid>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
+        {/* Second row: Use custom prefix checkbox (small font) */}
+        <Grid container justifyContent="left" sx={{ mb: 2 }}>
+          <Grid item>
             <FormControlLabel
               control={
                 <Checkbox
                   checked={useCustomPrefix}
                   onChange={(e) => setUseCustomPrefix(e.target.checked)}
+                  size="small"
                 />
               }
-              label="Use custom prefix for invoice number"
+              label={
+                <Typography variant="body2">
+                  Use custom prefix for invoice number
+                </Typography>
+              }
             />
           </Grid>
-          
-          {useCustomPrefix && (
-            <>
+        </Grid>
+
+<Grid item xs={12}>
+              <Divider sx={{ my: 1 }} />
+            </Grid>
+
+        {/* Custom prefix fields (if enabled) */}
+        {useCustomPrefix && (
+          <>
+
+            <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Invoice Prefix"
@@ -75,12 +73,13 @@ const InvoiceDetails = ({
                   onChange={(e) => setInvoicePrefix(e.target.value)}
                   fullWidth
                   margin="normal"
+                  size="small"
                   placeholder="Enter prefix (e.g. INV)"
                   helperText="Optional prefix for invoice numbers"
                 />
               </Grid>
               <Grid item xs={12} sm={6}>
-                <FormControl fullWidth margin="normal">
+                <FormControl fullWidth margin="normal" size="small">
                   <InputLabel>Delimiter</InputLabel>
                   <Select
                     value={invoiceDelimiter}
@@ -95,19 +94,20 @@ const InvoiceDetails = ({
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
-                <Divider sx={{ my: 1 }} />
-              </Grid>
-            </>
-          )}
-          
-          <Grid item xs={12} sm={6}>
+            </Grid>
+          </>
+        )}
+
+        {/* Third row: Invoice No, Invoice Date, Due Date, Currency */}
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={3}>
             <TextField
               label="Invoice No*"
               value={invoiceNumber}
               onChange={(e) => setInvoiceNumber(e.target.value)}
               fullWidth
               margin="normal"
+              size="small"
             />
             {lastInvoiceNumber && lastInvoiceDate && (
               <Typography variant="caption" color="text.secondary">
@@ -115,42 +115,45 @@ const InvoiceDetails = ({
               </Typography>
             )}
           </Grid>
-          <Grid item xs={12} sm={6}>
+
+          <Grid item xs={12} sm={3}>
             <DatePicker
               label="Invoice Date*"
               value={invoiceDate}
               onChange={(newValue) => {
-                // Ensure we always pass a valid dayjs object or null
                 const normalizedValue = newValue && dayjs(newValue).isValid() ? dayjs(newValue) : null;
                 setInvoiceDate(normalizedValue);
               }}
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  margin: "normal"
+                  margin: "normal",
+                  size: "small"
                 }
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+
+          <Grid item xs={12} sm={3}>
             <DatePicker
               label="Due Date"
               value={dueDate}
               onChange={(newValue) => {
-                // Ensure we always pass a valid dayjs object or null
                 const normalizedValue = newValue && dayjs(newValue).isValid() ? dayjs(newValue) : null;
                 setDueDate(normalizedValue);
               }}
               slotProps={{
                 textField: {
                   fullWidth: true,
-                  margin: "normal"
+                  margin: "normal",
+                  size: "small"
                 }
               }}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
-            <FormControl fullWidth margin="normal">
+
+          <Grid item xs={12} sm={3}>
+            <FormControl fullWidth margin="normal" size="small">
               <InputLabel>Currency*</InputLabel>
               <Select
                 value={currency}
@@ -160,10 +163,13 @@ const InvoiceDetails = ({
                 <MenuItem value="INR">Indian Rupee (INR, ₹)</MenuItem>
                 <MenuItem value="USD">US Dollar (USD, $)</MenuItem>
                 <MenuItem value="EUR">Euro (EUR, €)</MenuItem>
+                <MenuItem value="GBP">British Pound (GBP, £)</MenuItem>
+                <MenuItem value="AUD">Australian Dollar (AUD, A$)</MenuItem>
               </Select>
             </FormControl>
           </Grid>
         </Grid>
+
       </CardContent>
     </Card>
   );
