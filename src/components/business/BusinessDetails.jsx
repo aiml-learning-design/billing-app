@@ -563,6 +563,15 @@ const BusinessDetails = ({
       setSaving(false);
     }
   };
+
+  // Helper functions
+  const generateBusinessId = () => {
+    const bytes = new Uint8Array(12);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes)
+      .map(byte => byte.toString(16).padStart(2, '0'))
+      .join('');
+  };
   
   // Handle new business form submission
   const handleCreateBusiness = async () => {
@@ -571,11 +580,12 @@ const BusinessDetails = ({
       
       // Prepare data for API
       const businessData = {
+          businessId: generateBusinessId(),
         businessName: newBusinessData.businessName,
         gstin: newBusinessData.gstin,
         pan: newBusinessData.pan,
         checkGstType: newBusinessData.checkGstType,
-        officeAddress: {
+        address: {
           email: newBusinessData.email,
           phone: newBusinessData.phone,
           addressLine: newBusinessData.addressLine,
@@ -598,7 +608,7 @@ const BusinessDetails = ({
       console.log('Creating business with data:', businessData);
 
       // Call API to create new business
-      const response = await api.post('/api/businesses', businessData);
+      const response = await api.post('/api/vendor/business/add', businessData);
       
       // Add the new business to the list and select it
       const newBusiness = response.data;
@@ -807,6 +817,7 @@ const BusinessDetails = ({
 
 
         <Grid container spacing={3} sx={{ mt: 0, width: "100%" }}>
+
             <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "265px" }}>
                   <TextField
                     label="Vendor's Business Name*"

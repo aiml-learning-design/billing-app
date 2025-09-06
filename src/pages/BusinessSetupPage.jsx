@@ -148,7 +148,7 @@ const BusinessSetup = () => {
         }
         let logoUrl = null;
         const payload = {
-          businessId,
+          businessId: generateBusinessId(),
           businessName: values.businessName,
           gstin: values.gstin,
           pan: values.pan,
