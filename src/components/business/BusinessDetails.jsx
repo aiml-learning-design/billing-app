@@ -5,7 +5,7 @@ import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   CircularProgress, Snackbar, Alert, Autocomplete, Divider,
   IconButton, InputAdornment, FormControlLabel, Switch, Tooltip,
-  FormHelperText
+  FormHelperText, Collapse
 } from '@mui/material';
 import { Business, Edit, Save, Add, Delete as DeleteIcon, Label, Category } from '@mui/icons-material';
 import api from '../../services/api';
@@ -15,6 +15,7 @@ import countryStates from '../../utils/countryStates';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/material.css';
 import 'react-phone-input-2/lib/style.css';
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 /**
  * BusinessDetails component for displaying business information in the "Billed By" section
@@ -111,7 +112,9 @@ const BusinessDetails = ({
   const handleCloseEditDialog = () => {
     setOpenEditDialog(false);
   };
-  
+  const [showTaxInfo, setShowTaxInfo] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
+  const [showAdditionalDetails, setShowAdditionalDetails] = useState(false);
   // Fetch user's location and set country defaults
   const fetchLocationData = async () => {
     try {
@@ -200,7 +203,7 @@ const BusinessDetails = ({
   // Open new business dialog
   const handleOpenNewDialog = () => {
     setNewBusinessData({
-      businessName: inputValue || '',
+      businessName: '',
       gstin: '',
       pan: '',
       checkGstType: false,
@@ -655,8 +658,8 @@ const BusinessDetails = ({
             Billed By (Your Business Details)
           </Typography>
           <Box>
-            <Button 
-              startIcon={<Edit />} 
+            <Button
+              startIcon={<Edit />}
               onClick={handleOpenEditDialog}
               variant="outlined"
               size="small"
@@ -665,8 +668,8 @@ const BusinessDetails = ({
               Quick Edit
             </Button>
             {onEdit && (
-              <Button 
-                startIcon={<Edit />} 
+              <Button
+                startIcon={<Edit />}
                 onClick={onEdit}
                 variant="outlined"
                 size="small"
@@ -699,7 +702,7 @@ const BusinessDetails = ({
             freeSolo
             fullWidth
           />
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
             <Divider sx={{ flexGrow: 1 }} />
             <Typography variant="body2" color="text.secondary" sx={{ mx: 1 }}>
@@ -707,7 +710,7 @@ const BusinessDetails = ({
             </Typography>
             <Divider sx={{ flexGrow: 1 }} />
           </Box>
-          
+
           <Button
             variant="outlined"
             startIcon={<Add />}
@@ -737,7 +740,7 @@ const BusinessDetails = ({
                 </Typography>
               </Grid>
             )}
-            
+
             {business.gstin && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2">
@@ -745,7 +748,7 @@ const BusinessDetails = ({
                 </Typography>
               </Grid>
             )}
-            
+
             {business.pan && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2">
@@ -753,7 +756,7 @@ const BusinessDetails = ({
                 </Typography>
               </Grid>
             )}
-            
+
             {business.officeAddresses && business.officeAddresses.length > 0 && business.officeAddresses[0].email && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2">
@@ -761,7 +764,7 @@ const BusinessDetails = ({
                 </Typography>
               </Grid>
             )}
-            
+
             {business.officeAddresses && business.officeAddresses.length > 0 && business.officeAddresses[0].phone && (
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2">
@@ -773,206 +776,127 @@ const BusinessDetails = ({
         </Box>
       </CardContent>
 
-      {/* Edit Business Dialog */}
-      <Dialog open={openEditDialog} onClose={handleCloseEditDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Edit Business Details</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={3} sx={{ mt: 0 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Business Name"
-                name="businessName"
-                value={editFormData.businessName}
-                onChange={handleInputChange}
-                fullWidth
-                required
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="GSTIN"
-                name="gstin"
-                value={editFormData.gstin}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="PAN"
-                name="pan"
-                value={editFormData.pan}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Email"
-                name="email"
-                value={editFormData.email}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box sx={{ mt: 2, mb: 1 }}>
-                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
-                  Phone
-                </Typography>
-                <PhoneInput
-                  country={countryCode}
-                  value={editFormData.phone}
-                  onChange={handleEditPhoneChange}
-                  inputStyle={{
-                    width: '100%',
-                    height: '40px',
-                    fontSize: '0.875rem'
-                  }}
-                  containerStyle={{
-                    width: '100%'
-                  }}
-                />
-                <style>
-                  {`
-                    .react-tel-input .country-list .country {
-                      padding: 5px 35px;
-                    }
-                  `}
-                </style>
-              </Box>
-            </Grid>
-            <Grid item xs={12}>
-              <TextField
-                label="Address Line"
-                name="addressLine"
-                value={editFormData.addressLine}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="City"
-                name="city"
-                value={editFormData.city}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="State"
-                name="state"
-                value={editFormData.state}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField
-                label="Pincode"
-                name="pincode"
-                value={editFormData.pincode}
-                onChange={handleInputChange}
-                fullWidth
-                margin="normal"
-              />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEditDialog}>Cancel</Button>
-          <Button 
-            onClick={handleSubmit} 
-            variant="contained" 
-            color="primary"
-            disabled={saving}
-            startIcon={saving ? <CircularProgress size={20} /> : <Save />}
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-      
+
+
+
+
+
+
+
+
+
       {/* New Business Dialog */}
       <Dialog open={openNewDialog} onClose={handleCloseNewDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Add New Business</DialogTitle>
+        <Grid item xs={12} sm={6}>
+            <DialogTitle>Add New Business</DialogTitle>
+        </Grid>
         <DialogContent>
           <Typography variant="h6" fontWeight="bold" sx={{ mt: 2, mb: 1 }}>
             Business details
           </Typography>
           <Divider sx={{ mb: 3 }} />
-          
+
           {/* Basic Information Section */}
+          <Grid item xs={12} sm={12} md={12} lg={12}>
           <Typography variant="subtitle1" fontWeight="medium" sx={{ mb: 2 }}>
             Basic Information
           </Typography>
-          <Grid container spacing={3} sx={{ mt: 0 }}>
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Vendor's Business Name*"
-                name="businessName"
-                value={newBusinessData.businessName}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                required
-                margin="normal"
-              />
+          </Grid>
+
+
+
+
+        <Grid container spacing={3} sx={{ mt: 0, width: "100%" }}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "265px" }}>
+                  <TextField
+                    label="Vendor's Business Name*"
+                    name="businessName"
+                    value={newBusinessData.businessName}
+                    onChange={handleNewBusinessInputChange}
+                    fullWidth
+                    required
+                    margin="normal"
+                    size="small"
+                  />
             </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth margin="normal">
-                <InputLabel>Select Country*</InputLabel>
-                <Select
-                  name="country"
-                  value={newBusinessData.country}
-                  onChange={handleNewBusinessInputChange}
-                  label="Select Country*"
-                  required
-                >
-                  {countries.map((country) => (
-                    <MenuItem key={country.code} value={country.name}>
-                      {country.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              {geoLocationLoading && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
-                  <CircularProgress size={16} sx={{ mr: 1 }} />
-                  <Typography variant="caption" color="text.secondary">
-                    Detecting your location...
-                  </Typography>
-                </Box>
-              )}
+
+              <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "265px" }}>
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel>Select Country*</InputLabel>
+                    <Select
+                      name="country"
+                      value={newBusinessData.country}
+                      onChange={handleNewBusinessInputChange}
+                      label="Select Country*"
+                      required
+                      size="small"
+                    >
+                      {countries.map((country) => (
+                        <MenuItem key={country.code} value={country.name}>
+                          {country.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  {geoLocationLoading && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                      <CircularProgress size={16} sx={{ mr: 1 }} />
+                      <Typography variant="caption" color="text.secondary">
+                        Detecting your location...
+                      </Typography>
+                    </Box>
+                  )}
             </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="City/Town"
-                name="city"
-                value={newBusinessData.city}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
-              />
+
+              <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "265px" }}>
+                  <TextField
+                    label="City/Town"
+                    name="city"
+                    value={newBusinessData.city}
+                    onChange={handleNewBusinessInputChange}
+                    fullWidth
+                    margin="normal"
+                    size="small"
+                  />
             </Grid>
           </Grid>
-          
+
           {/* Tax Information Section */}
-          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
-            Tax Information (optional)
-          </Typography>
+              <Typography
+                variant="subtitle1"
+                fontWeight="medium"
+                sx={{ mt: 4, mb: 2, display: "flex", alignItems: "center", cursor: "pointer" }}
+                onClick={() => setShowTaxInfo(!showTaxInfo)}
+              >
+                Tax Information (optional)
+                <IconButton
+                  size="small"
+                  sx={{
+                    transform: showTaxInfo ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.3s",
+                    ml: 1,
+                  }}
+                >
+                  <ExpandMoreIcon />
+                </IconButton>
+              </Typography>
+
+          <Collapse in={showTaxInfo} timeout="auto" unmountOnExit>
+              <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "265px" }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={newBusinessData.checkGstType}
+                      onChange={handleCheckboxChange}
+                      name="checkGstType"
+                      color="primary"
+                    />
+                  }
+                  label="Check GST Type"
+                />
+              </Grid>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "410px" }}>
               <TextField
                 label="Business GSTIN"
                 name="gstin"
@@ -980,9 +904,10 @@ const BusinessDetails = ({
                 onChange={handleNewBusinessInputChange}
                 fullWidth
                 margin="normal"
+                size="small"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "410px" }}>
               <TextField
                 label="Business PAN Number"
                 name="pan"
@@ -990,29 +915,31 @@ const BusinessDetails = ({
                 onChange={handleNewBusinessInputChange}
                 fullWidth
                 margin="normal"
+                size="small"
               />
             </Grid>
-            <Grid item xs={12}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={newBusinessData.checkGstType}
-                    onChange={handleCheckboxChange}
-                    name="checkGstType"
-                    color="primary"
-                  />
-                }
-                label="Check GST Type"
-              />
-            </Grid>
+
           </Grid>
-          
-          {/* Address Section */}
-          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
+
+        </Collapse>
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }} onClick={() => setShowAddress(!showAddress)}>
             Address (optional)
+            <IconButton
+                  size="small"
+                  sx={{
+                    transform: showAddress ? "rotate(180deg)" : "rotate(0deg)",
+                    transition: "transform 0.3s",
+                    ml: 1,
+                  }}
+                >
+                  <ExpandMoreIcon />
+                </IconButton>
           </Typography>
+
+          {/* Address Section */}
+        <Collapse in={showAddress} timeout="auto" unmountOnExit>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "260px" }}>
               <FormControl fullWidth margin="normal">
                 <InputLabel>Select Country</InputLabel>
                 <Select
@@ -1020,6 +947,7 @@ const BusinessDetails = ({
                   value={newBusinessData.country}
                   onChange={handleNewBusinessInputChange}
                   label="Select Country"
+                   size='small'
                 >
                   {countries.map((country) => (
                     <MenuItem key={country.code} value={country.name}>
@@ -1029,17 +957,18 @@ const BusinessDetails = ({
                 </Select>
               </FormControl>
             </Grid>
-            
+
             {/* State - Only shown if country has states */}
             {newBusinessData.country && countryStates[newBusinessData.country] && countryStates[newBusinessData.country].hasStates ? (
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "260px" }}>
                 <FormControl fullWidth margin="normal">
-                  <InputLabel>State / Province</InputLabel>
+                  <InputLabel size='small'>State / Province</InputLabel>
                   <Select
                     name="state"
                     value={newBusinessData.state}
                     onChange={handleNewBusinessInputChange}
                     label="State / Province"
+                    size='small'
                   >
                     {countryStates[newBusinessData.country]?.states?.map((state) => (
                       <MenuItem key={state} value={state}>
@@ -1050,7 +979,7 @@ const BusinessDetails = ({
                 </FormControl>
               </Grid>
             ) : (
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "260px" }}>
                 <TextField
                   label="State / Province"
                   name="state"
@@ -1058,11 +987,12 @@ const BusinessDetails = ({
                   onChange={handleNewBusinessInputChange}
                   fullWidth
                   margin="normal"
+                   size='small'
                 />
               </Grid>
             )}
-            
-            <Grid item xs={12} sm={6}>
+
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "320" }}>
               <TextField
                 label="City/Town"
                 name="city"
@@ -1070,63 +1000,83 @@ const BusinessDetails = ({
                 onChange={handleNewBusinessInputChange}
                 fullWidth
                 margin="normal"
-              />
-            </Grid>
-            
-            <Grid item xs={12} sm={6}>
-              <TextField
-                label="Postal Code / Zip Code"
-                name="pincode"
-                value={newBusinessData.pincode}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
-                InputProps={{
-                  endAdornment: pincodeLoading ? (
-                    <InputAdornment position="end">
-                      <CircularProgress size={20} />
-                    </InputAdornment>
-                  ) : pincodeSuccess ? (
-                    <InputAdornment position="end">
-                      <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
-                        <span style={{ fontSize: '1.2rem' }}>✓</span>
-                      </Box>
-                    </InputAdornment>
-                  ) : null
-                }}
-                error={Boolean(pincodeError)}
-                helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "")}
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    '& fieldset': {
-                      borderColor: pincodeSuccess ? 'success.main' : undefined,
-                    },
-                  },
-                  '& .MuiFormHelperText-root': {
-                    color: pincodeSuccess ? 'success.main' : undefined,
-                  }
-                }}
-              />
-            </Grid>
-            
-            <Grid item xs={12}>
-              <TextField
-                label="Street Address"
-                name="addressLine"
-                value={newBusinessData.addressLine}
-                onChange={handleNewBusinessInputChange}
-                fullWidth
-                margin="normal"
+                size='small'
               />
             </Grid>
           </Grid>
-          
-          {/* Additional Details Section */}
-          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
-            Additional Details (optional)
-          </Typography>
+
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "500" }}>
+                        <TextField
+                          label="Postal Code / Zip Code"
+                          name="pincode"
+                          value={newBusinessData.pincode}
+                          onChange={handleNewBusinessInputChange}
+                          fullWidth
+                          margin="normal"
+                          size='small'
+                          InputProps={{
+                            endAdornment: pincodeLoading ? (
+                              <InputAdornment position="end">
+                                <CircularProgress size={20} />
+                              </InputAdornment>
+                            ) : pincodeSuccess ? (
+                              <InputAdornment position="end">
+                                <Box sx={{ color: 'success.main', display: 'flex', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '1.2rem' }}>✓</span>
+                                </Box>
+                              </InputAdornment>
+                            ) : null
+                          }}
+                          error={Boolean(pincodeError)}
+                          helperText={pincodeError || (pincodeSuccess ? "✓ Location found and fields updated!" : "")}
+                          sx={{
+                            '& .MuiOutlinedInput-root': {
+                              '& fieldset': {
+                                borderColor: pincodeSuccess ? 'success.main' : undefined,
+                              },
+                            },
+                            '& .MuiFormHelperText-root': {
+                              color: pincodeSuccess ? 'success.main' : undefined,
+                            }
+                          }}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "500" }} >
+                        <TextField
+                          label="Street Address"
+                          name="addressLine"
+                          value={newBusinessData.addressLine}
+                          onChange={handleNewBusinessInputChange}
+                          fullWidth
+                          margin="normal"
+                          size='small'
+                        />
+                      </Grid>
+                      </Grid>
+    </Collapse>
+
+          {/* Additional Details Section */}
+          <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }} onClick={() => setShowAdditionalDetails(!showAdditionalDetails)}>
+            Additional Details (optional)
+            <IconButton
+                              size="small"
+                              sx={{
+                                transform: showAdditionalDetails ? "rotate(180deg)" : "rotate(0deg)",
+                                transition: "transform 0.3s",
+                                ml: 1,
+                              }}
+                            >
+                              <ExpandMoreIcon />
+                            </IconButton>
+          </Typography>
+          <Collapse in={showAdditionalDetails} timeout="auto" unmountOnExit>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 1, width: "400px" }}>
+                <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 0, display: 'block' }}>
+                    Email
+                </Typography>
               <TextField
                 label="Email"
                 name="email"
@@ -1134,10 +1084,12 @@ const BusinessDetails = ({
                 onChange={handleNewBusinessInputChange}
                 fullWidth
                 margin="normal"
+                size='small'
+
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
-              <Box sx={{ mt: 2, mb: 1 }}>
+            <Grid item xs={12} sm={6} md={4} lg={4} sx={{ mt: 0, width: "400px" }}>
+              <Box sx={{ mt: 2, mb: 0 }}>
                 <Typography variant="caption" sx={{ fontWeight: 'bold', mb: 1, display: 'block' }}>
                   Phone No.
                 </Typography>
@@ -1163,7 +1115,7 @@ const BusinessDetails = ({
                 </style>
               </Box>
             </Grid>
-            
+
             <Grid item xs={12}>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <FormControlLabel
@@ -1177,7 +1129,7 @@ const BusinessDetails = ({
                   }
                   label="Add to directly email documents from Invoka"
                 />
-                
+
                 <FormControlLabel
                   control={
                     <Switch
@@ -1189,7 +1141,7 @@ const BusinessDetails = ({
                   }
                   label="Add to directly WhatsApp documents from Invoka"
                 />
-                
+
                 <Box sx={{ display: 'flex', gap: 4 }}>
                   <FormControlLabel
                     control={
@@ -1202,7 +1154,7 @@ const BusinessDetails = ({
                     }
                     label="Show Email in Invoice"
                   />
-                  
+
                   <FormControlLabel
                     control={
                       <Switch
@@ -1218,7 +1170,7 @@ const BusinessDetails = ({
               </Box>
             </Grid>
           </Grid>
-          
+</Collapse>
           {/* Add Custom Fields Section */}
           <Typography variant="subtitle1" fontWeight="medium" sx={{ mt: 4, mb: 2 }}>
             Add Custom Fields
@@ -1230,11 +1182,11 @@ const BusinessDetails = ({
                 {newBusinessData.additionalDetails.length > 0 ? (
                   <Box sx={{ mb: 2 }}>
                     {newBusinessData.additionalDetails.map((detail, index) => (
-                      <Box 
-                        key={index} 
-                        sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
+                      <Box
+                        key={index}
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
                           mb: 2,
                           p: 1,
                           borderRadius: 1,
@@ -1278,7 +1230,7 @@ const BusinessDetails = ({
                             />
                           </Grid>
                           <Grid item xs={2}>
-                            <IconButton 
+                            <IconButton
                               color="error"
                               onClick={() => {
                                 const newDetails = [...newBusinessData.additionalDetails];
@@ -1303,7 +1255,7 @@ const BusinessDetails = ({
                     </Typography>
                   </Box>
                 )}
-                
+
                 {/* Button to add new custom field */}
                 <Button
                   variant="outlined"
@@ -1317,6 +1269,8 @@ const BusinessDetails = ({
             </Grid>
           </Grid>
         </DialogContent>
+
+
         <DialogActions>
           <Button onClick={handleCloseNewDialog}>Cancel</Button>
           <Button 
@@ -1330,6 +1284,13 @@ const BusinessDetails = ({
           </Button>
         </DialogActions>
       </Dialog>
+
+
+
+
+
+
+
       
       {/* Custom Field Dialog */}
       <Dialog 
