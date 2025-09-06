@@ -234,8 +234,8 @@ const BusinessDetails = ({
   // Handle input changes in new business form
   const handleNewBusinessInputChange = (e) => {
     const { name, value } = e.target;
-    setNewBusinessData(prev => ({
-      ...prev,
+    setNewBusinessData(prevData => ({
+      ...prevData,
       [name]: value
     }));
     
@@ -246,13 +246,13 @@ const BusinessDetails = ({
         setCountryCode(country.code.toLowerCase());
         
         // Reset state if country changes
-        if (prev.country !== value) {
-          setNewBusinessData(prev => ({
-            ...prev,
+       // if (prev.country !== value) {
+          setNewBusinessData(prevData => ({
+            ...prevData,
             state: ''
           }));
         }
-      }
+     // }
     }
     
     // If pincode changes and is of sufficient length, trigger lookup
