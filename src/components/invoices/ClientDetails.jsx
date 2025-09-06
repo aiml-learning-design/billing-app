@@ -76,7 +76,6 @@ const ClientDetails = ({
   clients = [], 
   selectedClient, 
   setSelectedClient,
-  onAddNewClient,
   onClientAdded,
   useApiForClientData = true
 }) => {
@@ -123,15 +122,15 @@ const ClientDetails = ({
     label: '',
     options: ['Option 1']
   });
-        const generateBusinessId = () => {
-          const bytes = new Uint8Array(12);
-          window.crypto.getRandomValues(bytes);
-          return Array.from(bytes)
-            .map(byte => byte.toString(16).padStart(2, '0'))
-            .join('');
-        };
+const generateBusinessId = () => {
+  const bytes = new Uint8Array(12);
+  window.crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+};
 
-  const [businessId] = useState(generateBusinessId());
+
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ open: false, message: '', severity: 'success' });
   const [inputValue, setInputValue] = useState('');
@@ -488,8 +487,8 @@ const ClientDetails = ({
 
   // Handle opening the new client dialog
   const handleOpenNewDialog = () => {
+      const newBusinessId = generateBusinessId();
     setNewClientData({
-        newClientData: businessId,
       clientName: inputValue || '',
       businessName: inputValue || '',
       gstin: '',
@@ -914,11 +913,11 @@ const ClientDetails = ({
   const handleCreateClient = async () => {
     try {
       setSaving(true);
-      
+  const newBusinessId = generateBusinessId(); // Generate new ID here
       // Prepare data for API
       const clientData = {
         // Use businessName as the clientName
-        businessId: businessId,
+        businessId: newBusinessId,
         clientName: newClientData.businessName,
         businessName: newClientData.businessName,
         industry: newClientData.industry,
@@ -968,15 +967,15 @@ const ClientDetails = ({
             if (newClientData.logo) {
               // Create a FormData object for file upload
               const formData = new FormData();
-              formData.append('logo', newClientData.logo);
+              formData.append('file', newClientData.logo);
 
               try {
                 // Upload the logo first
-                const logoResponse = await api.post('/api/client/business/logo/upload', formData, {
-                  headers: {
-                    'Content-Type': 'multipart/form-data'
-                  }
-                });
+               const logoResponse = await api.post(`/api/v1/media/upload?keyIdentifier=${clientData.businessId}&assetType=CLIENT_LOGO&assetName=ClientLogo`, formData, {
+                                 headers: {
+                                   'Content-Type': 'multipart/form-data'
+                                 }
+                               });
 
                 // If logo upload was successful, add the logo URL to the client data
                 if (logoResponse.success && logoResponse.data && logoResponse.data.logoUrl) {
@@ -1033,14 +1032,14 @@ const ClientDetails = ({
     setAlert(prev => ({ ...prev, open: false }));
   };
   
-  // Handle add new client button click
+/*   // Handle add new client button click
   const handleAddNewClient = () => {
     if (onAddNewClient) {
       onAddNewClient();
     } else {
       handleOpenNewDialog();
     }
-  };
+  }; */
 
   return (
     <Card sx={{ mb: 3 }}>
@@ -1197,7 +1196,7 @@ const ClientDetails = ({
             variant="outlined"
             startIcon={<Add />}
             sx={{ mt: 1 }}
-            onClick={handleAddNewClient}
+            onClick={handleOpenNewDialog}
           >
             Add New Client
           </Button>

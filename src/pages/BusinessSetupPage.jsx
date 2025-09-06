@@ -109,7 +109,7 @@ const BusinessSetup = () => {
   const [businessId] = useState(generateBusinessId());
   const navigate = useNavigate();
 
-  const businessSetUpContext = searchParams.get('context') || 'vendor';
+  const businessSetUpContext = searchParams.get('context');
 
   // Formik initialization
   const formik = useFormik({
@@ -171,10 +171,8 @@ const BusinessSetup = () => {
         let logoType;
 
         if (businessSetUpContext === 'vendor') {
-          logoType = 'vendor';
-        } else if (businessSetUpContext === 'BUSINESS_LOGO') {
           logoType = 'BUSINESS_LOGO';
-        } else {
+        } else if (businessSetUpContext === 'client') {
           logoType = 'CLIENT_LOGO';
         }
 
@@ -422,7 +420,7 @@ const BusinessSetup = () => {
       <Box sx={{ mt: 5, mb: 5 }}>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Typography variant="h4" gutterBottom align="center">
-            Tell us about your {businessSetUpContext}
+            Tell us about your {businessSetUpContext == 'vendor'? 'Business' : 'Client'}
           </Typography>
           <Typography variant="subtitle1" gutterBottom align="center" color="text.secondary" sx={{ mb: 4 }}>
             This helps us personalize your experience

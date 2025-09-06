@@ -470,45 +470,6 @@ const BusinessDetailsPage = () => {
       setBusinessToDelete(null);
     };
 
-  // Function to fetch business logo
-  const fetchBusinessLogo = async (businessId) => {
-    if (!businessId) return;
-
-    try {
-      setLogoLoading(true);
-
-      // Get the authentication token from localStorage
-      const token = localStorage.getItem('token');
-
-      // Construct the URL for fetching the logo
-      const logoUrl = `${API_CONFIG.BASE_URL}/api/v1/media/load?keyIdentifier=${businessId}&assetType=BUSINESS_LOGO`;
-
-      // Make an authenticated request to fetch the logo
-      console.log(`Adding authorization header for fetchBusinessLogo: Bearer ${token ? token.substring(0, 10) + '...' : 'undefined'}`);
-
-      const response = await fetch(logoUrl, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch logo: ${response.status} ${response.statusText}`);
-      }
-
-      // Create a blob URL from the response
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-
-      // Set the logo URL to the blob URL
-      setBusinessLogo(objectUrl);
-    } catch (error) {
-      console.error('Error fetching business logo:', error);
-      setBusinessLogo(null);
-    } finally {
-      setLogoLoading(false);
-    }
-  };
 
   // Function to preload business logos
   const preloadBusinessLogos = async (businesses) => {
